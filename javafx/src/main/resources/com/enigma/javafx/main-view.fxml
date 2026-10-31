@@ -1,7 +1,193 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/25"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.enigma.javafx.controller.MainController"/>
+<BorderPane prefHeight="940.0" prefWidth="1020.0"
+            styleClass="app-root theme-dark"
+            xmlns="http://javafx.com/javafx/25"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.enigma.javafx.controller.MainController">
+    <top>
+        <!-- Cabecera de la aplicación y accesos a Ayuda y Acerca de. -->
+        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="app-header">
+            <VBox spacing="4.0">
+                <Label styleClass="eyebrow" text="RETO 02 · ENIGMA"/>
+                <Label styleClass="app-title" text="Gestor AES"/>
+                <Label styleClass="subtitle" text="Cifra y recupera archivos localmente con AES-256-GCM."/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER_RIGHT" spacing="10.0" styleClass="header-actions">
+                <Button fx:id="helpButton" accessibleText="Ayuda sobre el uso de la aplicación"
+                        onAction="#showHelp" styleClass="header-button" text="Ayuda"/>
+                <Button fx:id="aboutButton" accessibleText="Información de la aplicación"
+                        onAction="#showAbout" styleClass="header-button" text="Acerca de"/>
+            </HBox>
+        </HBox>
+    </top>
+    <center>
+        <!-- Contenido principal: selección, cifrado, descifrado y vista previa. -->
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
+            <content>
+                <VBox spacing="18.0" styleClass="content">
+                    <VBox spacing="14.0" styleClass="card">
+                        <VBox spacing="4.0">
+                            <Label styleClass="section-title" text="Archivos"/>
+                            <Label styleClass="section-description"
+                                   text="Elige el archivo de entrada y la carpeta de destino."/>
+                        </VBox>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <Label labelFor="$sourcePathField" minWidth="125.0" styleClass="field-label"
+                                   text="Fichero de origen" textOverrun="CLIP"/>
+                            <TextField fx:id="sourcePathField"
+                                       accessibleText="Fichero de origen. También puedes arrastrar y soltar un fichero aquí."
+                                       promptText="Suelta aquí un fichero o selecciona uno"
+                                       styleClass="drop-target"/>
+                            <Button fx:id="chooseSourceButton" onAction="#chooseSourceFile"
+                                    styleClass="secondary-button" text="Seleccionar archivo"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <Label labelFor="$destinationDirectoryField" minWidth="125.0"
+                                   styleClass="field-label" text="Carpeta destino"/>
+                            <TextField fx:id="destinationDirectoryField"
+                                       promptText="Carpeta del archivo resultante"/>
+                            <Button fx:id="chooseDestinationButton" onAction="#chooseDestinationDirectory"
+                                    styleClass="secondary-button" text="Seleccionar destino"/>
+                        </HBox>
+                        <HBox alignment="CENTER_RIGHT">
+                            <Button fx:id="clearSelectionButton"
+                                    accessibleText="Limpiar las rutas y contraseñas de la pantalla sin borrar archivos"
+                                    onAction="#clearSelection" styleClass="secondary-button"
+                                    text="Limpiar selección"/>
+                        </HBox>
+                        <Label styleClass="helper-text"
+                               text="Ctrl+Enter cifra archivos normales y descifra contenedores .enc. Los originales se conservan y no se sobrescriben resultados existentes."/>
+                    </VBox>
+
+                    <VBox spacing="14.0" styleClass="card">
+                        <VBox spacing="4.0">
+                            <Label styleClass="section-title" text="Cifrado (AES)"/>
+                            <Label styleClass="section-description"
+                                   text="Genera una contraseña segura y cifra el archivo en un contenedor R2AE interoperable."/>
+                        </VBox>
+                        <HBox alignment="CENTER_LEFT" spacing="14.0">
+                            <Button fx:id="encryptButton" onAction="#encryptFile"
+                                    styleClass="primary-button" text="Cifrar archivo"/>
+                            <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                                <Label labelFor="$generatedPasswordField" styleClass="field-label"
+                                       text="Contraseña generada (16 caracteres)"/>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                    <TextField fx:id="generatedPasswordField"
+                                               promptText="Aparecerá al terminar el cifrado"/>
+                                    <Button fx:id="copyPasswordButton" onAction="#copyGeneratedPassword"
+                                            styleClass="secondary-button" text="Copiar"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        <Label styleClass="helper-text"
+                               text="Guarda la contraseña por separado: no se almacena dentro del archivo .enc."/>
+                    </VBox>
+
+                    <VBox spacing="14.0" styleClass="card">
+                        <VBox spacing="4.0">
+                            <Label styleClass="section-title" text="Descifrado (AES)"/>
+                            <Label styleClass="section-description"
+                                   text="Introduce la contraseña del contenedor para recuperar exactamente los bytes originales."/>
+                        </VBox>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <Label labelFor="$decryptPasswordField" minWidth="125.0"
+                                   styleClass="field-label" text="Contraseña"/>
+                            <StackPane minWidth="180.0" HBox.hgrow="ALWAYS">
+                                <PasswordField fx:id="decryptPasswordField"
+                                               accessibleText="Contraseña del archivo cifrado"
+                                               promptText="Contraseña del archivo .enc"/>
+                                <TextField fx:id="visibleDecryptPasswordField"
+                                           accessibleText="Contraseña visible del archivo cifrado"
+                                           managed="false" visible="false"
+                                           promptText="Contraseña del archivo .enc"/>
+                            </StackPane>
+                            <ToggleButton fx:id="showPasswordToggle" accessibleText="Mostrar contraseña"
+                                          styleClass="secondary-button" text="Mostrar"/>
+                            <Button fx:id="decryptButton" onAction="#decryptFile"
+                                    styleClass="primary-button" text="Descifrar archivo"/>
+                        </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <CheckBox fx:id="verifyCheckbox"
+                                      accessibleText="Comparar el archivo recuperado con el archivo original"
+                                      text="Comparar con el archivo original"/>
+                            <Label labelFor="$referencePathField" styleClass="field-label"
+                                   text="Archivo original"/>
+                            <TextField fx:id="referencePathField"
+                                       promptText="Opcional: selecciona el original"/>
+                            <Button fx:id="chooseReferenceButton" onAction="#chooseReferenceFile"
+                                    styleClass="secondary-button" text="Seleccionar original"/>
+                        </HBox>
+                        <Label styleClass="helper-text"
+                               text="La etiqueta GCM valida el contenedor. La comparación opcional comprueba además tamaño y SHA-256."/>
+                    </VBox>
+
+                    <VBox spacing="12.0" styleClass="card">
+                        <VBox spacing="4.0">
+                            <Label styleClass="section-title" text="Vista previa"/>
+                            <Label fx:id="previewMessageLabel" styleClass="section-description"
+                                   text="La vista previa se muestra después de descifrar un .txt o un .png."/>
+                        </VBox>
+                        <Separator/>
+                        <HBox spacing="14.0">
+                            <VBox spacing="8.0" styleClass="preview-panel" HBox.hgrow="ALWAYS">
+                                <Label labelFor="$textPreviewArea" styleClass="field-label"
+                                       text="Texto recuperado"/>
+                                <TextArea fx:id="textPreviewArea"
+                                          accessibleText="Vista previa del texto descifrado"
+                                          prefRowCount="8"
+                                          promptText="El texto descifrado aparecerá aquí."
+                                          wrapText="true"/>
+                            </VBox>
+                            <VBox spacing="8.0" styleClass="preview-panel" HBox.hgrow="ALWAYS">
+                                <Label labelFor="$imagePreview" styleClass="field-label"
+                                       text="Imagen recuperada"/>
+                                <StackPane minHeight="220.0" styleClass="image-preview">
+                                    <ImageView fx:id="imagePreview"
+                                               accessibleText="Vista previa de la imagen PNG descifrada"
+                                               fitHeight="220.0" fitWidth="360.0"
+                                               preserveRatio="true" smooth="true"/>
+                                </StackPane>
+                            </VBox>
+                        </HBox>
+                        <Label styleClass="helper-text"
+                               text="La vista previa es limitada; la operación AES conserva siempre el archivo completo sin transformarlo."/>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+    <bottom>
+        <!-- Estado de la operación y controles de progreso. -->
+        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="status-bar">
+            <Label accessibleText="Estado de la aplicación" styleClass="status-dot"/>
+            <Label fx:id="statusLabel" styleClass="status-text" text="Listo para trabajar."
+                   HBox.hgrow="ALWAYS"/>
+            <ProgressIndicator fx:id="progressIndicator" accessibleText="Progreso de la operación"
+                               maxHeight="22.0" maxWidth="22.0" minHeight="22.0" minWidth="22.0"
+                               progress="-1.0"/>
+            <ProgressBar fx:id="progressBar" accessibleText="Porcentaje de progreso"
+                         prefWidth="150.0" progress="-1.0"/>
+            <Label styleClass="status-note" text="Procesamiento local · R2AE v1"/>
+        </HBox>
+    </bottom>
+</BorderPane>
