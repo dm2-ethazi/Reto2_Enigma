@@ -83,7 +83,7 @@
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Cifrado (AES)"/>
                             <Label styleClass="section-description"
-                                   text="Genera una contraseña segura y cifra el archivo en un contenedor R2AE interoperable."/>
+                                   text="Genera una contraseña segura de 16 caracteres para proteger el archivo."/>
                         </VBox>
                         <HBox alignment="CENTER_LEFT" spacing="14.0">
                             <Button fx:id="encryptButton" onAction="#encryptFile"
@@ -93,14 +93,17 @@
                                        text="Contraseña generada (16 caracteres)"/>
                                 <HBox alignment="CENTER_LEFT" spacing="8.0">
                                     <TextField fx:id="generatedPasswordField"
-                                               promptText="Aparecerá al terminar el cifrado"/>
+                                               editable="false"
+                                               promptText="Pulsa Generar contraseña"/>
+                                    <Button fx:id="generatePasswordButton" onAction="#generatePassword"
+                                            styleClass="secondary-button" text="Generar contraseña"/>
                                     <Button fx:id="copyPasswordButton" onAction="#copyGeneratedPassword"
                                             styleClass="secondary-button" text="Copiar"/>
                                 </HBox>
                             </VBox>
                         </HBox>
                         <Label styleClass="helper-text"
-                               text="Guarda la contraseña por separado: no se almacena dentro del archivo .enc."/>
+                               text="Usa A-Z, a-z y 0-9 con selección criptográficamente segura. Guarda la contraseña por separado."/>
                     </VBox>
 
                     <VBox spacing="14.0" styleClass="card">
