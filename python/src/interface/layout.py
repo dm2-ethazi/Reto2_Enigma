@@ -9,19 +9,18 @@ def render(title, choices, selected, fields, interactive):
     width = min(66, max(24, columns - 4))
     lines = [
         "ENIGMA / RETO 02",
-        "Vista previa de la interfaz",
+        "Cifrado Vigenère de texto",
         "",
         title,
         "-" * min(40, width),
     ]
     for label, placeholder in fields:
         lines.extend([label, "  " + placeholder, ""])
-    if not fields:
+    main_menu = title == "Menú principal"
+    if main_menu:
         lines.extend(["VIGENÈRE / TEXTO", ""])
     for index, label in enumerate(choices):
-        if not fields and index == 2:
-            lines.extend(["", "AES / ARCHIVOS", ""])
-        if not fields and index == 4:
+        if main_menu and label == "Salir":
             lines.append("")
         marker = ">" if interactive and index == selected else " "
         lines.append(f"{marker} {index + 1}. {label}")

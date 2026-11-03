@@ -1,8 +1,9 @@
-"""Flujo de navegación entre el menú y las pantallas de presentación."""
+"""Menú de esta fase: cifrado Vigenère y salida de la aplicación."""
 
+from ..errors import EnigmaError, OperationCancelled
 from .menu import SCREENS, show_main_menu
-from .navigation import choose
 from .terminal import enable_cursor_control
+from .vigenere import run_encryption
 
 
 def run():
@@ -12,13 +13,15 @@ def run():
             selected = show_main_menu(interactive=interactive)
             if selected is None or selected == len(SCREENS):
                 break
-            title, fields = SCREENS[selected]
-            choose(
-                title,
-                ["Volver al menú principal"],
-                fields=fields,
-                interactive=interactive,
-            )
+            try:
+                if selected == 0:
+                    run_encryption(interactive=interactive)
+            except OperationCancelled:
+                print("Operación cancelada. Volviendo al menú.")
+            except (EnigmaError, OSError, UnicodeError, MemoryError) as error:
+                message = str(error) or "Recursos insuficientes para completar la operación."
+                print(f"Error: {message}")
+                input("\nPulsa Enter para volver al menú principal.")
     except (EOFError, KeyboardInterrupt):
         pass
     print("Hasta pronto.")
