@@ -1,1 +1,1 @@
-"""Interfaz de terminal, sin operaciones de cifrado ni acceso a archivos."""
+"""Interfaz de terminal sin colores para las operaciones de Enigma."""

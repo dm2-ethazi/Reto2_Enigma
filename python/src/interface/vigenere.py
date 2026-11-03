@@ -1,24 +1,81 @@
-"""Pantallas de presentación de Vigenère."""
+"""Flujo de cifrado Vigenère, sin colores."""
+
+import getpass
+import sys
+from pathlib import Path
+
+from ..encrypt import vigenere
+from ..errors import OperationCancelled
+from ..utils.dialogs import TEXT_FILES, choose_path
+from ..utils.files import input_text_file, new_text_destination, temporary_parts, write_text
+from .loading import loading
+from .navigation import choose
 
 SCREENS = (
-    (
-        "Cifrar Vigenère",
-        (
-            ("Origen", "Texto por consola / archivo .txt"),
-            ("Texto", "[Texto que se quiere cifrar]"),
-            ("Clave", "[Clave de 1 a 64 letras]"),
-            ("Resultado", "[Texto cifrado]"),
-            ("Salida", "Mostrar / guardar .txt"),
-        ),
-    ),
-    (
-        "Descifrar Vigenère",
-        (
-            ("Origen", "Texto por consola / archivo .txt"),
-            ("Texto", "[Texto que se quiere descifrar]"),
-            ("Clave", "[Clave original]"),
-            ("Resultado", "[Texto recuperado]"),
-            ("Salida", "Mostrar / guardar .txt"),
-        ),
-    ),
+    ("Cifrar Vigenère", ()),
 )
+
+
+def run_encryption(*, interactive: bool = False) -> None:
+    title = "Cifrar Vigenère"
+    mode = choose(
+        f"{title} / Origen del texto",
+        ["Texto por consola", "Archivo .txt"],
+        interactive=interactive,
+    )
+    if mode is None:
+        raise OperationCancelled
+    source = None
+    if mode == 0:
+        text = input("Texto: ")
+    else:
+        source = input_text_file(
+            choose_path("Seleccionar archivo de texto", filetypes=TEXT_FILES)
+        )
+
+    prompt = "Clave Vigenère (1-64 letras A-Z): "
+    key = getpass.getpass(prompt) if sys.stdin.isatty() else input(prompt)
+    key = vigenere.validate_key(key)
+    mode = choose(
+        f"{title} / Qué hacer con el resultado",
+        ["Mostrar", "Guardar .txt", "Mostrar y guardar"],
+        interactive=interactive,
+    )
+    if mode is None:
+        raise OperationCancelled
+    destination = None
+    if mode in (1, 2):
+        destination = new_text_destination(
+            choose_path(
+                "Guardar resultado Vigenère",
+                save=True,
+                default=Path("resultado.txt"),
+                filetypes=TEXT_FILES,
+                extension=".txt",
+            )
+        )
+
+    if source is None:
+        with loading("Cifrando"):
+            result = vigenere.encrypt(text, key)
+        if mode in (0, 2):
+            print(f"\nResultado:\n{result}")
+        if destination is not None:
+            write_text(destination, result)
+    else:
+        directory = destination.parent if destination is not None else None
+        with temporary_parts(directory) as parts:
+            with loading("Cifrando"):
+                for block in vigenere.encrypt_file(source, key):
+                    parts.write(block)
+                parts.finish()
+                if destination is not None:
+                    parts.publish(destination)
+            if mode in (0, 2):
+                print("\nResultado:")
+                for block in parts.iter_text():
+                    sys.stdout.write(block)
+                print()
+    if destination is not None:
+        print(f"Resultado guardado en: {destination}")
+    input("\nPulsa Enter para volver al menú principal.")

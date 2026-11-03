@@ -1,10 +1,8 @@
 """Opciones y presentación del menú principal."""
 
-from .aes import SCREENS as AES_SCREENS
 from .navigation import choose
-from .vigenere import SCREENS as VIGENERE_SCREENS
+from .vigenere import SCREENS
 
-SCREENS = VIGENERE_SCREENS + AES_SCREENS
 CHOICES = [title for title, _ in SCREENS] + ["Salir"]
 
 
