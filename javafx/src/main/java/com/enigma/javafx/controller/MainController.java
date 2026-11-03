@@ -1,9 +1,13 @@
 package com.enigma.javafx.controller;
 
+import com.enigma.javafx.service.CryptoService;
+
 import javafx.fxml.FXML;
 import javafx.css.PseudoClass;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -17,6 +21,7 @@ import java.io.File;
 
 public class MainController {
     private static final PseudoClass DRAG_OVER = PseudoClass.getPseudoClass("drag-over");
+    private final CryptoService cryptoService = new CryptoService();
 
     @FXML
     private TextField sourcePathField;
@@ -121,8 +126,23 @@ public class MainController {
     }
 
     @FXML
+    private void generatePassword() {
+        generatedPasswordField.setText(cryptoService.generatePassword());
+        statusLabel.setText("Contraseña segura generada. Guárdala por separado.");
+    }
+
+    @FXML
     private void copyGeneratedPassword() {
-        showNotImplemented("Copiar contraseña");
+        String password = generatedPasswordField.getText();
+        if (password == null || password.isBlank()) {
+            statusLabel.setText("Genera una contraseña antes de copiarla.");
+            return;
+        }
+
+        ClipboardContent content = new ClipboardContent();
+        content.putString(password);
+        Clipboard.getSystemClipboard().setContent(content);
+        statusLabel.setText("Contraseña copiada al portapapeles.");
     }
 
     @FXML
