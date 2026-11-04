@@ -18,13 +18,18 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Vista principal declarativa de Gestor AES.
+  MainApplication carga este archivo y FXMLLoader conecta los fx:id con MainController.
+  Las clases CSS aquí declaradas se definen en styles.css.
+-->
 <BorderPane prefHeight="940.0" prefWidth="1020.0"
             styleClass="app-root theme-dark"
             xmlns="http://javafx.com/javafx/25"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.enigma.javafx.controller.MainController">
     <top>
-        <!-- Cabecera de la aplicación y accesos a Ayuda y Acerca de. -->
+        <!-- Cabecera persistente: identidad de la aplicación y acciones informativas. -->
         <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="app-header">
             <VBox spacing="4.0">
                 <Label styleClass="eyebrow" text="RETO 02 · ENIGMA"/>
@@ -41,10 +46,14 @@
         </HBox>
     </top>
     <center>
-        <!-- Contenido principal: selección, cifrado, descifrado y vista previa. -->
+        <!--
+          Área desplazable para que las tarjetas sigan accesibles en ventanas pequeñas.
+          El contenido central agrupa la selección de ficheros, las operaciones y la vista previa.
+        -->
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-scroll">
             <content>
                 <VBox spacing="18.0" styleClass="content">
+                    <!-- Entrada y destino del cifrado; el campo de origen también acepta arrastrar y soltar. -->
                     <VBox spacing="14.0" styleClass="card">
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Archivos"/>
@@ -79,6 +88,7 @@
                                text="Ctrl+Enter cifra archivos normales y descifra contenedores .enc. Los originales se conservan y no se sobrescriben resultados existentes."/>
                     </VBox>
 
+                    <!-- Resultado del cifrado: contraseña protegida, con opción para revelarla o copiarla. -->
                     <VBox spacing="14.0" styleClass="card">
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Cifrado (AES)"/>
@@ -92,11 +102,25 @@
                                 <Label labelFor="$generatedPasswordField" styleClass="field-label"
                                        text="Contraseña generada (16 caracteres)"/>
                                 <HBox alignment="CENTER_LEFT" spacing="8.0">
-                                    <TextField fx:id="generatedPasswordField"
-                                               editable="false"
-                                               promptText="Pulsa Generar contraseña"/>
-                                    <Button fx:id="generatePasswordButton" onAction="#generatePassword"
-                                            styleClass="secondary-button" text="Generar contraseña"/>
+                                    <!--
+                                      Los dos campos ocupan el mismo espacio y comparten el texto en el controlador.
+                                      El PasswordField permanece visible por defecto para ocultar la contraseña.
+                                    -->
+                                    <StackPane minWidth="180.0" HBox.hgrow="ALWAYS">
+                                        <PasswordField fx:id="generatedPasswordField"
+                                                       accessibleText="Contraseña generada para el archivo cifrado"
+                                                       editable="false"
+                                                       promptText="Aparecerá al terminar el cifrado"/>
+                                        <TextField fx:id="visibleGeneratedPasswordField"
+                                                   accessibleText="Contraseña generada visible"
+                                                   editable="false"
+                                                   managed="false"
+                                                   visible="false"/>
+                                    </StackPane>
+                                    <!-- El controlador alterna la visibilidad de los campos al cambiar la selección. -->
+                                    <ToggleButton fx:id="showGeneratedPasswordToggle"
+                                                  accessibleText="Mostrar contraseña generada"
+                                                  styleClass="secondary-button" text="Mostrar"/>
                                     <Button fx:id="copyPasswordButton" onAction="#copyGeneratedPassword"
                                             styleClass="secondary-button" text="Copiar"/>
                                 </HBox>
@@ -106,6 +130,7 @@
                                text="Usa A-Z, a-z y 0-9 con selección criptográficamente segura. Guarda la contraseña por separado."/>
                     </VBox>
 
+                    <!-- Controles reservados para la funcionalidad de descifrado. -->
                     <VBox spacing="14.0" styleClass="card">
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Descifrado (AES)"/>
@@ -144,6 +169,7 @@
                                text="La etiqueta GCM valida el contenedor. La comparación opcional comprueba además tamaño y SHA-256."/>
                     </VBox>
 
+                    <!-- Previsualización limitada a tipos compatibles; no reemplaza el archivo de salida. -->
                     <VBox spacing="12.0" styleClass="card">
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Vista previa"/>
@@ -180,11 +206,12 @@
         </ScrollPane>
     </center>
     <bottom>
-        <!-- Estado de la operación y controles de progreso. -->
+        <!-- Estado y progreso de la tarea de cifrado, actualizados por MainController. -->
         <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="status-bar">
             <Label accessibleText="Estado de la aplicación" styleClass="status-dot"/>
             <Label fx:id="statusLabel" styleClass="status-text" text="Listo para trabajar."
                    HBox.hgrow="ALWAYS"/>
+            <!-- Indicadores visuales reservados para mostrar el avance de las operaciones. -->
             <ProgressIndicator fx:id="progressIndicator" accessibleText="Progreso de la operación"
                                maxHeight="22.0" maxWidth="22.0" minHeight="22.0" minWidth="22.0"
                                progress="-1.0"/>
