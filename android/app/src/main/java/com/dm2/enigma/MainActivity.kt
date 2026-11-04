@@ -1,6 +1,7 @@
 package com.dm2.enigma
 
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
@@ -18,7 +19,8 @@ class MainActivity : AppCompatActivity() {
     private var archivoTxtSeleccionado: Uri? = null
     private var archivoEncSeleccionado: Uri? = null
 
-    // Formato: {9} + 16 caracteres alfanuméricos  →  ej: {3}Abc123XyZ456QwE
+    private var pantallaActual = "menu"
+
     private val REGEX_CONTRASENA = Regex("[A-Za-z0-9]{16}$")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,20 +38,48 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        mostrarMenu()
+        if (savedInstanceState != null) {
+            // Recuperar datos
+            pantallaActual = savedInstanceState.getString("pantalla_actual", "menu")
+
+            archivoTxtSeleccionado = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getParcelable("uri_txt", Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState.getParcelable("uri_txt")
+            }
+
+            archivoEncSeleccionado = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getParcelable("uri_enc", Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState.getParcelable("uri_enc")
+            }
+
+            // Restaurar la pantalla correcta
+            when (pantallaActual) {
+                "aes" -> mostrarAes(savedInstanceState.getString("texto_contrasena") ?: "")
+                "cesar" -> mostrarCesar(savedInstanceState.getString("texto_desplazamiento") ?: "")
+                else -> mostrarMenu()
+            }
+        } else {
+            mostrarMenu()
+        }
     }
 
     // ---------------------------------------------------------------
     //  Pantallas
     // ---------------------------------------------------------------
     fun mostrarMenu() {
+        pantallaActual = "menu"
         setContentView(R.layout.activity_main)
 
         findViewById<Button>(R.id.btnAesImagenes).setOnClickListener { mostrarAes() }
         findViewById<Button>(R.id.btnCesarTexto).setOnClickListener { mostrarCesar() }
     }
 
-    private fun mostrarAes() {
+    private fun mostrarAes(textoRecuperado: String = "") {
+        pantallaActual = "aes"
         setContentView(R.layout.activity_aes)
 
         findViewById<Button>(R.id.btnVolver).setOnClickListener { mostrarMenu() }
@@ -57,6 +87,9 @@ class MainActivity : AppCompatActivity() {
 
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         val btnMostrar = findViewById<ImageButton>(R.id.btnMostrarContrasena)
+
+        // Restaurar el texto guardado
+        etContrasena.setText(textoRecuperado)
 
         // --- Validación al pulsar Descifrar ---
         findViewById<Button>(R.id.btnDescifrarAes).setOnClickListener {
@@ -98,13 +131,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun mostrarCesar() {
+    private fun mostrarCesar(textoRecuperado: String = "") {
+        pantallaActual = "cesar"
         setContentView(R.layout.activity_cesar)
 
         findViewById<Button>(R.id.btnVolver)?.setOnClickListener { mostrarMenu() }
         findViewById<Button>(R.id.btnImportarTxt).setOnClickListener { abrirSelectorTxt() }
 
         val etDesplazamiento = findViewById<EditText>(R.id.etDesplazamiento)
+
+        // Restaurar el texto guardado
+        etDesplazamiento.setText(textoRecuperado)
 
         etDesplazamiento.filters = arrayOf(
             InputFilter { source, start, end, dest, dstart, dend ->
@@ -124,6 +161,24 @@ class MainActivity : AppCompatActivity() {
     // ---------------------------------------------------------------
     //  Utilidades
     // ---------------------------------------------------------------
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        // Guardar en qué pantalla está el usuario
+        outState.putString("pantalla_actual", pantallaActual)
+
+        // Guardar el texto escrito en las cajas
+        if (pantallaActual == "aes") {
+            outState.putString("texto_contrasena", findViewById<EditText>(R.id.etContrasena)?.text.toString())
+        } else if (pantallaActual == "cesar") {
+            outState.putString("texto_desplazamiento", findViewById<EditText>(R.id.etDesplazamiento)?.text.toString())
+        }
+
+        // Guardar los archivos seleccionados (las URIs)
+        outState.putParcelable("uri_txt", archivoTxtSeleccionado)
+        outState.putParcelable("uri_enc", archivoEncSeleccionado)
+    }
 
     private val selectorTxt =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
