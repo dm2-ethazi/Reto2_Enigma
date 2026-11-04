@@ -1,5 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- ===== FONDOS ===== -->
+    <color name="bg_app">#171831</color>          <!-- Fondo principal -->
+    <color name="bg_surface">#22254B</color>       <!-- Tarjetas / contenedores -->
+    <color name="bg_header">#1E234F</color>        <!-- Cabecera / top bar -->
+    <color name="bg_status">#191B38</color>        <!-- Barra de estado -->
+    <color name="bg_input">#252210</color>         <!-- Campo resaltado (amarillo) -->
+
+    <!-- ===== TEXTO ===== -->
+    <color name="text_primary">#F1F5F9</color>     <!-- slate-100 -->
+    <color name="text_secondary">#94A3B8</color>   <!-- slate-400 -->
+    <color name="text_hint">#64748B</color>        <!-- slate-500 -->
+    <color name="text_on_accent">#FFFFFF</color>
+
+    <!-- ===== AZUL (Primario / Acción) ===== -->
+    <color name="azul_boton">#3D5CE6</color>       <!-- Botón principal -->
+    <color name="azul_hover">#5372F6</color>       <!-- Hover / pressed -->
+    <color name="azul_fondo">#1E234F</color>       <!-- Cabecera -->
+    <color name="azul_texto">#A5B4FC</color>       <!-- Texto accesible -->
+    <color name="azul_borde">#637DF2</color>
+
+    <!-- ===== VERDE (Éxito) ===== -->
+    <color name="verde_indicador">#10B981</color>
+    <color name="verde_progreso">#059669</color>
+    <color name="verde_fondo_badge">#132E22</color>
+    <color name="verde_texto">#6EE7B7</color>
+    <color name="verde_borde">#065F46</color>
+
+    <!-- ===== AMARILLO (Alerta / Foco) ===== -->
+    <color name="amarillo_foco">#E6C148</color>
+    <color name="amarillo_oro">#D4AF37</color>
+    <color name="amarillo_fondo">#2D2712</color>
+    <color name="amarillo_texto">#FDE047</color>
+    <color name="amarillo_borde">#B39226</color>
+
+    <!-- ===== MAGENTA (Peligro) ===== -->
+    <color name="magenta_borde">#B82865</color>
+    <color name="magenta_hover">#D63378</color>
+    <color name="magenta_fondo">#381B2B</color>
+    <color name="magenta_texto">#FAD2E1</color>
 </resources>
