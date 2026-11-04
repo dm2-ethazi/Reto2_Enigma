@@ -46,7 +46,8 @@
             android:textAllCaps="false"
             android:textColor="@color/magenta_texto"
             android:textSize="18sp"
-            app:backgroundTint="@null" />
+            app:backgroundTint="@null"
+            android:onClick="pantalla_aes"/>
 
         <Button
             android:id="@+id/btnCesarTexto"
@@ -61,6 +62,7 @@
             android:textAllCaps="false"
             android:textColor="@color/magenta_texto"
             android:textSize="18sp"
-            app:backgroundTint="@null" />
+            app:backgroundTint="@null"
+            android:onClick="pantalla_cesar"/>
     </LinearLayout>
 </ScrollView>
