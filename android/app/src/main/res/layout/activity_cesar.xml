@@ -83,6 +83,7 @@
             android:importantForAutofill="no"
             android:maxLength="2"
             android:text="1"
+            android:hint="1"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_secondary"
             android:textSize="18sp" />
