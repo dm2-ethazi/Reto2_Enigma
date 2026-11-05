@@ -3,16 +3,23 @@ package com.enigma.javafx.controller;
 import com.enigma.javafx.service.FileService;
 import com.enigma.javafx.service.FileService.DecryptionResult;
 import com.enigma.javafx.service.FileService.EncryptionResult;
+import com.enigma.javafx.i18n.LanguageService;
+import com.enigma.javafx.i18n.LanguageService.Language;
 
 import javafx.css.PseudoClass;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.Clipboard;
@@ -27,6 +34,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -51,6 +59,18 @@ public class MainController {
     private Task<EncryptionResult> encryptionTask;
     /** Tarea activa de descifrado, si la hay. */
     private Task<DecryptionResult> decryptionTask;
+    private volatile Language selectedLanguage = Language.SPANISH;
+    private volatile LocalizedText currentStatus =
+            new LocalizedText("Listo para trabajar.", new Object[0]);
+
+    @FXML
+    private Parent rootPane;
+
+    @FXML
+    private Label languageLabel;
+
+    @FXML
+    private ComboBox<Language> languageSelector;
 
     /** Campo de ruta del fichero que se cifrará. */
     @FXML
@@ -162,10 +182,15 @@ public class MainController {
                 decryptPasswordField, visibleDecryptPasswordField, "contraseña");
         configurePasswordVisibility(
                 showGeneratedPasswordToggle, showGeneratedPasswordIcon, hideGeneratedPasswordIcon,
-                generatedPasswordField, visibleGeneratedPasswordField, "contraseña generada");
+                generatedPasswordField, visibleGeneratedPasswordField,
+                "contraseña generada");
         generatedPasswordField.setEditable(false);
         visibleGeneratedPasswordField.setEditable(false);
         showGeneratedPasswordToggle.setDisable(true);
+        languageSelector.getItems().setAll(Language.values());
+        languageSelector.setValue(Language.SPANISH);
+        languageSelector.setOnAction(event -> changeLanguage());
+        applyLanguage(Language.SPANISH);
 
         // El pseudoestado permite que la hoja CSS destaque una zona de soltado válida.
         sourcePathField.setOnDragOver(event -> {
@@ -190,7 +215,7 @@ public class MainController {
             if (success) {
                 setSourceFile(dragboard.getFiles().get(0));
             } else {
-                statusLabel.setText("Arrastra un único archivo válido.");
+                setStatus("Arrastra un único archivo válido.");
             }
             sourcePathField.pseudoClassStateChanged(DRAG_OVER, false);
             event.setDropCompleted(success);
@@ -214,7 +239,7 @@ public class MainController {
     @FXML
     private void chooseSourceFile() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Seleccionar archivo de origen");
+        chooser.setTitle(translate("Seleccionar archivo de origen"));
         setInitialDirectory(chooser, sourcePathField, destinationDirectoryField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(sourcePathField));
@@ -227,13 +252,13 @@ public class MainController {
     @FXML
     private void chooseDestinationDirectory() {
         DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Seleccionar carpeta de destino");
+        chooser.setTitle(translate("Seleccionar carpeta de destino"));
         setInitialDirectory(chooser, destinationDirectoryField, sourcePathField);
 
         File selectedDirectory = chooser.showDialog(getOwnerWindow(destinationDirectoryField));
         if (selectedDirectory != null) {
             destinationDirectoryField.setText(selectedDirectory.getAbsolutePath());
-            statusLabel.setText("Carpeta de destino seleccionada.");
+            setStatus("Carpeta de destino seleccionada.");
         }
     }
 
@@ -252,7 +277,7 @@ public class MainController {
         generatedPasswordField.clear();
         showGeneratedPasswordToggle.setSelected(false);
         showGeneratedPasswordToggle.setDisable(true);
-        statusLabel.setText("Selección limpiada.");
+        setStatus("Selección limpiada.");
     }
 
     /**
@@ -275,12 +300,12 @@ public class MainController {
             source = selectedPath(sourcePathField);
             destination = selectedPath(destinationDirectoryField);
         } catch (InvalidPathException exception) {
-            showError("Una de las rutas seleccionadas no es válida.");
+            showError(translate("Una de las rutas seleccionadas no es válida."));
             return;
         }
 
         if (source == null || destination == null) {
-            showError("Selecciona un fichero de origen y una carpeta de destino.");
+            showError(translate("Selecciona un fichero de origen y una carpeta de destino."));
             return;
         }
 
@@ -293,40 +318,36 @@ public class MainController {
             @Override
             protected EncryptionResult call() throws IOException, GeneralSecurityException {
                 long totalBytes = Files.size(source);
-                updateMessage("Preparando cifrado...");
+                updateMessage(setTaskStatus("Preparando cifrado..."));
                 EncryptionResult result = fileService.encrypt(source, destination, processed -> {
                     long percentage = totalBytes == 0 ? 100
                             : Math.min(100, Math.round(processed * 100.0 / totalBytes));
-                    updateMessage("Cifrando archivo: " + percentage + "%");
+                    updateMessage(setTaskStatus("Cifrando archivo: {0}%", percentage));
                 });
-                updateMessage("Cifrado completado.");
+                updateMessage(setTaskStatus("Cifrado completado."));
                 return result;
             }
         };
 
         // Los callbacks de estado de Task vuelven al hilo JavaFX de forma segura.
-        statusLabel.textProperty().bind(encryptionTask.messageProperty());
+        observeTaskMessages(encryptionTask);
         encryptionTask.setOnSucceeded(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
             EncryptionResult result = encryptionTask.getValue();
             generatedPasswordField.setText(result.password());
             showGeneratedPasswordToggle.setDisable(false);
-            statusLabel.setText("Archivo cifrado: " + result.outputPath());
+            setStatus("Archivo cifrado: {0}", result.outputPath());
         });
         encryptionTask.setOnFailed(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
             generatedPasswordField.clear();
             Throwable failure = encryptionTask.getException();
-            showError(failure.getMessage() == null
-                    ? "No se pudo cifrar el archivo." : failure.getMessage());
+            showError(translateFailure(failure, "No se pudo cifrar el archivo."));
         });
         encryptionTask.setOnCancelled(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
             generatedPasswordField.clear();
-            statusLabel.setText("Cifrado cancelado.");
+            setStatus("Cifrado cancelado.");
         });
 
         // Un hilo daemon permite cerrar la aplicación sin dejar un proceso colgado.
@@ -343,14 +364,14 @@ public class MainController {
     private void copyGeneratedPassword() {
         String password = generatedPasswordField.getText();
         if (password == null || password.isBlank()) {
-            statusLabel.setText("Cifra un archivo antes de copiar su contraseña.");
+            setStatus("Cifra un archivo antes de copiar su contraseña.");
             return;
         }
 
         ClipboardContent content = new ClipboardContent();
         content.putString(password);
         Clipboard.getSystemClipboard().setContent(content);
-        statusLabel.setText("Contraseña copiada al portapapeles.");
+        setStatus("Contraseña copiada al portapapeles.");
     }
 
     /** Descifra el contenedor seleccionado sin modificar la vista previa. */
@@ -370,20 +391,20 @@ public class MainController {
                 selectedReference = selectedPath(referencePathField);
             }
         } catch (InvalidPathException exception) {
-            showError("Una de las rutas seleccionadas no es válida.");
+            showError(translate("Una de las rutas seleccionadas no es válida."));
             return;
         }
 
         if (encryptedFile == null || destination == null) {
-            showError("Selecciona el contenedor .enc y una carpeta de destino.");
+            showError(translate("Selecciona el contenedor .enc y una carpeta de destino."));
             return;
         }
         if (decryptPasswordField.getText() == null || decryptPasswordField.getText().isBlank()) {
-            showError("Introduce la contraseña del contenedor.");
+            showError(translate("Introduce la contraseña del contenedor."));
             return;
         }
         if (verifyCheckbox.isSelected() && selectedReference == null) {
-            showError("Selecciona el archivo original para poder compararlo.");
+            showError(translate("Selecciona el archivo original para poder compararlo."));
             return;
         }
 
@@ -395,14 +416,14 @@ public class MainController {
             protected DecryptionResult call() throws IOException, GeneralSecurityException {
                 try {
                     long totalBytes = Files.size(encryptedFile);
-                    updateMessage("Preparando descifrado...");
+                    updateMessage(setTaskStatus("Preparando descifrado..."));
                     DecryptionResult result = fileService.decrypt(
                             encryptedFile, destination, password, reference, processed -> {
                                 long percentage = totalBytes == 0 ? 100
                                         : Math.min(100, Math.round(processed * 100.0 / totalBytes));
-                                updateMessage("Descifrando archivo: " + percentage + "%");
+                                updateMessage(setTaskStatus("Descifrando archivo: {0}%", percentage));
                             });
-                    updateMessage("Descifrado completado.");
+                    updateMessage(setTaskStatus("Descifrado completado."));
                     return result;
                 } finally {
                     Arrays.fill(password, '\0');
@@ -410,23 +431,19 @@ public class MainController {
             }
         };
 
-        statusLabel.textProperty().bind(decryptionTask.messageProperty());
+        observeTaskMessages(decryptionTask);
         decryptionTask.setOnSucceeded(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
-            statusLabel.setText("Archivo descifrado: " + decryptionTask.getValue().outputPath());
+            setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
         });
         decryptionTask.setOnFailed(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
             Throwable failure = decryptionTask.getException();
-            showError(failure.getMessage() == null
-                    ? "No se pudo descifrar el archivo." : failure.getMessage());
+            showError(translateFailure(failure, "No se pudo descifrar el archivo."));
         });
         decryptionTask.setOnCancelled(event -> {
-            statusLabel.textProperty().unbind();
             setEncryptionControlsDisabled(false);
-            statusLabel.setText("Descifrado cancelado.");
+            setStatus("Descifrado cancelado.");
         });
 
         Thread worker = new Thread(decryptionTask, "enigma-aes-decryption");
@@ -438,15 +455,16 @@ public class MainController {
     @FXML
     private void chooseEncryptedFile() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Seleccionar archivo cifrado");
+        chooser.setTitle(translate("Seleccionar archivo cifrado"));
         chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Contenedores Enigma (*.enc)", "*.enc"));
+                new FileChooser.ExtensionFilter(
+                        translate("Contenedores Enigma (*.enc)"), "*.enc"));
         setInitialDirectory(chooser, decryptSourcePathField, sourcePathField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(decryptSourcePathField));
         if (selectedFile != null) {
             decryptSourcePathField.setText(selectedFile.getAbsolutePath());
-            statusLabel.setText("Archivo cifrado seleccionado.");
+            setStatus("Archivo cifrado seleccionado.");
         }
     }
 
@@ -454,20 +472,20 @@ public class MainController {
     @FXML
     private void chooseReferenceFile() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Seleccionar archivo original");
+        chooser.setTitle(translate("Seleccionar archivo original"));
         setInitialDirectory(chooser, referencePathField, sourcePathField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(referencePathField));
         if (selectedFile != null) {
             referencePathField.setText(selectedFile.getAbsolutePath());
-            statusLabel.setText("Archivo original seleccionado.");
+            setStatus("Archivo original seleccionado.");
         }
     }
 
     /** Actualiza la ruta de origen después de elegir o arrastrar un archivo. */
     private void setSourceFile(File file) {
         sourcePathField.setText(file.getAbsolutePath());
-        statusLabel.setText("Archivo de entrada seleccionado.");
+        setStatus("Archivo de entrada seleccionado.");
     }
 
     /**
@@ -587,9 +605,9 @@ public class MainController {
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         styleAlert(alert, "app-alert-error");
-        alert.setTitle("Error de cifrado");
+        alert.setTitle(translate("Error de cifrado"));
         alert.setHeaderText(null);
-        alert.setContentText(message);
+        alert.setContentText(translate(message));
         Window owner = getOwnerWindow(sourcePathField);
         if (owner != null) {
             alert.initOwner(owner);
@@ -606,9 +624,95 @@ public class MainController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         styleAlert(alert, "app-alert-info");
         alert.setTitle("Enigma");
-        alert.setHeaderText(action);
-        alert.setContentText("Esta función todavía no está implementada.");
+        alert.setHeaderText(translate(action));
+        alert.setContentText(translate("Esta función todavía no está implementada."));
         alert.showAndWait();
+    }
+
+    private void changeLanguage() {
+        Language language = languageSelector.getValue();
+        if (language != null) {
+            applyLanguage(language);
+        }
+    }
+
+    private void applyLanguage(Language language) {
+        selectedLanguage = language;
+        translateNode(rootPane);
+        statusLabel.setText(renderStatus(currentStatus));
+        updatePasswordVisibilityText(showPasswordToggle, "contraseña");
+        updatePasswordVisibilityText(showGeneratedPasswordToggle, "contraseña generada");
+    }
+
+    private void translateNode(Node node) {
+        if (node instanceof Labeled labeled) {
+            labeled.setText(translate(labeled.getText()));
+        }
+        if (node instanceof TextInputControl input) {
+            input.setPromptText(translate(input.getPromptText()));
+        }
+        node.setAccessibleText(translate(node.getAccessibleText()));
+
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                translateNode(child);
+            }
+        }
+        if (node instanceof ScrollPane scrollPane && scrollPane.getContent() != null) {
+            translateNode(scrollPane.getContent());
+        }
+    }
+
+    private String translate(String text) {
+        return LanguageService.translate(selectedLanguage, text);
+    }
+
+    private void setStatus(String spanishTemplate, Object... arguments) {
+        currentStatus = new LocalizedText(spanishTemplate, arguments);
+        statusLabel.setText(renderStatus(currentStatus));
+    }
+
+    private String setTaskStatus(String spanishTemplate, Object... arguments) {
+        currentStatus = new LocalizedText(spanishTemplate, arguments);
+        return renderStatus(currentStatus);
+    }
+
+    private String renderStatus(LocalizedText status) {
+        return LanguageService.format(selectedLanguage, status.template(), status.arguments());
+    }
+
+    private void observeTaskMessages(Task<?> task) {
+        task.messageProperty().addListener((observable, oldMessage, newMessage) -> {
+            if (newMessage != null && !newMessage.isBlank()) {
+                statusLabel.setText(renderStatus(currentStatus));
+            }
+        });
+    }
+
+    private void updatePasswordVisibilityText(ToggleButton toggle, String passwordName) {
+        String verb = toggle.isSelected() ? "Ocultar " : "Mostrar ";
+        toggle.setAccessibleText(translate(verb + passwordName));
+    }
+
+    private String translateFailure(Throwable failure, String fallback) {
+        if (failure instanceof FileAlreadyExistsException alreadyExists) {
+            return LanguageService.format(selectedLanguage,
+                    "El archivo de destino ya existe; no se sobrescribirá: {0}",
+                    alreadyExists.getFile());
+        }
+        if (failure instanceof javax.crypto.AEADBadTagException) {
+            return translate("La contraseña es incorrecta o el archivo cifrado está dañado.");
+        }
+        if (failure == null || failure.getMessage() == null) {
+            return translate(fallback);
+        }
+        String translated = translate(failure.getMessage());
+        return translated.equals(failure.getMessage())
+                && (failure instanceof IOException || failure instanceof GeneralSecurityException)
+                ? translate(fallback) : translated;
+    }
+
+    private record LocalizedText(String template, Object[] arguments) {
     }
 
     /**
@@ -645,9 +749,9 @@ public class MainController {
         showIcon.managedProperty().bind(toggle.selectedProperty().not());
         hideIcon.visibleProperty().bind(toggle.selectedProperty());
         hideIcon.managedProperty().bind(toggle.selectedProperty());
-        toggle.accessibleTextProperty().bind(
-                javafx.beans.binding.Bindings.when(toggle.selectedProperty())
-                        .then("Ocultar " + accessibleName)
-                        .otherwise("Mostrar " + accessibleName));
+        toggle.selectedProperty().addListener(
+                (observable, wasSelected, isSelected) ->
+                        updatePasswordVisibilityText(toggle, accessibleName));
+        updatePasswordVisibilityText(toggle, accessibleName);
     }
 }

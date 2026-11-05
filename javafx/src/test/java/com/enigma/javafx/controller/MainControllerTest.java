@@ -3,10 +3,12 @@ package com.enigma.javafx.controller;
 import com.enigma.javafx.MainApplication;
 import com.enigma.javafx.service.FileService;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -28,6 +30,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -113,6 +116,90 @@ class MainControllerTest {
         assertEquals("", field(controller, "decryptSourcePathField", TextField.class).getText());
         assertTrue(visibilityToggle.isDisable());
         assertEquals("Selección limpiada.", field(controller, "statusLabel", Label.class).getText());
+    }
+
+    @Test
+    void switchesInterfaceLanguageWithoutChangingSelectedPathsOrFileContents() throws Exception {
+        MainController controller = loadController();
+        Path file = Files.createTempFile("enigma-language", ".txt");
+        byte[] originalContents = "Contenido original: ñ, € y 漢字".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        Files.write(file, originalContents);
+
+        runOnFxThread(() -> {
+            ComboBox<?> languageSelector = field(controller, "languageSelector");
+            TextField sourcePath = field(controller, "sourcePathField", TextField.class);
+            TextField destinationPath = field(controller, "destinationDirectoryField", TextField.class);
+            PasswordField password = field(controller, "decryptPasswordField", PasswordField.class);
+            Button encryptButton = field(controller, "encryptButton", Button.class);
+            Label status = field(controller, "statusLabel", Label.class);
+            ToggleButton passwordToggle = field(controller, "showPasswordToggle", ToggleButton.class);
+            ToggleButton generatedPasswordToggle =
+                    field(controller, "showGeneratedPasswordToggle", ToggleButton.class);
+
+            sourcePath.setText(file.toString());
+            destinationPath.setText(file.getParent().toString());
+            password.setText("KeepThisPassword123");
+
+            languageSelector.getSelectionModel().select(1);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Encrypt file", encryptButton.getText());
+            assertEquals("Language",
+                    field(controller, "languageLabel", Label.class).getText());
+            assertEquals("Ready.", status.getText());
+            assertEquals("Drop a file here or choose one", sourcePath.getPromptText());
+            assertEquals("Show password", passwordToggle.getAccessibleText());
+            assertEquals("Show generated password", generatedPasswordToggle.getAccessibleText());
+            passwordToggle.setSelected(true);
+            assertEquals("Hide password", passwordToggle.getAccessibleText());
+            passwordToggle.setSelected(false);
+            assertEquals("Show password", passwordToggle.getAccessibleText());
+
+            languageSelector.getSelectionModel().select(2);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Zifratu fitxategia", encryptButton.getText());
+            assertEquals("Prest.", status.getText());
+            assertEquals("Arrastatu fitxategi bat hona edo aukeratu", sourcePath.getPromptText());
+
+            languageSelector.getSelectionModel().select(0);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Cifrar archivo", encryptButton.getText());
+            assertEquals("Listo para trabajar.", status.getText());
+            assertEquals(file.toString(), sourcePath.getText());
+            assertEquals(file.getParent().toString(), destinationPath.getText());
+            assertEquals("KeepThisPassword123", password.getText());
+            return null;
+        });
+
+        assertArrayEquals(originalContents, Files.readAllBytes(file));
+    }
+
+    @Test
+    void translatesAnActiveOperationStatusWhenLanguageChanges() throws Exception {
+        MainController controller = loadController();
+
+        runOnFxThread(() -> {
+            Label status = field(controller, "statusLabel", Label.class);
+            ComboBox<?> languageSelector = field(controller, "languageSelector");
+
+            String progressMessage = (String) invoke(controller, "setTaskStatus",
+                    new Class<?>[] {String.class, Object[].class},
+                    "Cifrando archivo: {0}%", new Object[] {42});
+            status.setText(progressMessage);
+            assertEquals("Cifrando archivo: 42%", status.getText());
+
+            languageSelector.getSelectionModel().select(1);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Encrypting file: 42%", status.getText());
+
+            languageSelector.getSelectionModel().select(2);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Fitxategia zifratzen: 42%", status.getText());
+
+            languageSelector.getSelectionModel().select(0);
+            languageSelector.fireEvent(new ActionEvent());
+            assertEquals("Cifrando archivo: 42%", status.getText());
+            return null;
+        });
     }
 
     @Test
