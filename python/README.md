@@ -1,23 +1,32 @@
 # Enigma — interfaz de terminal
 
-Esta fase incluye únicamente cifrado Vigenère para texto por consola o archivos
-`.txt` UTF-8, con una interfaz de terminal sin colores. El menú ofrece
-**Cifrar Vigenère** y **Salir**.
+Aplicación de terminal sin colores para cifrar texto con Vigenère y cualquier
+archivo con AES-256-GCM. El menú ofrece **Cifrar Vigenère**, **Cifrar archivo AES**
+y **Salir**. Esta fase incluye solo cifrado.
 
-Necesita Python 3.14 o posterior y no tiene dependencias externas.
+Necesita Python 3.14 o posterior. AES utiliza `cryptography`, fijado en
+`requirements.txt`; Vigenère y la interfaz usan la biblioteca estándar.
 
-Desde esta carpeta, en Windows:
+## Instalación y arranque
+
+Desde esta carpeta, en Windows, crea el entorno e instala las dependencias una vez:
 
 ```powershell
-py -3 main.py
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe main.py
 ```
 
-También puedes abrir `iniciar_enigma.bat` con doble clic.
+También puedes abrir `iniciar_enigma.bat` con doble clic: utiliza automáticamente
+`.venv` cuando existe. Si ejecutas `py -3 main.py` sin ese entorno, instala las
+dependencias en ese mismo intérprete para usar AES.
 
 En Debian o Ubuntu:
 
 ```bash
-python3 main.py
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python main.py
 ```
 
 Usa las flechas para navegar y Enter para elegir. También puedes pulsar
@@ -45,6 +54,31 @@ Solo las letras A-Z/a-z se transforman y avanzan la clave. Se conservan las
 mayúsculas y minúsculas, los espacios, signos, números, acentos, ñ y otros
 caracteres Unicode. Los archivos conservan sus saltos de línea CRLF/LF y el
 BOM UTF-8, si existe. Vigenère es un cifrado educativo.
+
+## AES
+
+1. Elige **Cifrar archivo AES**.
+2. Selecciona cualquier archivo de origen: texto, imagen, documento o binario.
+3. Selecciona el destino; se propone `<nombre original>.enc`.
+4. Durante `Cifrando AES...` se leen bloques de 1 MiB y se escriben directamente
+   en `.part` de hasta 20 MiB en la carpeta de destino. Se mantienen una única
+   operación AES-GCM y su etiqueta de autenticación entre todos los bloques.
+5. Al completar el guardado se muestra una contraseña aleatoria de 16 caracteres
+   A-Z, a-z y 0-9. Guárdala: no se escribe en el archivo ni se puede recuperar.
+6. Pulsa Enter para volver al menú.
+
+Cada operación genera una contraseña, una sal de 16 bytes y un nonce de 12 bytes
+nuevos mediante `secrets`. Se deriva una clave de 256 bits con PBKDF2-HMAC-SHA256
+y 200 000 iteraciones, como en el proyecto de referencia. El resultado usa el
+contenedor R2AE v1: cabecera autenticada de 37 bytes, contenido cifrado y etiqueta
+GCM de 16 bytes. Su tamaño es el original más 53 bytes; también admite archivos
+vacíos. El límite de 20 MiB se aplica a todos los bytes de cada parte, incluida
+la cabecera y la etiqueta. Consulta [el formato R2AE](docs/R2AE.md).
+
+La contraseña solo se muestra después de guardar correctamente. Cancelar un
+selector vuelve al menú sin cifrar; los errores de lectura o guardado se comunican
+sin sobrescribir archivos existentes. El cifrado usa las primitivas de
+[cryptography](https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/).
 
 ## Selección y guardado de archivos
 
@@ -97,6 +131,7 @@ python/
     encrypt/
       __init__.py
       vigenere.py         # Algoritmo de cifrado independiente de la interfaz
+      aes.py              # AES-256-GCM incremental con contenedor R2AE
     utils/
       __init__.py
       dialogs.py          # Selector nativo con alternativa por terminal
@@ -106,26 +141,32 @@ python/
       app.py              # Flujo entre menú y pantallas
       menu.py             # Opciones del menú principal
       vigenere.py         # Flujo de cifrado Vigenère
+      aes.py              # Selección de origen/destino y cifrado AES
       layout.py           # Marcos y composición visual sin colores
       loading.py          # Indicador animado durante el cifrado
       navigation.py       # Selección de opciones y navegación
       terminal.py         # Lectura de teclas y compatibilidad Windows/Linux
-  tests/                  # Algoritmo, archivos, selectores e interfaz
+  requirements.txt        # Dependencia cryptography para AES
+  docs/R2AE.md            # Formato binario compartido con el proyecto original
+  tests/                  # Algoritmos, archivos, selectores e interfaz
+    fixtures/r2ae-v1.json  # Vectores públicos de prueba
 ```
 
 `main.py` es un lanzador mínimo en la raíz de la aplicación. La implementación
 se mantiene en `src/interface/`, con importaciones relativas entre sus módulos.
 
-El algoritmo reside en `src/encrypt/vigenere.py` y las utilidades de archivos en
+Los algoritmos residen en `src/encrypt/` y las utilidades de archivos en
 `src/utils/`, para poder usarlos sin iniciar el menú.
 
 ## Pruebas
 
-Desde esta carpeta, sin dependencias adicionales:
+Desde esta carpeta, después de instalar `requirements.txt` en el entorno:
 
 ```powershell
-py -3 -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-En Linux, utiliza `python3` en lugar de `py -3`. Las pruebas de los selectores
-nativos simulan Tkinter y no abren ventanas.
+En Linux, utiliza `.venv/bin/python`. Las pruebas de los selectores nativos
+simulan Tkinter y no abren ventanas. Las pruebas AES comparan el cifrado con
+vectores públicos y verifican el resultado con un consumidor independiente,
+incluidos los límites de las partes, archivos binarios, cancelación y errores.
