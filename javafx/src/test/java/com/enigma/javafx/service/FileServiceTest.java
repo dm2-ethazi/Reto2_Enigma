@@ -1,6 +1,7 @@
 package com.enigma.javafx.service;
 
 import com.enigma.javafx.service.FileService.EncryptionResult;
+import com.enigma.javafx.service.FileService.DecryptionResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -102,6 +103,83 @@ class FileServiceTest {
 
         assertFalse(Files.exists(destination.resolve("interrupted.txt.enc")));
         try (Stream<Path> files = Files.list(destination)) {
+            assertEquals(0, files.count());
+        }
+    }
+
+    /** Descifra archivos, incluido uno vacío, y puede comprobarlos contra su referencia. */
+    @Test
+    void decryptsFilesAndVerifiesOptionalReference() throws Exception {
+        byte[][] contents = {
+                new byte[0],
+                "contenido original ñ €".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        };
+        Path destination = Files.createDirectory(temporaryDirectory.resolve("decrypted"));
+
+        for (int index = 0; index < contents.length; index++) {
+            Path source = temporaryDirectory.resolve("original-" + index + ".bin");
+            Files.write(source, contents[index]);
+            EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+
+            DecryptionResult decrypted = fileService.decrypt(encrypted.outputPath(), destination,
+                    encrypted.password().toCharArray(), source, ignored -> { });
+
+            assertEquals(source.getFileName().toString(),
+                    decrypted.outputPath().getFileName().toString());
+            assertArrayEquals(contents[index], Files.readAllBytes(decrypted.outputPath()));
+        }
+    }
+
+    /** No publica resultados parciales ante errores de autenticación o referencias distintas. */
+    @Test
+    void rejectsWrongPasswordTamperingAndReferenceMismatchWithoutPublishing() throws Exception {
+        Path source = Files.writeString(temporaryDirectory.resolve("secure.txt"), "texto protegido");
+        EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+        Path destination = Files.createDirectory(temporaryDirectory.resolve("secure-output"));
+
+        assertThrows(java.security.GeneralSecurityException.class,
+                () -> fileService.decrypt(encrypted.outputPath(), destination,
+                        "WrongPassword1234".toCharArray()));
+        assertDirectoryEmpty(destination);
+
+        Path incorrectReference = Files.writeString(
+                temporaryDirectory.resolve("wrong-reference.txt"), "otro contenido");
+        assertThrows(IOException.class, () -> fileService.decrypt(encrypted.outputPath(), destination,
+                encrypted.password().toCharArray(), incorrectReference, ignored -> { }));
+        assertDirectoryEmpty(destination);
+
+        byte[] tamperedContent = Files.readAllBytes(encrypted.outputPath());
+        tamperedContent[tamperedContent.length - 1] ^= 1;
+        Files.write(encrypted.outputPath(), tamperedContent);
+        assertThrows(java.security.GeneralSecurityException.class,
+                () -> fileService.decrypt(encrypted.outputPath(), destination,
+                        encrypted.password().toCharArray()));
+        assertDirectoryEmpty(destination);
+    }
+
+    /** Conserva el contenido de un destino preexistente y rechaza contenedores inválidos. */
+    @Test
+    void doesNotOverwriteDecryptedFileAndRejectsInvalidContainers() throws Exception {
+        Path source = Files.writeString(temporaryDirectory.resolve("existing.txt"), "original");
+        EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+        Path destination = Files.createDirectory(temporaryDirectory.resolve("existing-output"));
+        Path existingOutput = Files.writeString(destination.resolve("existing.txt"), "no sobrescribir");
+
+        assertThrows(FileAlreadyExistsException.class,
+                () -> fileService.decrypt(encrypted.outputPath(), destination,
+                        encrypted.password().toCharArray()));
+        assertEquals("no sobrescribir", Files.readString(existingOutput));
+
+        Path invalidContainer = Files.writeString(temporaryDirectory.resolve("not-encrypted.txt"), "x");
+        assertThrows(IOException.class, () -> fileService.decrypt(invalidContainer, destination,
+                encrypted.password().toCharArray()));
+        assertThrows(IOException.class, () -> fileService.decrypt(encrypted.outputPath(), destination,
+                new char[0]));
+    }
+
+    /** Comprueba que una operación fallida no deja ficheros temporales en el destino. */
+    private static void assertDirectoryEmpty(Path directory) throws IOException {
+        try (Stream<Path> files = Files.list(directory)) {
             assertEquals(0, files.count());
         }
     }

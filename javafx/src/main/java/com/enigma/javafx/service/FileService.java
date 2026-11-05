@@ -90,6 +90,83 @@ public class FileService {
     }
 
     /**
+     * Descifra un contenedor R2AE a la carpeta indicada sin sobrescribir archivos existentes.
+     *
+     * @param source contenedor cifrado con extensión .enc
+     * @param destinationDirectory carpeta donde se publicará el archivo recuperado
+     * @param password contraseña usada para cifrar el contenedor
+     * @return ruta del archivo descifrado
+     * @throws IOException si las rutas no son válidas, el contenedor falla o no se puede publicar
+     * @throws GeneralSecurityException si la contraseña no es correcta o falla la autenticación
+     */
+    public DecryptionResult decrypt(Path source, Path destinationDirectory, char[] password)
+            throws IOException, GeneralSecurityException {
+        return decrypt(source, destinationDirectory, password, null, ignored -> { });
+    }
+
+    /**
+     * Descifra un contenedor por bloques y publica el resultado solo después de validar GCM.
+     * Si se proporciona un archivo de referencia, compara sus bytes con el resultado antes
+     * de mover el temporal a su destino definitivo.
+     *
+     * @param source contenedor cifrado con extensión .enc
+     * @param destinationDirectory carpeta donde se publicará el archivo recuperado
+     * @param password contraseña usada para cifrar el contenedor
+     * @param referenceFile archivo original opcional para comprobar igualdad exacta
+     * @param processedBytes callback con el total de bytes cifrados procesados
+     * @return ruta del archivo descifrado
+     * @throws IOException si las rutas no son válidas, no coincide la referencia o falla el I/O
+     * @throws GeneralSecurityException si la contraseña no es correcta o falla la autenticación
+     */
+    public DecryptionResult decrypt(Path source, Path destinationDirectory, char[] password,
+                                    Path referenceFile, LongConsumer processedBytes)
+            throws IOException, GeneralSecurityException {
+        Path encryptedFile = validateSource(source);
+        Path outputDirectory = validateDestinationDirectory(destinationDirectory);
+        if (password == null || password.length == 0) {
+            throw new IOException("Introduce la contraseña del contenedor.");
+        }
+        if (!encryptedFile.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".enc")) {
+            throw new IOException("Selecciona un contenedor cifrado con extensión .enc.");
+        }
+        if (Files.size(encryptedFile) < CryptoService.HEADER_LENGTH + 16L) {
+            throw new IOException("El contenedor R2AE está incompleto.");
+        }
+
+        Path outputFile = outputDirectory.resolve(decryptedFileName(encryptedFile));
+        if (Files.exists(outputFile)) {
+            throw new FileAlreadyExistsException(outputFile.toString(), null,
+                    "El archivo de destino ya existe; no se sobrescribirá.");
+        }
+
+        Path normalizedReference = referenceFile == null ? null : validateSource(referenceFile);
+        Path temporaryFile = Files.createTempFile(outputDirectory, ".r2ae-", ".part");
+        boolean published = false;
+        try {
+            try (InputStream input = Files.newInputStream(encryptedFile);
+                 OutputStream output = Files.newOutputStream(temporaryFile)) {
+                cryptoService.decrypt(input, output, password, processedBytes);
+            }
+            if (normalizedReference != null && Files.mismatch(temporaryFile, normalizedReference) != -1) {
+                throw new IOException("El archivo descifrado no coincide con el original de referencia.");
+            }
+            Files.move(temporaryFile, outputFile);
+            published = true;
+            return new DecryptionResult(outputFile);
+        } finally {
+            if (!published) {
+                Files.deleteIfExists(temporaryFile);
+            }
+        }
+    }
+
+    /** Retira el sufijo .enc para recuperar el nombre original del archivo. */
+    private static String decryptedFileName(Path encryptedFile) {
+        String fileName = encryptedFile.getFileName().toString();
+        return fileName.substring(0, fileName.length() - ".enc".length());
+    }
+
+    /**
      * Comprueba que el origen sea un archivo normal existente y legible, y normaliza su ruta.
      *
      * @param source ruta introducida para el archivo de origen
@@ -132,5 +209,9 @@ public class FileService {
      * @param password contraseña generada para cifrar ese contenedor
      */
     public record EncryptionResult(Path outputPath, String password) {
+    }
+
+    /** Ruta del archivo publicado tras validar correctamente la autenticidad del contenedor. */
+    public record DecryptionResult(Path outputPath) {
     }
 }

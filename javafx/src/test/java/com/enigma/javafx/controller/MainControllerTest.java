@@ -1,6 +1,7 @@
 package com.enigma.javafx.controller;
 
 import com.enigma.javafx.MainApplication;
+import com.enigma.javafx.service.FileService;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,11 +15,8 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import javafx.util.Duration;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -66,15 +64,38 @@ class MainControllerTest {
         PasswordField maskedPassword = field(controller, "generatedPasswordField");
         TextField visiblePassword = field(controller, "visibleGeneratedPasswordField");
         ToggleButton visibilityToggle = field(controller, "showGeneratedPasswordToggle");
+        ToggleButton decryptVisibilityToggle = field(controller, "showPasswordToggle");
         assertTrue(maskedPassword.isVisible());
         assertFalse(visiblePassword.isVisible());
         assertTrue(visibilityToggle.isDisable());
+        var showGeneratedIcon = field(controller, "showGeneratedPasswordIcon",
+                org.kordamp.ikonli.javafx.FontIcon.class);
+        var hideGeneratedIcon = field(controller, "hideGeneratedPasswordIcon",
+                org.kordamp.ikonli.javafx.FontIcon.class);
+        var showDecryptIcon = field(controller, "showDecryptPasswordIcon",
+                org.kordamp.ikonli.javafx.FontIcon.class);
+        var hideDecryptIcon = field(controller, "hideDecryptPasswordIcon",
+                org.kordamp.ikonli.javafx.FontIcon.class);
+        assertTrue(showGeneratedIcon.isVisible());
+        assertFalse(hideGeneratedIcon.isVisible());
+        assertTrue(showDecryptIcon.isVisible());
+        assertFalse(hideDecryptIcon.isVisible());
+        assertEquals("fas-eye", showGeneratedIcon.getIconLiteral());
+        assertEquals("fas-eye-slash", hideGeneratedIcon.getIconLiteral());
+        assertEquals("fas-eye", showDecryptIcon.getIconLiteral());
+        assertEquals("fas-eye-slash", hideDecryptIcon.getIconLiteral());
+        assertEquals(javafx.scene.paint.Color.web("#D63378"), showGeneratedIcon.getIconColor());
+        assertEquals(javafx.scene.paint.Color.web("#D63378"), hideGeneratedIcon.getIconColor());
+        assertEquals(javafx.scene.paint.Color.web("#D63378"), showDecryptIcon.getIconColor());
+        assertEquals(javafx.scene.paint.Color.web("#D63378"), hideDecryptIcon.getIconColor());
 
         runOnFxThread(() -> {
             visibilityToggle.setSelected(true);
+            decryptVisibilityToggle.setSelected(true);
             maskedPassword.setText("SafePassword1234");
             field(controller, "sourcePathField", TextField.class).setText("source.txt");
             field(controller, "destinationDirectoryField", TextField.class).setText("output");
+            field(controller, "decryptSourcePathField", TextField.class).setText("encrypted.enc");
             field(controller, "referencePathField", TextField.class).setText("reference.txt");
             field(controller, "decryptPasswordField", PasswordField.class).setText("decrypt");
             field(controller, "visibleDecryptPasswordField", TextField.class).setText("decrypt");
@@ -85,6 +106,11 @@ class MainControllerTest {
         assertEquals("", maskedPassword.getText());
         assertEquals("", visiblePassword.getText());
         assertFalse(visibilityToggle.isSelected());
+        assertEquals("", visibilityToggle.getText());
+        assertEquals("", decryptVisibilityToggle.getText());
+        assertFalse(showDecryptIcon.isVisible());
+        assertTrue(hideDecryptIcon.isVisible());
+        assertEquals("", field(controller, "decryptSourcePathField", TextField.class).getText());
         assertTrue(visibilityToggle.isDisable());
         assertEquals("Selección limpiada.", field(controller, "statusLabel", Label.class).getText());
     }
@@ -235,6 +261,39 @@ class MainControllerTest {
     }
 
     @Test
+    void decryptsSelectedContainerAndReportsOutputPath() throws Exception {
+        MainController controller = loadController();
+        Path directory = Files.createTempDirectory("enigma-decrypt");
+        Path source = Files.writeString(directory.resolve("source.txt"), "texto para recuperar ñ");
+        Path encryptedDirectory = Files.createDirectory(directory.resolve("encrypted"));
+        Path destination = Files.createDirectory(directory.resolve("decrypted"));
+        FileService fileService = new FileService();
+        FileService.EncryptionResult encrypted = fileService.encrypt(source, encryptedDirectory);
+
+        runOnFxThread(() -> {
+            field(controller, "sourcePathField", TextField.class)
+                    .setText(source.toString());
+            field(controller, "decryptSourcePathField", TextField.class)
+                    .setText(encrypted.outputPath().toString());
+            field(controller, "destinationDirectoryField", TextField.class).setText(destination.toString());
+            field(controller, "decryptPasswordField", PasswordField.class).setText(encrypted.password());
+            invoke(controller, "decryptFile");
+            return null;
+        });
+
+        Object task = field(controller, "decryptionTask");
+        task.getClass().getMethod("get", long.class, TimeUnit.class)
+                .invoke(task, FX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        runOnFxThread(() -> null);
+
+        Path decryptedFile = destination.resolve(source.getFileName());
+        assertEquals(Files.readString(source), Files.readString(decryptedFile));
+        assertEquals("Archivo descifrado: " + decryptedFile,
+                field(controller, "statusLabel", Label.class).getText());
+        assertControlsDisabled(controller, false);
+    }
+
+    @Test
     void reportsEncryptionFailureAndPreservesAnExistingResult() throws Exception {
         MainController controller = loadController();
         Path directory = Files.createTempDirectory("enigma-failed-encrypt");
@@ -324,11 +383,15 @@ class MainControllerTest {
     }
 
     @Test
-    void displaysInformationalMessagesForUnimplementedActions() throws Exception {
+    void displaysInformationalMessagesForHelpAndAbout() throws Exception {
         MainController controller = loadController();
+        Stage ownerStage = showControllerWindow(controller);
         invokeWhileDismissingAlert(controller, "showHelp");
         invokeWhileDismissingAlert(controller, "showAbout");
-        invokeWhileDismissingAlert(controller, "decryptFile");
+        runOnFxThread(() -> {
+            ownerStage.close();
+            return null;
+        });
     }
 
     @Test
@@ -342,6 +405,7 @@ class MainControllerTest {
             }
             Stage stage = new Stage();
             stage.setScene(new Scene(root));
+            stage.show();
             return stage;
         });
         runOnFxThread(() -> {
@@ -376,17 +440,31 @@ class MainControllerTest {
     private static void invokeWhileDismissingAlert(MainController controller, String methodName)
             throws Exception {
         runOnFxThread(() -> {
-            Timeline alertDismissal = new Timeline(new KeyFrame(Duration.millis(100), event -> {
+            Platform.runLater(() -> {
                 for (Window window : new ArrayList<>(Window.getWindows())) {
-                    if (window.isShowing()) {
+                    if (window.isShowing() && window instanceof Stage stage
+                            && stage.getScene() != null
+                            && stage.getScene().getRoot() instanceof javafx.scene.control.DialogPane) {
                         window.hide();
                     }
                 }
-            }));
-            alertDismissal.setCycleCount(50);
-            alertDismissal.play();
+            });
             invoke(controller, methodName);
             return null;
+        });
+    }
+
+    private static Stage showControllerWindow(MainController controller) throws Exception {
+        return runOnFxThread(() -> {
+            TextField sourceField = field(controller, "sourcePathField", TextField.class);
+            Parent root = sourceField;
+            while (root.getParent() != null) {
+                root = root.getParent();
+            }
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root));
+            stage.show();
+            return stage;
         });
     }
 
@@ -405,6 +483,8 @@ class MainControllerTest {
             assertEquals(disabled, field(controller, "encryptButton", Button.class).isDisable());
             assertEquals(disabled, field(controller, "chooseSourceButton", Button.class).isDisable());
             assertEquals(disabled, field(controller, "chooseDestinationButton", Button.class).isDisable());
+            assertEquals(disabled,
+                    field(controller, "chooseEncryptedFileButton", Button.class).isDisable());
             assertEquals(disabled, field(controller, "copyPasswordButton", Button.class).isDisable());
             assertEquals(disabled, field(controller, "clearSelectionButton", Button.class).isDisable());
             return null;

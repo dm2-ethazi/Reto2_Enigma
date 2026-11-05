@@ -17,6 +17,7 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <!--
   Vista principal declarativa de Gestor AES.
@@ -120,7 +121,16 @@
                                     <!-- El controlador alterna la visibilidad de los campos al cambiar la selección. -->
                                     <ToggleButton fx:id="showGeneratedPasswordToggle"
                                                   accessibleText="Mostrar contraseña generada"
-                                                  styleClass="secondary-button" text="Mostrar"/>
+                                                  styleClass="secondary-button password-visibility-button">
+                                        <graphic>
+                                            <StackPane prefHeight="20.0" prefWidth="20.0">
+                                                <FontIcon fx:id="showGeneratedPasswordIcon"
+                                                          iconLiteral="fas-eye"/>
+                                                <FontIcon fx:id="hideGeneratedPasswordIcon"
+                                                          iconLiteral="fas-eye-slash"/>
+                                            </StackPane>
+                                        </graphic>
+                                    </ToggleButton>
                                     <Button fx:id="copyPasswordButton" onAction="#copyGeneratedPassword"
                                             styleClass="secondary-button" text="Copiar"/>
                                 </HBox>
@@ -130,13 +140,22 @@
                                text="Usa A-Z, a-z y 0-9 con selección criptográficamente segura. Guarda la contraseña por separado."/>
                     </VBox>
 
-                    <!-- Controles reservados para la funcionalidad de descifrado. -->
+                    <!-- Controles de descifrado independientes de la selección de cifrado. -->
                     <VBox spacing="14.0" styleClass="card">
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Descifrado (AES)"/>
                             <Label styleClass="section-description"
                                    text="Introduce la contraseña del contenedor para recuperar exactamente los bytes originales."/>
                         </VBox>
+                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <Label labelFor="$decryptSourcePathField" minWidth="125.0"
+                                   styleClass="field-label" text="Archivo cifrado"/>
+                            <TextField fx:id="decryptSourcePathField"
+                                       HBox.hgrow="ALWAYS"
+                                       promptText="Selecciona un archivo .enc"/>
+                            <Button fx:id="chooseEncryptedFileButton" onAction="#chooseEncryptedFile"
+                                    styleClass="secondary-button" text="Seleccionar archivo"/>
+                        </HBox>
                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                             <Label labelFor="$decryptPasswordField" minWidth="125.0"
                                    styleClass="field-label" text="Contraseña"/>
@@ -150,7 +169,14 @@
                                            promptText="Contraseña del archivo .enc"/>
                             </StackPane>
                             <ToggleButton fx:id="showPasswordToggle" accessibleText="Mostrar contraseña"
-                                          styleClass="secondary-button" text="Mostrar"/>
+                                          styleClass="secondary-button password-visibility-button">
+                                <graphic>
+                                    <StackPane prefHeight="20.0" prefWidth="20.0">
+                                        <FontIcon fx:id="showDecryptPasswordIcon" iconLiteral="fas-eye"/>
+                                        <FontIcon fx:id="hideDecryptPasswordIcon" iconLiteral="fas-eye-slash"/>
+                                    </StackPane>
+                                </graphic>
+                            </ToggleButton>
                             <Button fx:id="decryptButton" onAction="#decryptFile"
                                     styleClass="primary-button" text="Descifrar archivo"/>
                         </HBox>

@@ -1,40 +1,37 @@
+/* Paleta compartida con Android: fondos, superficies y estados principales. */
 .root {
     -fx-font-family: "Segoe UI", "Arial", sans-serif;
     -fx-font-size: 13px;
-    -fx-background-color: #f3f6fb;
+    -fx-base: #22254B;
+    -fx-background-color: #171831;
+    -fx-focus-color: #E6C148;
+    -fx-faint-focus-color: rgba(230, 193, 72, 0.28);
+    -fx-accent: #3D5CE6;
 }
 
 .app-root {
-    -fx-background-color: #f3f6fb;
-}
-
-.theme-dark {
-    -fx-background-color: #141c28;
+    -fx-background-color: #171831;
 }
 
 .app-header {
     -fx-padding: 26px 34px 22px 34px;
-    -fx-background-color: #17243b;
-}
-
-.theme-dark .app-header {
-    -fx-background-color: #101722;
+    -fx-background-color: #1E234F;
 }
 
 .eyebrow {
-    -fx-text-fill: #8fb7ff;
+    -fx-text-fill: #A5B4FC;
     -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
 
 .app-title {
-    -fx-text-fill: white;
+    -fx-text-fill: #F1F5F9;
     -fx-font-size: 27px;
     -fx-font-weight: bold;
 }
 
 .subtitle {
-    -fx-text-fill: #c3ccda;
+    -fx-text-fill: #94A3B8;
     -fx-font-size: 13px;
 }
 
@@ -42,14 +39,14 @@
     -fx-padding: 0 0 0 18px;
 }
 
-.content-scroll {
-    -fx-background-color: transparent;
-    -fx-background: transparent;
-    -fx-padding: 18px 24px;
-}
-
+/* La tarjeta mantiene un tono distinto al fondo para conservar la jerarquía visual. */
+.content-scroll,
 .content-scroll > .viewport {
     -fx-background-color: transparent;
+}
+
+.content-scroll {
+    -fx-padding: 18px 24px;
 }
 
 .content {
@@ -58,125 +55,47 @@
 
 .card {
     -fx-padding: 18px 20px;
-    -fx-background-color: white;
+    -fx-background-color: #22254B;
     -fx-background-radius: 12px;
-    -fx-border-color: #dce3ed;
+    -fx-border-color: #2E3263;
     -fx-border-radius: 12px;
 }
 
-.theme-dark .card {
-    -fx-background-color: #202b3a;
-    -fx-border-color: #354357;
-}
-
-.theme-dark .section-title,
-.theme-dark .field-label {
-    -fx-text-fill: #e5ecf6;
-}
-
-.theme-dark .section-description,
-.theme-dark .helper-text {
-    -fx-text-fill: #aab8ca;
-}
-
-.theme-dark .text-field,
-.theme-dark .password-field,
-.theme-dark .text-area {
-    -fx-background-color: #172130;
-    -fx-text-fill: #e9eff8;
-    -fx-prompt-text-fill: #8696ab;
-    -fx-border-color: #46566b;
-}
-
-.theme-dark .text-area .content {
-    -fx-background-color: #172130;
-}
-
-.theme-dark .preview-panel {
-    -fx-background-color: #192434;
-    -fx-border-color: #354357;
-}
-
-.theme-dark .image-preview {
-    -fx-background-color: #111a26;
-}
-
-.theme-dark .secondary-button {
-    -fx-background-color: #2b3a4f;
-    -fx-text-fill: #e3ebf7;
-    -fx-border-color: #4a5b71;
-}
-
-.theme-dark .header-button {
-    -fx-background-color: #2b3a4f;
-    -fx-text-fill: #e3ebf7;
-    -fx-border-color: #4a5b71;
-}
-
-.theme-dark .header-button:hover {
-    -fx-background-color: #344a66;
-    -fx-border-color: #8fb7ff;
-}
-
-.theme-dark .status-bar {
-    -fx-background-color: #1b2635;
-    -fx-border-color: #354357 transparent transparent transparent;
-}
-
-.theme-dark .status-text {
-    -fx-text-fill: #d9e3f0;
-}
-
-.theme-dark .status-note {
-    -fx-text-fill: #9cabc0;
+.section-title,
+.field-label {
+    -fx-text-fill: #F1F5F9;
 }
 
 .section-title {
-    -fx-text-fill: #17243b;
     -fx-font-size: 17px;
     -fx-font-weight: bold;
 }
 
+.section-description,
+.helper-text {
+    -fx-text-fill: #94A3B8;
+}
+
 .section-description {
-    -fx-text-fill: #657187;
     -fx-font-size: 12px;
 }
 
-.field-label {
-    -fx-text-fill: #34425a;
-    -fx-font-weight: bold;
-}
-
-.theme-dark .radio-button {
-    -fx-text-fill: #e5ecf6;
-}
-
-.theme-dark .radio-button .radio {
-    -fx-background-color: #172130;
-    -fx-border-color: #718198;
-    -fx-border-radius: 1em;
-}
-
-.theme-dark .radio-button:selected .radio .dot {
-    -fx-background-color: #8fb7ff;
-    -fx-background-insets: 0;
-}
-
-.theme-dark .radio-button:focused .radio {
-    -fx-border-color: #8fb7ff;
-    -fx-effect: dropshadow(gaussian, rgba(143, 183, 255, 0.55), 5, 0.15, 0, 0);
-}
-
 .helper-text {
-    -fx-text-fill: #738096;
     -fx-font-size: 11px;
 }
 
+.field-label {
+    -fx-font-weight: bold;
+}
+
+/* Los campos usan la superficie oscura amarillenta de la paleta Android. */
 .text-field,
 .password-field,
 .text-area {
-    -fx-background-color: #fbfcfe;
-    -fx-border-color: #cbd4e1;
+    -fx-background-color: #252210;
+    -fx-text-fill: #F1F5F9;
+    -fx-prompt-text-fill: #64748B;
+    -fx-border-color: #B39226;
     -fx-border-radius: 7px;
     -fx-background-radius: 7px;
     -fx-padding: 9px 11px;
@@ -185,45 +104,54 @@
 .text-field:focused,
 .password-field:focused,
 .text-area:focused {
-    -fx-border-color: #3974d8;
-    -fx-background-color: white;
+    -fx-border-color: #E6C148;
+    -fx-border-width: 2px;
+    -fx-background-color: #2D2712;
+}
+
+.text-area .content {
+    -fx-background-color: #252210;
 }
 
 .drop-target:drag-over {
-    -fx-border-color: #2866c7;
+    -fx-border-color: #E6C148;
     -fx-border-width: 2px;
-    -fx-background-color: #eaf2ff;
+    -fx-background-color: #2D2712;
 }
 
-.theme-dark .drop-target:drag-over {
-    -fx-background-color: #263a55;
-    -fx-border-color: #8fb7ff;
-}
-
+/* Azul para la acción principal; el verde queda reservado al progreso y éxito. */
 .primary-button {
-    -fx-background-color: #2866c7;
-    -fx-text-fill: white;
+    -fx-background-color: #3D5CE6;
+    -fx-text-fill: #FFFFFF;
     -fx-font-weight: bold;
     -fx-background-radius: 7px;
     -fx-padding: 10px 17px;
     -fx-cursor: hand;
 }
 
-.primary-button:hover {
-    -fx-background-color: #1d55aa;
+.primary-button:hover,
+.primary-button:pressed {
+    -fx-background-color: #5372F6;
+}
+
+.primary-button:focused {
+    -fx-border-color: #E6C148;
+    -fx-border-width: 2px;
+    -fx-border-radius: 7px;
 }
 
 .primary-button:disabled {
-    -fx-background-color: #aab9cf;
-    -fx-opacity: 0.8;
+    -fx-background-color: #2E3263;
+    -fx-text-fill: #64748B;
+    -fx-opacity: 1;
 }
 
 .secondary-button,
 .header-button {
-    -fx-background-color: #eef3fa;
-    -fx-text-fill: #283950;
+    -fx-background-color: #1E234F;
+    -fx-text-fill: #F1F5F9;
     -fx-font-weight: bold;
-    -fx-border-color: #cbd4e1;
+    -fx-border-color: #637DF2;
     -fx-border-radius: 7px;
     -fx-background-radius: 7px;
     -fx-padding: 9px 13px;
@@ -232,60 +160,185 @@
 
 .secondary-button:hover,
 .header-button:hover {
-    -fx-background-color: #e2ebf7;
+    -fx-background-color: #1E234F;
+    -fx-border-color: #A5B4FC;
 }
 
+.secondary-button:pressed,
+.header-button:pressed {
+    -fx-background-color: #22254B;
+}
+
+.secondary-button:focused,
+.header-button:focused {
+    -fx-border-color: #E6C148;
+    -fx-border-width: 2px;
+}
+
+.secondary-button:disabled,
+.header-button:disabled {
+    -fx-text-fill: #64748B;
+    -fx-border-color: #2E3263;
+    -fx-opacity: 1;
+}
+
+/* El magenta de la paleta distingue los iconos que controlan la visibilidad. */
+.password-visibility-button .ikonli-font-icon {
+    -fx-icon-color: #D63378;
+    -fx-icon-size: 17px;
+}
+
+.password-visibility-button {
+    -fx-content-display: graphic-only;
+    -fx-alignment: center;
+    -fx-min-width: 40px;
+    -fx-pref-width: 40px;
+    -fx-max-width: 40px;
+    -fx-min-height: 38px;
+    -fx-pref-height: 38px;
+    -fx-max-height: 38px;
+    -fx-padding: 7px;
+}
+
+/* Paneles de vista previa y separadores usan las superficies de la misma paleta. */
 .preview-panel {
     -fx-padding: 12px;
-    -fx-background-color: #f8fafd;
+    -fx-background-color: #1E234F;
     -fx-background-radius: 8px;
-    -fx-border-color: #e0e6ef;
+    -fx-border-color: #2E3263;
     -fx-border-radius: 8px;
 }
 
 .image-preview {
-    -fx-background-color: #eef2f8;
+    -fx-background-color: #191B38;
     -fx-background-radius: 6px;
 }
 
+.separator .line {
+    -fx-border-color: #2E3263;
+}
+
+/* El verde identifica el estado correcto y el avance de una operación. */
 .status-bar {
     -fx-padding: 12px 30px;
-    -fx-background-color: white;
-    -fx-border-color: #dce3ed transparent transparent transparent;
+    -fx-background-color: #191B38;
+    -fx-border-color: #2E3263 transparent transparent transparent;
 }
 
 .status-dot {
     -fx-min-width: 12px;
     -fx-min-height: 12px;
-    -fx-background-color: #39a879;
+    -fx-background-color: #10B981;
     -fx-background-radius: 6px;
 }
 
 .status-text {
-    -fx-text-fill: #34425a;
+    -fx-text-fill: #F1F5F9;
     -fx-font-size: 11px;
 }
 
 .status-note {
-    -fx-text-fill: #8490a2;
+    -fx-text-fill: #94A3B8;
     -fx-font-size: 10px;
 }
 
 .progress-bar > .track {
-    -fx-background-color: #e5ebf3;
+    -fx-background-color: #1E234F;
     -fx-background-radius: 4px;
 }
 
 .progress-bar > .bar {
-    -fx-background-color: #3974d8;
+    -fx-background-color: #059669;
     -fx-background-radius: 4px;
     -fx-background-insets: 0;
 }
 
-.theme-dark .progress-bar > .track {
-    -fx-background-color: #344357;
+.progress-indicator {
+    -fx-progress-color: #059669;
 }
 
-.theme-dark .progress-indicator {
-    -fx-progress-color: #8fb7ff;
+/* CheckBox conserva texto claro y un foco dorado visible al navegar con teclado. */
+.check-box {
+    -fx-text-fill: #F1F5F9;
+}
+
+.check-box .box {
+    -fx-background-color: #252210;
+    -fx-border-color: #B39226;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: #FFFFFF;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #3D5CE6;
+    -fx-border-color: #637DF2;
+}
+
+.check-box:focused .box {
+    -fx-border-color: #E6C148;
+}
+
+/* Los diálogos también reciben la paleta de la app aunque se creen aparte de la escena. */
+.app-alert {
+    -fx-background-color: #22254B;
+}
+
+.app-alert .header-panel {
+    -fx-background-color: #1E234F;
+}
+
+.app-alert .header-panel .label,
+.app-alert .content.label {
+    -fx-text-fill: #F1F5F9;
+}
+
+.app-alert-error .header-panel {
+    -fx-border-color: transparent transparent #B82865 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.app-alert-error .header-panel .label {
+    -fx-text-fill: #FAD2E1;
+}
+
+.app-alert-info .header-panel {
+    -fx-border-color: transparent transparent #637DF2 transparent;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.app-alert .button {
+    -fx-background-color: #3D5CE6;
+    -fx-text-fill: #FFFFFF;
+}
+
+.app-alert .button:hover {
+    -fx-background-color: #5372F6;
+}
+
+.app-alert .button:focused {
+    -fx-border-color: #E6C148;
+    -fx-border-width: 2px;
+}
+
+/* Las barras de desplazamiento mantienen el contraste con el fondo principal. */
+.scroll-bar {
+    -fx-background-color: #171831;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #2E3263;
+    -fx-background-radius: 5px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #637DF2;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #171831;
 }

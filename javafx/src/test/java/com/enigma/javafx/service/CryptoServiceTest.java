@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -94,6 +95,69 @@ class CryptoServiceTest {
                 () -> cryptoService.encrypt(input, output, "Password12345678".toCharArray(), null));
         assertThrows(IllegalArgumentException.class,
                 () -> cryptoService.encrypt(input, output, new char[0]));
+    }
+
+    /** Comprueba que se recuperan exactamente entradas binarias, UTF-8 y vacías. */
+    @Test
+    void decryptsEmptyBinaryAndUtf8ContentExactly() throws Exception {
+        byte[][] originals = {
+                new byte[0],
+                new byte[] {0, 1, (byte) 0xff, 10, 0},
+                "texto UTF-8: ñ y €".getBytes(StandardCharsets.UTF_8)
+        };
+        char[] password = "Password12345678".toCharArray();
+
+        for (byte[] original : originals) {
+            ByteArrayOutputStream decrypted = new ByteArrayOutputStream();
+            cryptoService.decrypt(new ByteArrayInputStream(encrypt(original)), decrypted, password);
+            assertArrayEquals(original, decrypted.toByteArray());
+        }
+    }
+
+    /** Rechaza contraseñas equivocadas, contenedores alterados y cabeceras incompletas. */
+    @Test
+    void rejectsWrongPasswordTamperedContentAndInvalidHeaders() throws Exception {
+        byte[] encrypted = encrypt("contenido autenticado".getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        assertThrows(javax.crypto.AEADBadTagException.class,
+                () -> cryptoService.decrypt(new ByteArrayInputStream(encrypted), output,
+                        "WrongPassword1234".toCharArray()));
+
+        byte[] tampered = encrypted.clone();
+        tampered[tampered.length - 1] ^= 1;
+        assertThrows(javax.crypto.AEADBadTagException.class,
+                () -> cryptoService.decrypt(new ByteArrayInputStream(tampered),
+                        new ByteArrayOutputStream(), "Password12345678".toCharArray()));
+
+        assertThrows(IOException.class,
+                () -> cryptoService.decrypt(new ByteArrayInputStream(new byte[10]),
+                        new ByteArrayOutputStream(), "Password12345678".toCharArray()));
+
+        byte[] wrongMagic = encrypted.clone();
+        wrongMagic[0] = 'X';
+        assertThrows(IOException.class,
+                () -> cryptoService.decrypt(new ByteArrayInputStream(wrongMagic),
+                        new ByteArrayOutputStream(), "Password12345678".toCharArray()));
+
+        byte[] unsupportedVersion = encrypted.clone();
+        unsupportedVersion[4] = 2;
+        assertThrows(IOException.class,
+                () -> cryptoService.decrypt(new ByteArrayInputStream(unsupportedVersion),
+                        new ByteArrayOutputStream(), "Password12345678".toCharArray()));
+    }
+
+    /** Informa cuántos bytes del contenedor se han procesado durante el descifrado. */
+    @Test
+    void reportsProcessedEncryptedBytesWhileDecrypting() throws Exception {
+        byte[] original = new byte[150_000];
+        byte[] encrypted = encrypt(original);
+        AtomicLong processedBytes = new AtomicLong();
+
+        cryptoService.decrypt(new ByteArrayInputStream(encrypted), new ByteArrayOutputStream(),
+                "Password12345678".toCharArray(), processedBytes::set);
+
+        assertEquals(encrypted.length - CryptoService.HEADER_LENGTH, processedBytes.get());
     }
 
     /** Cifra los bytes indicados en memoria y devuelve el contenedor producido. */

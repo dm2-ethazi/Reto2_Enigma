@@ -2,6 +2,7 @@ package com.enigma.javafx.service;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.AEADBadTagException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -136,6 +137,87 @@ public final class CryptoService {
         }
     }
 
+    /** Descifra un contenedor R2AE completo sin notificar el progreso de lectura. */
+    public void decrypt(InputStream input, OutputStream output, char[] password)
+            throws IOException, GeneralSecurityException {
+        decrypt(input, output, password, ignored -> { });
+    }
+
+    /**
+     * Descifra un contenedor R2AE v1 y valida su etiqueta GCM antes de completar la operación.
+     * El llamador debe escribir en un archivo temporal y publicarlo solo si este método termina
+     * correctamente, ya que GCM puede producir bytes antes de comprobar la etiqueta final.
+     *
+     * @param input flujo del contenedor cifrado
+     * @param output destino temporal para los bytes descifrados
+     * @param password contraseña proporcionada para derivar la clave AES
+     * @param processedBytes callback con el total de bytes cifrados procesados
+     * @throws IllegalArgumentException si falta un flujo, callback o contraseña
+     * @throws IOException si el contenedor está truncado o falla la lectura/escritura
+     * @throws GeneralSecurityException si la cabecera no es compatible o la autenticación falla
+     */
+    public void decrypt(InputStream input, OutputStream output, char[] password,
+                        LongConsumer processedBytes)
+            throws IOException, GeneralSecurityException {
+        if (input == null || output == null || processedBytes == null) {
+            throw new IllegalArgumentException("Los flujos y el callback de progreso son obligatorios.");
+        }
+        if (password == null || password.length == 0) {
+            throw new IllegalArgumentException("La contraseña no puede estar vacía.");
+        }
+
+        byte[] header = readHeader(input);
+        ByteBuffer headerFields = ByteBuffer.wrap(header).order(ByteOrder.BIG_ENDIAN);
+        byte[] magic = new byte[MAGIC.length];
+        headerFields.get(magic);
+        if (!Arrays.equals(magic, MAGIC)) {
+            throw new IOException("El archivo no contiene un contenedor R2AE válido.");
+        }
+        if (headerFields.get() != FORMAT_VERSION) {
+            throw new IOException("La versión del contenedor R2AE no es compatible.");
+        }
+        if (headerFields.getInt() != PBKDF2_ITERATIONS) {
+            throw new IOException("El número de iteraciones del contenedor no es compatible.");
+        }
+
+        byte[] salt = new byte[SALT_LENGTH];
+        byte[] nonce = new byte[NONCE_LENGTH];
+        headerFields.get(salt);
+        headerFields.get(nonce);
+        byte[] key = deriveKey(password, salt);
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"),
+                    new GCMParameterSpec(TAG_LENGTH_BITS, nonce));
+            cipher.updateAAD(header);
+            decryptStream(input, output, cipher, processedBytes);
+        } finally {
+            Arrays.fill(key, (byte) 0);
+        }
+    }
+
+    /** Lee exactamente una cabecera R2AE, incluso si el flujo entrega bloques parciales. */
+    private static byte[] readHeader(InputStream input) throws IOException {
+        byte[] header = new byte[HEADER_LENGTH];
+        int offset = 0;
+        while (offset < header.length) {
+            int read = input.read(header, offset, header.length - offset);
+            if (read == -1) {
+                throw new IOException("El contenedor R2AE está incompleto.");
+            }
+            if (read == 0) {
+                int value = input.read();
+                if (value == -1) {
+                    throw new IOException("El contenedor R2AE está incompleto.");
+                }
+                header[offset++] = (byte) value;
+            } else {
+                offset += read;
+            }
+        }
+        return header;
+    }
+
     /**
      * Deriva una clave AES de 256 bits a partir de la contraseña y la sal.
      * PBEKeySpec mantiene una copia interna y por eso se limpia al terminar.
@@ -196,6 +278,44 @@ public final class CryptoService {
         byte[] finalBlock = cipher.doFinal();
         if (finalBlock != null && finalBlock.length > 0) {
             output.write(finalBlock);
+        }
+    }
+
+    /**
+     * Descifra el contenido por bloques y verifica la etiqueta al finalizar.
+     * Si la etiqueta no coincide, {@code doFinal} lanza una excepción y el archivo temporal
+     * debe eliminarse sin publicar el contenido parcial.
+     */
+    private static void decryptStream(InputStream input, OutputStream output, Cipher cipher,
+                                      LongConsumer processedBytes)
+            throws IOException, GeneralSecurityException {
+        byte[] inputBuffer = new byte[BUFFER_SIZE];
+        long processed = 0;
+        int read;
+        while ((read = input.read(inputBuffer)) != -1) {
+            if (read == 0) {
+                int value = input.read();
+                if (value == -1) {
+                    break;
+                }
+                inputBuffer[0] = (byte) value;
+                read = 1;
+            }
+            byte[] decrypted = cipher.update(inputBuffer, 0, read);
+            if (decrypted != null && decrypted.length > 0) {
+                output.write(decrypted);
+            }
+            processed += read;
+            processedBytes.accept(processed);
+        }
+
+        try {
+            byte[] finalBlock = cipher.doFinal();
+            if (finalBlock != null && finalBlock.length > 0) {
+                output.write(finalBlock);
+            }
+        } catch (AEADBadTagException exception) {
+            throw new AEADBadTagException("La contraseña es incorrecta o el contenedor ha sido alterado.");
         }
     }
 }
