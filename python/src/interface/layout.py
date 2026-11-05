@@ -9,7 +9,7 @@ def render(title, choices, selected, fields, interactive):
     width = min(66, max(24, columns - 4))
     lines = [
         "ENIGMA / RETO 02",
-        "Cifrado Vigenère de texto",
+        "Cifrado de texto y archivos",
         "",
         title,
         "-" * min(40, width),
@@ -20,6 +20,8 @@ def render(title, choices, selected, fields, interactive):
     if main_menu:
         lines.extend(["VIGENÈRE / TEXTO", ""])
     for index, label in enumerate(choices):
+        if main_menu and label == "Cifrar archivo AES":
+            lines.extend(["", "AES / ARCHIVOS", ""])
         if main_menu and label == "Salir":
             lines.append("")
         marker = ">" if interactive and index == selected else " "

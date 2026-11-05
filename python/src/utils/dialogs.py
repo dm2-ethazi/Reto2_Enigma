@@ -7,6 +7,7 @@ from ..errors import OperationCancelled
 
 ALL_FILES = (("Todos los archivos", "*"),)
 TEXT_FILES = (("Archivos de texto", "*.txt"),) + ALL_FILES
+ENCRYPTED_FILES = (("Archivos cifrados", "*.enc"),) + ALL_FILES
 
 
 def _prompt_path(title: str, *, save: bool, default: Path | None, extension: str) -> Path:
