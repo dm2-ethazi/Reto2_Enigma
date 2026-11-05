@@ -96,35 +96,36 @@ python-cli/htmlcov/
 # ============================================
 #  Unity
 # ============================================
-unity/[Ll]ibrary/
-unity/[Tt]emp/
-unity/[Oo]bj/
-unity/[Bb]uild/
-unity/[Bb]uilds/
-unity/[Ll]ogs/
-unity/[Uu]ser[Ss]ettings/
-unity/[Mm]emoryCaptures/
-unity/[Rr]ecordings/
+[Ll]ibrary
+[Bb]ackups
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
 
 # Unity generated
-unity/*.csproj
-unity/*.unityproj
-unity/*.sln
-unity/*.suo
-unity/*.user
-unity/*.userprefs
-unity/*.pidb
-unity/*.booproj
-unity/*.svd
-unity/*.pdb
-unity/*.mdb
-unity/*.opendb
-unity/*.VC.db
-unity/sysinfo.txt
-unity/crashlytics-build.properties
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+sysinfo.txt
+crashlytics-build.properties
 
 # Unity - Crash reports
-unity/sysinfo.txt
+sysinfo.txt
 
 # Unity - Asset meta files (opcional, depende del equipo)
 # unity/**/*.meta
