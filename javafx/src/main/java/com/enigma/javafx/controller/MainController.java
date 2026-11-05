@@ -1,6 +1,7 @@
 package com.enigma.javafx.controller;
 
 import com.enigma.javafx.service.FileService;
+import com.enigma.javafx.service.FileService.DecryptionResult;
 import com.enigma.javafx.service.FileService.EncryptionResult;
 
 import javafx.css.PseudoClass;
@@ -9,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
@@ -17,9 +19,11 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 
 /**
  * Controlador de la pantalla principal. Coordina la selección de archivos,
@@ -44,6 +49,8 @@ public class MainController {
     private final FileService fileService = new FileService();
     /** Tarea activa de cifrado, si la hay. */
     private Task<EncryptionResult> encryptionTask;
+    /** Tarea activa de descifrado, si la hay. */
+    private Task<DecryptionResult> decryptionTask;
 
     /** Campo de ruta del fichero que se cifrará. */
     @FXML
@@ -53,17 +60,37 @@ public class MainController {
     @FXML
     private TextField destinationDirectoryField;
 
-    /** Ruta del original de referencia para la sección de descifrado aún no implementada. */
+    /** Ruta del contenedor .enc que se va a descifrar, independiente del origen de cifrado. */
+    @FXML
+    private TextField decryptSourcePathField;
+
+    /** Ruta opcional del original usado para verificar un archivo descifrado. */
     @FXML
     private TextField referencePathField;
 
-    /** Campo enmascarado de contraseña de descifrado; reservado para esa funcionalidad futura. */
+    /** Campo enmascarado de la contraseña del contenedor que se va a descifrar. */
     @FXML
     private PasswordField decryptPasswordField;
 
-    /** Campo visible de contraseña de descifrado; reservado para esa funcionalidad futura. */
+    /** Campo sincronizado que muestra la contraseña de descifrado cuando se revela. */
     @FXML
     private TextField visibleDecryptPasswordField;
+
+    /** Alterna la visibilidad del campo de contraseña de descifrado. */
+    @FXML
+    private ToggleButton showPasswordToggle;
+
+    /** Opción para comprobar el resultado frente al archivo original. */
+    @FXML
+    private CheckBox verifyCheckbox;
+
+    /** Icono que indica que la contraseña de descifrado está oculta. */
+    @FXML
+    private FontIcon showDecryptPasswordIcon;
+
+    /** Icono que indica que la contraseña de descifrado está visible. */
+    @FXML
+    private FontIcon hideDecryptPasswordIcon;
 
     /** Campo de contraseña generada; PasswordField la oculta de forma predeterminada. */
     @FXML
@@ -77,6 +104,14 @@ public class MainController {
     @FXML
     private ToggleButton showGeneratedPasswordToggle;
 
+    /** Icono para indicar que la contraseña generada está oculta. */
+    @FXML
+    private FontIcon showGeneratedPasswordIcon;
+
+    /** Icono para indicar que la contraseña generada está visible. */
+    @FXML
+    private FontIcon hideGeneratedPasswordIcon;
+
     /** Botón que inicia el cifrado. */
     @FXML
     private Button encryptButton;
@@ -88,6 +123,18 @@ public class MainController {
     /** Botón para seleccionar la carpeta de destino. */
     @FXML
     private Button chooseDestinationButton;
+
+    /** Botón que inicia el descifrado. */
+    @FXML
+    private Button decryptButton;
+
+    /** Botón para seleccionar el contenedor que se va a descifrar. */
+    @FXML
+    private Button chooseEncryptedFileButton;
+
+    /** Botón para seleccionar el archivo original usado en la verificación opcional. */
+    @FXML
+    private Button chooseReferenceButton;
 
     /** Botón para copiar la contraseña generada al portapapeles. */
     @FXML
@@ -110,26 +157,15 @@ public class MainController {
      */
     @FXML
     private void initialize() {
+        configurePasswordVisibility(
+                showPasswordToggle, showDecryptPasswordIcon, hideDecryptPasswordIcon,
+                decryptPasswordField, visibleDecryptPasswordField, "contraseña");
+        configurePasswordVisibility(
+                showGeneratedPasswordToggle, showGeneratedPasswordIcon, hideGeneratedPasswordIcon,
+                generatedPasswordField, visibleGeneratedPasswordField, "contraseña generada");
         generatedPasswordField.setEditable(false);
         visibleGeneratedPasswordField.setEditable(false);
         showGeneratedPasswordToggle.setDisable(true);
-        visibleGeneratedPasswordField.textProperty()
-                .bindBidirectional(generatedPasswordField.textProperty());
-        visibleGeneratedPasswordField.visibleProperty()
-                .bind(showGeneratedPasswordToggle.selectedProperty());
-        visibleGeneratedPasswordField.managedProperty()
-                .bind(showGeneratedPasswordToggle.selectedProperty());
-        generatedPasswordField.visibleProperty()
-                .bind(showGeneratedPasswordToggle.selectedProperty().not());
-        generatedPasswordField.managedProperty()
-                .bind(showGeneratedPasswordToggle.selectedProperty().not());
-        showGeneratedPasswordToggle.textProperty().bind(
-                javafx.beans.binding.Bindings.when(showGeneratedPasswordToggle.selectedProperty())
-                        .then("Ocultar").otherwise("Mostrar"));
-        showGeneratedPasswordToggle.accessibleTextProperty().bind(
-                javafx.beans.binding.Bindings.when(showGeneratedPasswordToggle.selectedProperty())
-                        .then("Ocultar contraseña generada")
-                        .otherwise("Mostrar contraseña generada"));
 
         // El pseudoestado permite que la hoja CSS destaque una zona de soltado válida.
         sourcePathField.setOnDragOver(event -> {
@@ -209,6 +245,7 @@ public class MainController {
     private void clearSelection() {
         sourcePathField.clear();
         destinationDirectoryField.clear();
+        decryptSourcePathField.clear();
         referencePathField.clear();
         decryptPasswordField.clear();
         visibleDecryptPasswordField.clear();
@@ -228,7 +265,7 @@ public class MainController {
     @FXML
     private void encryptFile() {
         // Impide que dos operaciones de cifrado se ejecuten simultáneamente.
-        if (encryptionTask != null && encryptionTask.isRunning()) {
+        if (isOperationRunning()) {
             return;
         }
 
@@ -316,13 +353,104 @@ public class MainController {
         statusLabel.setText("Contraseña copiada al portapapeles.");
     }
 
-    /** Mantiene el evento de la vista, pero no realiza descifrado en esta versión. */
+    /** Descifra el contenedor seleccionado sin modificar la vista previa. */
     @FXML
     private void decryptFile() {
-        showNotImplemented("Descifrar archivo");
+        if (isOperationRunning()) {
+            return;
+        }
+
+        Path encryptedFile;
+        Path destination;
+        Path selectedReference = null;
+        try {
+            encryptedFile = selectedPath(decryptSourcePathField);
+            destination = selectedPath(destinationDirectoryField);
+            if (verifyCheckbox.isSelected()) {
+                selectedReference = selectedPath(referencePathField);
+            }
+        } catch (InvalidPathException exception) {
+            showError("Una de las rutas seleccionadas no es válida.");
+            return;
+        }
+
+        if (encryptedFile == null || destination == null) {
+            showError("Selecciona el contenedor .enc y una carpeta de destino.");
+            return;
+        }
+        if (decryptPasswordField.getText() == null || decryptPasswordField.getText().isBlank()) {
+            showError("Introduce la contraseña del contenedor.");
+            return;
+        }
+        if (verifyCheckbox.isSelected() && selectedReference == null) {
+            showError("Selecciona el archivo original para poder compararlo.");
+            return;
+        }
+
+        Path reference = selectedReference;
+        char[] password = decryptPasswordField.getText().toCharArray();
+        setEncryptionControlsDisabled(true);
+        decryptionTask = new Task<>() {
+            @Override
+            protected DecryptionResult call() throws IOException, GeneralSecurityException {
+                try {
+                    long totalBytes = Files.size(encryptedFile);
+                    updateMessage("Preparando descifrado...");
+                    DecryptionResult result = fileService.decrypt(
+                            encryptedFile, destination, password, reference, processed -> {
+                                long percentage = totalBytes == 0 ? 100
+                                        : Math.min(100, Math.round(processed * 100.0 / totalBytes));
+                                updateMessage("Descifrando archivo: " + percentage + "%");
+                            });
+                    updateMessage("Descifrado completado.");
+                    return result;
+                } finally {
+                    Arrays.fill(password, '\0');
+                }
+            }
+        };
+
+        statusLabel.textProperty().bind(decryptionTask.messageProperty());
+        decryptionTask.setOnSucceeded(event -> {
+            statusLabel.textProperty().unbind();
+            setEncryptionControlsDisabled(false);
+            statusLabel.setText("Archivo descifrado: " + decryptionTask.getValue().outputPath());
+        });
+        decryptionTask.setOnFailed(event -> {
+            statusLabel.textProperty().unbind();
+            setEncryptionControlsDisabled(false);
+            Throwable failure = decryptionTask.getException();
+            showError(failure.getMessage() == null
+                    ? "No se pudo descifrar el archivo." : failure.getMessage());
+        });
+        decryptionTask.setOnCancelled(event -> {
+            statusLabel.textProperty().unbind();
+            setEncryptionControlsDisabled(false);
+            statusLabel.setText("Descifrado cancelado.");
+        });
+
+        Thread worker = new Thread(decryptionTask, "enigma-aes-decryption");
+        worker.setDaemon(true);
+        worker.start();
     }
 
-    /** Abre el selector del archivo de referencia usado por una función futura. */
+    /** Abre el selector para elegir el contenedor .enc que se va a descifrar. */
+    @FXML
+    private void chooseEncryptedFile() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Seleccionar archivo cifrado");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Contenedores Enigma (*.enc)", "*.enc"));
+        setInitialDirectory(chooser, decryptSourcePathField, sourcePathField);
+
+        File selectedFile = chooser.showOpenDialog(getOwnerWindow(decryptSourcePathField));
+        if (selectedFile != null) {
+            decryptSourcePathField.setText(selectedFile.getAbsolutePath());
+            statusLabel.setText("Archivo cifrado seleccionado.");
+        }
+    }
+
+    /** Abre el selector del archivo original para la verificación opcional. */
     @FXML
     private void chooseReferenceFile() {
         FileChooser chooser = new FileChooser();
@@ -432,10 +560,23 @@ public class MainController {
      */
     private void setEncryptionControlsDisabled(boolean disabled) {
         encryptButton.setDisable(disabled);
+        decryptButton.setDisable(disabled);
+        chooseEncryptedFileButton.setDisable(disabled);
         chooseSourceButton.setDisable(disabled);
         chooseDestinationButton.setDisable(disabled);
+        chooseReferenceButton.setDisable(disabled);
+        decryptPasswordField.setDisable(disabled);
+        visibleDecryptPasswordField.setDisable(disabled);
+        showPasswordToggle.setDisable(disabled);
+        verifyCheckbox.setDisable(disabled);
         copyPasswordButton.setDisable(disabled);
         clearSelectionButton.setDisable(disabled);
+    }
+
+    /** Informa si alguna de las operaciones criptográficas sigue ejecutándose. */
+    private boolean isOperationRunning() {
+        return encryptionTask != null && encryptionTask.isRunning()
+                || decryptionTask != null && decryptionTask.isRunning();
     }
 
     /**
@@ -445,6 +586,7 @@ public class MainController {
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        styleAlert(alert, "app-alert-error");
         alert.setTitle("Error de cifrado");
         alert.setHeaderText(null);
         alert.setContentText(message);
@@ -462,9 +604,50 @@ public class MainController {
      */
     private void showNotImplemented(String action) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        styleAlert(alert, "app-alert-info");
         alert.setTitle("Enigma");
         alert.setHeaderText(action);
         alert.setContentText("Esta función todavía no está implementada.");
         alert.showAndWait();
+    }
+
+    /**
+     * Aplica a los diálogos la misma paleta que usa la ventana principal.
+     *
+     * @param alert diálogo que se va a mostrar
+     * @param styleClass clase CSS que identifica el tipo de aviso
+     */
+    private void styleAlert(Alert alert, String styleClass) {
+        var stylesheet = MainController.class.getResource("/com/enigma/javafx/styles.css");
+        if (stylesheet == null) {
+            throw new IllegalStateException("No se encontró la hoja de estilos de la aplicación.");
+        }
+        alert.getDialogPane().getStylesheets().add(stylesheet.toExternalForm());
+        alert.getDialogPane().getStyleClass().addAll("app-alert", styleClass);
+    }
+
+    /**
+     * Sincroniza los campos de contraseña y alterna el texto y los iconos del botón.
+     * El ojo indica que se puede mostrar el valor; el ojo tachado, que se puede ocultar.
+     */
+    private void configurePasswordVisibility(ToggleButton toggle, FontIcon showIcon,
+                                            FontIcon hideIcon, PasswordField maskedField,
+                                            TextField visibleField, String accessibleName) {
+        Color magenta = Color.web("#D63378");
+        showIcon.setIconColor(magenta);
+        hideIcon.setIconColor(magenta);
+        visibleField.textProperty().bindBidirectional(maskedField.textProperty());
+        visibleField.visibleProperty().bind(toggle.selectedProperty());
+        visibleField.managedProperty().bind(toggle.selectedProperty());
+        maskedField.visibleProperty().bind(toggle.selectedProperty().not());
+        maskedField.managedProperty().bind(toggle.selectedProperty().not());
+        showIcon.visibleProperty().bind(toggle.selectedProperty().not());
+        showIcon.managedProperty().bind(toggle.selectedProperty().not());
+        hideIcon.visibleProperty().bind(toggle.selectedProperty());
+        hideIcon.managedProperty().bind(toggle.selectedProperty());
+        toggle.accessibleTextProperty().bind(
+                javafx.beans.binding.Bindings.when(toggle.selectedProperty())
+                        .then("Ocultar " + accessibleName)
+                        .otherwise("Mostrar " + accessibleName));
     }
 }
