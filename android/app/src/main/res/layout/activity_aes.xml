@@ -11,7 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:paddingTop="45dp"
+        android:paddingEnd="40dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -88,6 +91,7 @@
                 app:backgroundTint="@null"
                 android:hint="Introduce la contraseña"
                 android:inputType="textPassword"
+                android:maxLength="16"
                 android:paddingStart="12dp"
                 android:paddingEnd="8dp"
                 android:paddingTop="12dp"
@@ -103,8 +107,8 @@
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:contentDescription="Mostrar contraseña"
-                android:src="@android:drawable/ic_menu_view"
-                app:tint="@color/magenta_hover" />
+                android:src="@drawable/ic_ojo_abierto"
+                app:tint="@color/magenta_borde" />
         </LinearLayout>
 
         <Button
