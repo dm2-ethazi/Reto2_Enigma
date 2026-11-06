@@ -4,106 +4,46 @@ import com.enigma.javafx.service.FileService.EncryptionResult;
 import com.enigma.javafx.service.FileService.DecryptionResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.stream.Stream;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Pruebas de integración del servicio de archivos y sus reglas de publicación.
- */
-class FileServiceTest {
-    /** Carpeta aislada que JUnit crea y elimina para cada prueba. */
+class FileServiceDecryptionTest {
+    /** Servicio real usado para validar los flujos de archivos. */
+    private final FileService fileService = new FileService();
     @TempDir
     Path temporaryDirectory;
 
-    /** Servicio real usado para cifrar los archivos temporales. */
-    private final FileService fileService = new FileService();
-
-    /** Comprueba tamaños variados y que el cifrado no modifica los archivos de origen. */
+    /** Verifica el ciclo AES completo en todos los tamaños exigidos por el contrato. */
     @Test
-    void encryptsRequiredFileSizesWithoutChangingTheOriginal() throws Exception {
+    void roundTripsRequiredFileSizesWithExactBytesAndMatchingSha256() throws Exception {
         int[] sizes = {0, 1, 1024 * 1024, 20 * 1024 * 1024};
+        Path encryptedDirectory = Files.createDirectory(
+                temporaryDirectory.resolve("round-trip-encrypted"));
+        Path decryptedDirectory = Files.createDirectory(
+                temporaryDirectory.resolve("round-trip-decrypted"));
+
         for (int size : sizes) {
-            Path source = temporaryDirectory.resolve("input-" + size + ".bin");
-            Path destination = Files.createDirectory(
-                    temporaryDirectory.resolve("output-" + size));
+            Path source = temporaryDirectory.resolve("round-trip-" + size + ".bin");
             writePattern(source, size);
             byte[] originalHash = sha256(source);
+            EncryptionResult encrypted = fileService.encrypt(source, encryptedDirectory);
+            DecryptionResult decrypted = fileService.decrypt(encrypted.outputPath(),
+                    decryptedDirectory, encrypted.password().toCharArray());
 
-            EncryptionResult result = fileService.encrypt(source, destination);
-
-            assertEquals(source.getFileName() + ".enc", result.outputPath().getFileName().toString());
-            assertEquals(size + CryptoService.HEADER_LENGTH + 16,
-                    Files.size(result.outputPath()));
-            assertArrayEquals(originalHash, sha256(source));
-            assertTrue(result.password().matches("[A-Za-z0-9]{16}"));
-        }
-    }
-
-    /** Confirma que un resultado existente no se sobrescribe ni se dejan temporales. */
-    @Test
-    void doesNotOverwriteAnExistingEncryptedFile() throws Exception {
-        Path source = temporaryDirectory.resolve("input.txt");
-        Path destination = Files.createDirectory(temporaryDirectory.resolve("output"));
-        Files.writeString(source, "contenido original");
-        EncryptionResult result = fileService.encrypt(source, destination);
-        byte[] encryptedContent = Files.readAllBytes(result.outputPath());
-
-        assertThrows(FileAlreadyExistsException.class,
-                () -> fileService.encrypt(source, destination));
-        assertArrayEquals(encryptedContent, Files.readAllBytes(result.outputPath()));
-        try (Stream<Path> files = Files.list(destination)) {
-            assertEquals(1, files.count());
-        }
-    }
-
-    /** Comprueba el rechazo de rutas de entrada y destino inexistentes. */
-    @Test
-    void rejectsMissingSourceOrDestination() throws IOException {
-        Path missingSource = temporaryDirectory.resolve("missing.txt");
-        Path missingDirectory = temporaryDirectory.resolve("missing-output");
-
-        assertThrows(IOException.class, () -> fileService.encrypt(missingSource, temporaryDirectory));
-        Path validSource = temporaryDirectory.resolve("valid.txt");
-        Files.writeString(validSource, "contenido");
-        assertThrows(IOException.class, () -> fileService.encrypt(validSource, missingDirectory));
-    }
-
-    /** Valida también argumentos nulos y rutas que no son archivos normales o carpetas. */
-    @Test
-    void rejectsNullAndWrongTypePaths() throws Exception {
-        Path destination = Files.createDirectory(temporaryDirectory.resolve("output-types"));
-        Path source = Files.writeString(temporaryDirectory.resolve("valid-types.txt"), "texto");
-
-        assertThrows(IOException.class, () -> fileService.encrypt(null, destination));
-        assertThrows(IOException.class, () -> fileService.encrypt(source, null));
-        assertThrows(IOException.class, () -> fileService.encrypt(temporaryDirectory, destination));
-    }
-
-    /** Elimina el archivo temporal si el procesamiento falla antes de publicar el resultado. */
-    @Test
-    void removesTemporaryOutputWhenProgressCallbackFails() throws Exception {
-        Path source = Files.writeString(temporaryDirectory.resolve("interrupted.txt"), "contenido");
-        Path destination = Files.createDirectory(temporaryDirectory.resolve("interrupted-output"));
-
-        assertThrows(IllegalStateException.class, () -> fileService.encrypt(source, destination,
-                ignored -> {
-                    throw new IllegalStateException("Fallo de prueba");
-                }));
-
-        assertFalse(Files.exists(destination.resolve("interrupted.txt.enc")));
-        try (Stream<Path> files = Files.list(destination)) {
-            assertEquals(0, files.count());
+            assertEquals(size, Files.size(decrypted.outputPath()));
+            assertEquals(-1, Files.mismatch(source, decrypted.outputPath()),
+                    "Los bytes deben coincidir para el tamaño " + size);
+            assertArrayEquals(originalHash, sha256(decrypted.outputPath()),
+                    "SHA-256 debe coincidir para el tamaño " + size);
+            assertArrayEquals(originalHash, sha256(source),
+                    "El original debe permanecer intacto para el tamaño " + size);
         }
     }
 
@@ -173,15 +113,30 @@ class FileServiceTest {
         Path invalidContainer = Files.writeString(temporaryDirectory.resolve("not-encrypted.txt"), "x");
         assertThrows(IOException.class, () -> fileService.decrypt(invalidContainer, destination,
                 encrypted.password().toCharArray()));
+        Path incompleteContainer = Files.write(temporaryDirectory.resolve("incomplete.enc"),
+                new byte[CryptoService.HEADER_LENGTH + 15]);
+        assertThrows(IOException.class, () -> fileService.decrypt(incompleteContainer, destination,
+                encrypted.password().toCharArray()));
         assertThrows(IOException.class, () -> fileService.decrypt(encrypted.outputPath(), destination,
                 new char[0]));
     }
 
-    /** Comprueba que una operación fallida no deja ficheros temporales en el destino. */
-    private static void assertDirectoryEmpty(Path directory) throws IOException {
-        try (Stream<Path> files = Files.list(directory)) {
-            assertEquals(0, files.count());
-        }
+    /** Elimina el temporal si falla el procesamiento durante el descifrado por bloques. */
+    @Test
+    void removesTemporaryOutputWhenDecryptionProgressCallbackFails() throws Exception {
+        Path source = Files.writeString(
+                temporaryDirectory.resolve("decrypt-interrupted.txt"), "contenido protegido");
+        EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+        Path destination = Files.createDirectory(
+                temporaryDirectory.resolve("decrypt-interrupted-output"));
+
+        assertThrows(IllegalStateException.class, () -> fileService.decrypt(
+                encrypted.outputPath(), destination, encrypted.password().toCharArray(),
+                null, ignored -> {
+                    throw new IllegalStateException("Fallo de prueba");
+                }));
+
+        assertDirectoryEmpty(destination);
     }
 
     /** Escribe un patrón determinista para poder probar archivos grandes por bloques. */
@@ -198,6 +153,13 @@ class FileServiceTest {
                 output.write(buffer, 0, length);
                 offset += length;
             }
+        }
+    }
+
+    /** Comprueba que una operación fallida no deja ficheros temporales en el destino. */
+    private static void assertDirectoryEmpty(Path directory) throws IOException {
+        try (Stream<Path> files = Files.list(directory)) {
+            assertEquals(0, files.count());
         }
     }
 

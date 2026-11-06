@@ -1,7 +1,6 @@
 package com.enigma.javafx.i18n;
 
 import org.junit.jupiter.api.Test;
-
 import static com.enigma.javafx.i18n.LanguageService.Language.BASQUE;
 import static com.enigma.javafx.i18n.LanguageService.Language.ENGLISH;
 import static com.enigma.javafx.i18n.LanguageService.Language.SPANISH;
