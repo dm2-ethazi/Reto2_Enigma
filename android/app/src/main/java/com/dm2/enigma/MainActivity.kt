@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private var archivoTxtSeleccionado: Uri? = null
     private var archivoEncSeleccionado: Uri? = null
     private var textoDescifradoCesar = ""
+    /** Temporal en caché con la imagen descifrada: solo vive mientras se ve la pantalla. */
     private var rutaImagenRecuperada: String? = null
     private var descifrandoAes = false
     private var generacion = 0
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
         archivoTxtSeleccionado = null
         archivoEncSeleccionado = null
         textoDescifradoCesar = ""
-        rutaImagenRecuperada = null
+        borrarImagenRecuperada()
         descifrandoAes = false
         aviso?.dismiss()
         aviso = null
@@ -120,7 +121,21 @@ class MainActivity : AppCompatActivity() {
     /** Solo girar la pantalla conserva el estado; al salir de la app o de la vista se reinicia. */
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations && !selectorPendiente) reiniciarAlEntrar = true
+        if (isChangingConfigurations || selectorPendiente) return
+        reiniciarAlEntrar = true
+        borrarImagenRecuperada()
+    }
+
+    override fun onDestroy() {
+        if (isFinishing) borrarImagenRecuperada()
+        super.onDestroy()
+    }
+
+    /** Borra la imagen descifrada: nunca queda nada guardado al salir de la ventana. */
+    private fun borrarImagenRecuperada() {
+        rutaImagenRecuperada?.let { File(it).delete() }
+        rutaImagenRecuperada = null
+        DescifrarAes.limpiarTemporales(this)
     }
 
     private fun mostrarAes(textoRecuperado: String = "") {
@@ -249,7 +264,7 @@ class MainActivity : AppCompatActivity() {
                     mostrarVistaPrevia(resultado.archivo, g)
                     Toast.makeText(
                         this,
-                        "Guardado en Descargas/Enigma/${resultado.archivo.name}",
+                        "Vista previa lista · se borra al salir de la pantalla",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -304,9 +319,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 findViewById<TextView>(R.id.tvTituloImagen).text =
                     if (foto != null) {
-                        "Imagen recuperada · ${archivo.name}"
+                        "Imagen recuperada · solo en pantalla"
                     } else {
-                        "Archivo recuperado (sin vista previa) · ${archivo.name}"
+                        "Archivo recuperado (sin vista previa)"
                     }
             }
         }.start()
@@ -390,7 +405,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             archivoEncSeleccionado = uri
-            rutaImagenRecuperada = null
+            borrarImagenRecuperada()
             findViewById<TextView>(R.id.tvEstadoAes).apply {
                 text = "Archivo: $nombre"
                 visibility = View.VISIBLE

@@ -2,7 +2,6 @@ package com.dm2.enigma.Descifradores
 
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import android.provider.OpenableColumns
 import java.io.File
 import java.io.IOException
@@ -26,13 +25,17 @@ import javax.crypto.spec.SecretKeySpec
  *
  * El texto se escribe en un `.part` que solo se publica cuando la etiqueta se
  * autentica, así que una contraseña incorrecta no deja ningún archivo.
+ *
+ * El resultado va a un archivo temporal en la caché privada de la app (nunca a
+ * Descargas ni a la galería): solo sirve para mostrar la vista previa y se
+ * borra al salir de la pantalla.
  */
 class DescifrarAes {
 
     /** Error de descifrado; [titulo] es el encabezado que muestra la interfaz. */
     class ErrorDescifradoException(val titulo: String, mensaje: String) : Exception(mensaje)
 
-    /** Descifra el `.enc` de [origen] en Descargas/Enigma. [alProgresar]: 0..100. */
+    /** Descifra el `.enc` de [origen] en un temporal de la caché. [alProgresar]: 0..100. */
     fun descifrarArchivo(
         context: Context,
         origen: Uri,
@@ -49,10 +52,11 @@ class DescifrarAes {
             )
         }
 
-        val carpeta = carpetaDestino(context)
+        val carpeta = carpetaTemporal(context)
         val textoEsperado = if (tamano > 0) tamano - SOBRECARGA else -1L
         comprobarEspacio(carpeta, textoEsperado)
-        val destino = archivoLibre(carpeta, nombreDe(context, origen))
+        limpiarTemporales(context)
+        val destino = File.createTempFile(PREFIJO_TEMPORAL, SUFIJO_CACHE, carpeta)
 
         val entrada = try {
             context.contentResolver.openInputStream(origen)
@@ -60,8 +64,13 @@ class DescifrarAes {
             null
         } ?: throw ErrorDescifradoException("Error al leer", "No se pudo abrir el archivo cifrado.")
 
-        val escritos = entrada.use {
-            descifrar(it, destino, contrasena, textoEsperado, alProgresar)
+        val escritos = try {
+            entrada.use {
+                descifrar(it, destino, contrasena, textoEsperado, alProgresar)
+            }
+        } catch (e: Exception) {
+            destino.delete()
+            throw e
         }
         return ResultadoDescifrado(destino, escritos)
     }
@@ -186,7 +195,9 @@ class DescifrarAes {
         private const val SOBRECARGA = TAMANO_CABECERA + TAMANO_ETIQUETA
 
         private const val SUFIJO_TEMPORAL = ".part"
-        private const val CARPETA_DESTINO = "Enigma"
+        private const val SUFIJO_CACHE = ".tmp"
+        private const val CARPETA_TEMPORAL = "descifrado"
+        private const val PREFIJO_TEMPORAL = "enigma-"
         private val PATRON_CONTRASENA = Regex("[A-Za-z0-9]{16}")
 
         /** Mismo formato que `validate_password` en Python. */
@@ -253,27 +264,25 @@ class DescifrarAes {
             }
         }
 
-        private fun carpetaDestino(context: Context): File {
-            val base = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-            val carpeta = File(base, CARPETA_DESTINO)
+        /** Caché privada de la app: el resultado nunca aparece en Descargas ni en la galería. */
+        private fun carpetaTemporal(context: Context): File {
+            val carpeta = File(context.cacheDir, CARPETA_TEMPORAL)
             if (!carpeta.isDirectory && !carpeta.mkdirs()) {
                 throw ErrorDescifradoException(
                     "No hay almacenamiento",
-                    "No se pudo crear la carpeta de descargas en el dispositivo."
+                    "No se pudo crear la carpeta temporal para el resultado."
                 )
             }
             return carpeta
         }
 
-        private fun nombreDe(context: Context, origen: Uri): String {
-            val original = consultar(context, origen, OpenableColumns.DISPLAY_NAME)
-                ?: origen.lastPathSegment.orEmpty()
-            return original.substringAfterLast('/')
-                .removeSuffix(".enc")
-                .removeSuffix(".ENC")
-                .replace(Regex("[^A-Za-z0-9._ -]"), "_")
-                .trim()
-                .ifEmpty { "archivo_descifrado" }
+        /** Borra los temporales que hayan quedado de ejecuciones anteriores. */
+        fun limpiarTemporales(context: Context) {
+            try {
+                File(context.cacheDir, CARPETA_TEMPORAL).listFiles()?.forEach { it.delete() }
+            } catch (e: SecurityException) {
+                // Sin permisos sobre la caché no hay nada que limpiar.
+            }
         }
 
         private fun consultar(context: Context, uri: Uri, columna: String): String? = try {
@@ -285,14 +294,8 @@ class DescifrarAes {
             null
         }
 
-        private fun archivoLibre(carpeta: File, nombre: String): File {
-            var archivo = File(carpeta, nombre)
-            var indice = 1
-            while (archivo.exists()) archivo = File(carpeta, "$nombre (${indice++})")
-            return archivo
-        }
     }
 }
 
-/** Resultado de un descifrado correcto: ya está autenticado y guardado. */
+/** Resultado de un descifrado correcto: autenticado y en un temporal que hay que borrar. */
 data class ResultadoDescifrado(val archivo: File, val tamanoBytes: Long)
