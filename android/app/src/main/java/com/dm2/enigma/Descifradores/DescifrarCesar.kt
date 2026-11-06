@@ -3,7 +3,7 @@ package com.dm2.enigma.Descifradores
 import android.content.Context
 import android.net.Uri
 
-class Cesar {
+class DescifrarCesar {
 
     companion object {
         // Rango 1: ASCII imprimible estándar

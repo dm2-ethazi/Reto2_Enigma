@@ -55,7 +55,7 @@
             android:backgroundTint="@null"
             android:minHeight="56dp"
             android:padding="16dp"
-            android:text="Importar archivo .enc"
+            android:text="Importar archivo .png.enc"
             android:textAllCaps="false"
             android:textColor="@color/magenta_texto"
             android:textSize="17sp"
@@ -126,11 +126,34 @@
             android:textSize="18sp"
             app:backgroundTint="@null" />
 
+        <ProgressBar
+            android:id="@+id/pbProgresoAes"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:max="100"
+            android:progress="0"
+            android:progressBackgroundTint="@color/text_hint"
+            android:progressTint="@color/verde_progreso"
+            android:visibility="gone" />
+
         <TextView
+            android:id="@+id/tvEstadoAes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/text_secondary"
+            android:textIsSelectable="true"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvTituloImagen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
-            android:text="PNG recuperado"
+            android:text="Imagen recuperada"
             android:textColor="@color/magenta_texto"
             android:textSize="16sp"
             android:textStyle="bold" />
