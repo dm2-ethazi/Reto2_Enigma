@@ -35,6 +35,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -699,6 +700,10 @@ public class MainController {
             return LanguageService.format(selectedLanguage,
                     "El archivo de destino ya existe; no se sobrescribirá: {0}",
                     alreadyExists.getFile());
+        }
+        if (failure instanceof FileSystemException) {
+            return translate(
+                    "No se pudo completar la operación de archivo. Comprueba los permisos y el espacio disponible.");
         }
         if (failure instanceof javax.crypto.AEADBadTagException) {
             return translate("La contraseña es incorrecta o el archivo cifrado está dañado.");
