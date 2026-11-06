@@ -8,16 +8,19 @@ import android.text.InputType
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.dm2.enigma.Descifradores.Cesar
 
 class MainActivity : AppCompatActivity() {
 
     private var archivoTxtSeleccionado: Uri? = null
     private var archivoEncSeleccionado: Uri? = null
+    private var textoDescifradoCesar: String = ""
 
     private var pantallaActual = "menu"
 
@@ -59,7 +62,11 @@ class MainActivity : AppCompatActivity() {
             // Restaurar la pantalla correcta
             when (pantallaActual) {
                 "aes" -> mostrarAes(savedInstanceState.getString("texto_contrasena") ?: "")
-                "cesar" -> mostrarCesar(savedInstanceState.getString("texto_desplazamiento") ?: "")
+                "cesar" -> {
+                    // Recuperamos el texto descifrado
+                    textoDescifradoCesar = savedInstanceState.getString("texto_descifrado_cesar") ?: ""
+                    mostrarCesar(savedInstanceState.getString("texto_desplazamiento") ?: "")
+                }
                 else -> mostrarMenu()
             }
         } else {
@@ -93,7 +100,7 @@ class MainActivity : AppCompatActivity() {
 
         // --- Validación al pulsar Descifrar ---
         findViewById<Button>(R.id.btnDescifrarAes).setOnClickListener {
-            val pass = etContrasena.text.toString()   // ← leer AQUÍ, no fuera
+            val pass = etContrasena.text.toString()
             if (!esContrasenaValida(pass)) {
                 Toast.makeText(
                     this,
@@ -139,23 +146,58 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnImportarTxt).setOnClickListener { abrirSelectorTxt() }
 
         val etDesplazamiento = findViewById<EditText>(R.id.etDesplazamiento)
-
-        // Restaurar el texto guardado
         etDesplazamiento.setText(textoRecuperado)
+
+        // Recuperar el texto descifrado si venimos de girar la pantalla
+        val tvMensaje = findViewById<TextView>(R.id.tvMensajeRecuperado)
+        if (textoDescifradoCesar.isNotEmpty()) {
+            tvMensaje.text = textoDescifradoCesar
+        }
 
         etDesplazamiento.filters = arrayOf(
             InputFilter { source, start, end, dest, dstart, dend ->
                 val texto = dest.toString().substring(0, dstart) +
                         source.toString().substring(start, end) +
                         dest.toString().substring(dend)
-
                 if (texto.isEmpty()) return@InputFilter null
-
                 val numero = texto.toIntOrNull() ?: return@InputFilter ""
-
                 if (numero in 1..25) null else ""
             }
         )
+
+        findViewById<Button>(R.id.btnDescifrarCesar).setOnClickListener {
+            // 1. Validar
+            val uri = archivoTxtSeleccionado
+            val textoDesplazamiento = etDesplazamiento.text.toString().trim()
+
+            if (uri == null) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Error")
+                    .setMessage("Selecciona primero un archivo .txt")
+                    .show()
+                return@setOnClickListener
+            }
+
+            if (textoDesplazamiento.isEmpty()) {
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Error")
+                    .setMessage("Selecciona una cantidad de desplazamiento")
+                    .show()
+                return@setOnClickListener
+            }
+
+            val desplazamiento : Int = textoDesplazamiento.toInt()
+
+            // 2. Descifrar con la clase Cesar
+            try {
+                val cesar = Cesar()
+                textoDescifradoCesar = cesar.descifrarArchivo(this, uri, desplazamiento)
+                tvMensaje.text = textoDescifradoCesar
+
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error al leer el archivo: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     // ---------------------------------------------------------------
@@ -168,11 +210,13 @@ class MainActivity : AppCompatActivity() {
         // Guardar en qué pantalla está el usuario
         outState.putString("pantalla_actual", pantallaActual)
 
-        // Guardar el texto escrito en las cajas
+        // Guardar el texto escrito en las cajas y el resultado
         if (pantallaActual == "aes") {
             outState.putString("texto_contrasena", findViewById<EditText>(R.id.etContrasena)?.text.toString())
         } else if (pantallaActual == "cesar") {
             outState.putString("texto_desplazamiento", findViewById<EditText>(R.id.etDesplazamiento)?.text.toString())
+            // Guardamos el texto descifrado
+            outState.putString("texto_descifrado_cesar", textoDescifradoCesar)
         }
 
         // Guardar los archivos seleccionados (las URIs)
