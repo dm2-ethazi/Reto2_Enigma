@@ -254,6 +254,8 @@ public final class CryptoService {
                                      LongConsumer processedBytes)
             throws IOException, GeneralSecurityException {
         byte[] inputBuffer = new byte[BUFFER_SIZE];
+        // Reutiliza un buffer de salida con el máximo tamaño que puede producir un bloque.
+        byte[] outputBuffer = new byte[cipher.getOutputSize(BUFFER_SIZE)];
         long processed = 0;
         int read;
         while ((read = input.read(inputBuffer)) != -1) {
@@ -266,18 +268,18 @@ public final class CryptoService {
                 inputBuffer[0] = (byte) value;
                 read = 1;
             }
-            byte[] encrypted = cipher.update(inputBuffer, 0, read);
-            if (encrypted != null && encrypted.length > 0) {
-                output.write(encrypted);
+            int encryptedLength = cipher.update(inputBuffer, 0, read, outputBuffer, 0);
+            if (encryptedLength > 0) {
+                output.write(outputBuffer, 0, encryptedLength);
             }
             processed += read;
             processedBytes.accept(processed);
         }
 
         // GCM emite aquí los últimos bytes pendientes y su etiqueta de autenticación.
-        byte[] finalBlock = cipher.doFinal();
-        if (finalBlock != null && finalBlock.length > 0) {
-            output.write(finalBlock);
+        int finalLength = cipher.doFinal(outputBuffer, 0);
+        if (finalLength > 0) {
+            output.write(outputBuffer, 0, finalLength);
         }
     }
 
@@ -290,6 +292,8 @@ public final class CryptoService {
                                       LongConsumer processedBytes)
             throws IOException, GeneralSecurityException {
         byte[] inputBuffer = new byte[BUFFER_SIZE];
+        // Evita crear un nuevo arreglo de salida en cada llamada a Cipher.update.
+        byte[] outputBuffer = new byte[cipher.getOutputSize(BUFFER_SIZE)];
         long processed = 0;
         int read;
         while ((read = input.read(inputBuffer)) != -1) {
@@ -301,17 +305,18 @@ public final class CryptoService {
                 inputBuffer[0] = (byte) value;
                 read = 1;
             }
-            byte[] decrypted = cipher.update(inputBuffer, 0, read);
-            if (decrypted != null && decrypted.length > 0) {
-                output.write(decrypted);
+            int decryptedLength = cipher.update(inputBuffer, 0, read, outputBuffer, 0);
+            if (decryptedLength > 0) {
+                output.write(outputBuffer, 0, decryptedLength);
             }
             processed += read;
             processedBytes.accept(processed);
         }
 
         try {
+            // Algunos proveedores retienen el texto claro hasta validar GCM y lo devuelven entero aquí.
             byte[] finalBlock = cipher.doFinal();
-            if (finalBlock != null && finalBlock.length > 0) {
+            if (finalBlock.length > 0) {
                 output.write(finalBlock);
             }
         } catch (AEADBadTagException exception) {

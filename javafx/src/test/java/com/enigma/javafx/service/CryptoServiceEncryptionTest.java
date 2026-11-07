@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,6 +64,26 @@ class CryptoServiceEncryptionTest {
 
         assertEquals(content.length, processedBytes.get());
         assertEquals(CryptoService.HEADER_LENGTH + content.length + 16, encrypted.size());
+    }
+
+    /** Verifica el ciclo criptográfico cuando el contenido cae antes, en y después del límite de bloque. */
+    @Test
+    void roundTripsContentAroundChunkBoundaries() throws Exception {
+        int chunkSize = 64 * 1024;
+        char[] password = "Password12345678".toCharArray();
+
+        for (int size : new int[] {chunkSize - 1, chunkSize, chunkSize + 1,
+                2 * chunkSize, 2 * chunkSize + 1}) {
+            byte[] original = new byte[size];
+            new Random(size).nextBytes(original);
+            byte[] encrypted = encrypt(original);
+            ByteArrayOutputStream decrypted = new ByteArrayOutputStream();
+
+            cryptoService.decrypt(new ByteArrayInputStream(encrypted), decrypted, password);
+
+            assertArrayEquals(original, decrypted.toByteArray(),
+                    "El contenido debe mantenerse para un tamaño de " + size + " bytes");
+        }
     }
 
     /** Cifra los bytes indicados en memoria y devuelve el contenedor producido. */
