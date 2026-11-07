@@ -1,0 +1,144 @@
+# ============================================
+#  General
+# ============================================
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================
+#  IntelliJ IDEA / Android Studio
+# ============================================
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+!/.idea/runConfigurations.xml
+
+# ============================================
+#  Android / Gradle
+# ============================================
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Local configuration
+local.properties
+sdk.dir
+
+# Android build outputs
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+android/app/debug/
+android/.cxx/
+android/captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.keystore
+!debug.keystore
+*.jks
+
+# Android Studio / Kotlin
+android/.idea/
+android/.kotlin/
+*.hprof
+.kotlin/
+
+# Generated files
+android/app/src/main/gen/
+android/app/src/debug/gen/
+android/app/src/release/gen/
+
+# ============================================
+#  Java / JavaFX
+# ============================================
+javafx/.gradle/
+javafx/build/
+javafx/out/
+*.jar
+!javafx/**/gradle-wrapper.jar
+target/
+
+# ============================================
+#  Python (python-cli)
+# ============================================
+python-cli/__pycache__/
+python-cli/*.py[cod]
+python-cli/*$py.class
+python-cli/.venv/
+python-cli/venv/
+python-cli/env/
+python-cli/ENV/
+python-cli/.env
+python-cli/*.egg-info/
+python-cli/.pytest_cache/
+python-cli/.mypy_cache/
+python-cli/.ruff_cache/
+python-cli/build/
+python-cli/dist/
+python-cli/.ipynb_checkpoints/
+python-cli/.coverage
+python-cli/htmlcov/
+
+# ============================================
+#  Unity
+# ============================================
+[Ll]ibrary
+[Bb]ackups
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Unity generated
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+sysinfo.txt
+crashlytics-build.properties
+
+# Unity - Crash reports
+sysinfo.txt
+
+# Unity - Asset meta files (opcional, depende del equipo)
+# unity/**/*.meta
+
+# ============================================
+#  Documentación
+# ============================================
+docs/_build/
+docs/.doctrees/
+
+# ============================================
+#  Configuración de agentes / IDE extra
+# ============================================
+.vscode/
+*.code-workspace
+.fleet/
