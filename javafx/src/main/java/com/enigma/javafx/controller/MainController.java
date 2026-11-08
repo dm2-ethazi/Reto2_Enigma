@@ -18,10 +18,15 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -32,8 +37,11 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
@@ -41,6 +49,10 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.Locale;
+import java.util.prefs.Preferences;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Controlador de la pantalla principal. Coordina la selección de archivos,
@@ -54,12 +66,28 @@ import java.util.Arrays;
 public class MainController {
     /** Estado visual aplicado al campo cuando se arrastra un archivo válido. */
     private static final PseudoClass DRAG_OVER = PseudoClass.getPseudoClass("drag-over");
+    private static final int TEXT_PREVIEW_LIMIT = 256 * 1024;
+    private static final int PNG_PREVIEW_LIMIT = 8 * 1024 * 1024;
+    private static final int PNG_MAX_DIMENSION = 8192;
+    private static final long PNG_MAX_PIXELS = 16_777_216L;
+    private static final byte[] PNG_SIGNATURE = {
+            (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+    };
+    private static final Preferences PREFERENCES =
+            Preferences.userNodeForPackage(MainController.class);
+    private static final String LAST_SOURCE_DIRECTORY = "lastSourceDirectory";
+    private static final String LAST_DESTINATION_DIRECTORY = "lastDestinationDirectory";
+    private static final String LAST_ENCRYPTED_DIRECTORY = "lastEncryptedDirectory";
+    private static final String LAST_REFERENCE_DIRECTORY = "lastReferenceDirectory";
     /** Operaciones de lectura y cifrado de ficheros. */
     private final FileService fileService = new FileService();
     /** Tarea activa de cifrado, si la hay. */
     private Task<EncryptionResult> encryptionTask;
     /** Tarea activa de descifrado, si la hay. */
     private Task<DecryptionResult> decryptionTask;
+    /** Tarea activa de vista previa, si la hay. */
+    private Task<FileService.PreviewResult> previewTask;
+    private long previewGeneration;
     private volatile Language selectedLanguage = Language.SPANISH;
     private volatile LocalizedText currentStatus =
             new LocalizedText("Listo para trabajar.", new Object[0]);
@@ -169,6 +197,21 @@ public class MainController {
     @FXML
     private Label statusLabel;
 
+    @FXML
+    private ProgressIndicator progressIndicator;
+
+    @FXML
+    private ProgressBar progressBar;
+
+    @FXML
+    private Label previewMessageLabel;
+
+    @FXML
+    private TextArea textPreviewArea;
+
+    @FXML
+    private ImageView imagePreview;
+
     /**
      * Configura los controles después de que FXMLLoader los haya inyectado.
      *
@@ -192,36 +235,20 @@ public class MainController {
         languageSelector.setValue(Language.SPANISH);
         languageSelector.setOnAction(event -> changeLanguage());
         applyLanguage(Language.SPANISH);
+        setOperationProgressVisible(false);
+        decryptSourcePathField.textProperty().addListener(
+                (observable, oldValue, newValue) -> onPreviewInputChanged());
+        decryptPasswordField.textProperty().addListener(
+                (observable, oldValue, newValue) -> onPreviewInputChanged());
+        clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
 
-        // El pseudoestado permite que la hoja CSS destaque una zona de soltado válida.
-        sourcePathField.setOnDragOver(event -> {
-            boolean accepted = hasSingleRegularFile(event.getDragboard());
-            sourcePathField.pseudoClassStateChanged(DRAG_OVER, accepted);
-            if (accepted) {
-                event.acceptTransferModes(TransferMode.COPY);
-            }
-            event.consume();
-        });
-
-        // Al abandonar el campo se elimina el resaltado de arrastre.
-        sourcePathField.setOnDragExited(event -> {
-            sourcePathField.pseudoClassStateChanged(DRAG_OVER, false);
-            event.consume();
-        });
-
-        // Solo se confirma la operación cuando se ha aceptado exactamente un archivo.
-        sourcePathField.setOnDragDropped(event -> {
-            Dragboard dragboard = event.getDragboard();
-            boolean success = hasSingleRegularFile(dragboard);
-            if (success) {
-                setSourceFile(dragboard.getFiles().get(0));
-            } else {
-                setStatus("Arrastra un único archivo válido.");
-            }
-            sourcePathField.pseudoClassStateChanged(DRAG_OVER, false);
-            event.setDropCompleted(success);
-            event.consume();
-        });
+        configureFileDropTarget(sourcePathField, MainController::isSupportedSourceFile,
+                this::setSourceFile, "Arrastra un único archivo .txt o .png.");
+        configureFileDropTarget(decryptSourcePathField,
+                MainController::isSupportedEncryptedContainer, this::setEncryptedFile,
+                "Arrastra un único contenedor .txt.enc o .png.enc.");
+        configureFileDropTarget(referencePathField, MainController::isSupportedSourceFile,
+                this::setReferenceFile, "Arrastra un único archivo .txt o .png.");
     }
 
     /** Informa que la pantalla de ayuda todavía no forma parte de esta versión. */
@@ -241,7 +268,10 @@ public class MainController {
     private void chooseSourceFile() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(translate("Seleccionar archivo de origen"));
-        setInitialDirectory(chooser, sourcePathField, destinationDirectoryField);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                translate("Archivos de texto e imágenes (*.txt, *.png)"), "*.txt", "*.png"));
+        setInitialDirectory(chooser, LAST_SOURCE_DIRECTORY,
+                sourcePathField, destinationDirectoryField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(sourcePathField));
         if (selectedFile != null) {
@@ -254,11 +284,13 @@ public class MainController {
     private void chooseDestinationDirectory() {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle(translate("Seleccionar carpeta de destino"));
-        setInitialDirectory(chooser, destinationDirectoryField, sourcePathField);
+        setInitialDirectory(chooser, LAST_DESTINATION_DIRECTORY,
+                destinationDirectoryField, sourcePathField);
 
         File selectedDirectory = chooser.showDialog(getOwnerWindow(destinationDirectoryField));
         if (selectedDirectory != null) {
             destinationDirectoryField.setText(selectedDirectory.getAbsolutePath());
+            rememberDirectory(LAST_DESTINATION_DIRECTORY, selectedDirectory);
             setStatus("Carpeta de destino seleccionada.");
         }
     }
@@ -278,6 +310,7 @@ public class MainController {
         generatedPasswordField.clear();
         showGeneratedPasswordToggle.setSelected(false);
         showGeneratedPasswordToggle.setDisable(true);
+        clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
         setStatus("Selección limpiada.");
     }
 
@@ -309,11 +342,16 @@ public class MainController {
             showError(translate("Selecciona un fichero de origen y una carpeta de destino."));
             return;
         }
+        if (!isSupportedSourceFile(source.toFile())) {
+            showError(translate("Selecciona un archivo .txt o .png."));
+            return;
+        }
 
         generatedPasswordField.clear();
         showGeneratedPasswordToggle.setSelected(false);
         showGeneratedPasswordToggle.setDisable(true);
         setEncryptionControlsDisabled(true);
+        setOperationProgressVisible(true);
         // Task.call se ejecuta en el hilo de trabajo, no en el hilo de la interfaz.
         encryptionTask = new Task<>() {
             @Override
@@ -334,6 +372,7 @@ public class MainController {
         observeTaskMessages(encryptionTask);
         encryptionTask.setOnSucceeded(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             EncryptionResult result = encryptionTask.getValue();
             generatedPasswordField.setText(result.password());
             showGeneratedPasswordToggle.setDisable(false);
@@ -341,12 +380,14 @@ public class MainController {
         });
         encryptionTask.setOnFailed(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             generatedPasswordField.clear();
             Throwable failure = encryptionTask.getException();
             showError(translateFailure(failure, "No se pudo cifrar el archivo."));
         });
         encryptionTask.setOnCancelled(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             generatedPasswordField.clear();
             setStatus("Cifrado cancelado.");
         });
@@ -412,6 +453,7 @@ public class MainController {
         Path reference = selectedReference;
         char[] password = decryptPasswordField.getText().toCharArray();
         setEncryptionControlsDisabled(true);
+        setOperationProgressVisible(true);
         decryptionTask = new Task<>() {
             @Override
             protected DecryptionResult call() throws IOException, GeneralSecurityException {
@@ -435,21 +477,251 @@ public class MainController {
         observeTaskMessages(decryptionTask);
         decryptionTask.setOnSucceeded(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
+            startPreview();
         });
         decryptionTask.setOnFailed(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             Throwable failure = decryptionTask.getException();
             showError(translateFailure(failure, "No se pudo descifrar el archivo."));
         });
         decryptionTask.setOnCancelled(event -> {
             setEncryptionControlsDisabled(false);
+            setOperationProgressVisible(false);
             setStatus("Descifrado cancelado.");
         });
 
         Thread worker = new Thread(decryptionTask, "enigma-aes-decryption");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    private void onPreviewInputChanged() {
+        previewGeneration++;
+        if (previewTask != null && previewTask.isRunning()) {
+            previewTask.cancel();
+        }
+        clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
+    }
+
+    /**
+     * Descifra y autentica el contenedor seleccionado para mostrar su
+     * contenido después de completar correctamente la operación solicitada.
+     */
+    private void startPreview() {
+        if (isOperationRunning()) {
+            return;
+        }
+
+        Path encryptedFile;
+        try {
+            encryptedFile = selectedPath(decryptSourcePathField);
+        } catch (InvalidPathException exception) {
+            showPreviewMessage("Una de las rutas seleccionadas no es válida.");
+            return;
+        }
+        if (encryptedFile == null) {
+            showPreviewMessage("Selecciona el contenedor .enc e introduce su contraseña para generar la vista previa.");
+            return;
+        }
+        if (decryptPasswordField.getText() == null || decryptPasswordField.getText().isBlank()) {
+            showPreviewMessage("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
+            return;
+        }
+
+        PreviewType previewType = previewType(encryptedFile);
+        if (previewType == null) {
+            showPreviewMessage("La vista previa solo está disponible para archivos .txt.enc y .png.enc.");
+            return;
+        }
+
+        long requestGeneration = previewGeneration;
+        int previewLimit = previewType == PreviewType.TEXT
+                ? TEXT_PREVIEW_LIMIT : PNG_PREVIEW_LIMIT;
+        char[] password = decryptPasswordField.getText().toCharArray();
+        clearPreview("Validando el contenedor para preparar la vista previa...");
+        setEncryptionControlsDisabled(true);
+        setPreviewControlsDisabled(true);
+        setOperationProgressVisible(true);
+        previewTask = new Task<>() {
+            @Override
+            protected FileService.PreviewResult call() throws IOException, GeneralSecurityException {
+                try {
+                    long totalBytes = Files.size(encryptedFile);
+                    updateMessage(setTaskStatus("Validando archivo para vista previa: {0}%", 0));
+                    FileService.PreviewResult result = fileService.preview(
+                            encryptedFile, password, previewLimit, processed -> {
+                                long percentage = totalBytes == 0 ? 100
+                                        : Math.min(100, Math.round(processed * 100.0 / totalBytes));
+                                updateMessage(setTaskStatus(
+                                        "Validando archivo para vista previa: {0}%", percentage));
+                            });
+                    updateMessage(setTaskStatus("Vista previa autenticada."));
+                    return result;
+                } finally {
+                    Arrays.fill(password, '\0');
+                }
+            }
+        };
+
+        observeTaskMessages(previewTask);
+        previewTask.setOnSucceeded(event -> {
+            setEncryptionControlsDisabled(false);
+            setPreviewControlsDisabled(false);
+            setOperationProgressVisible(false);
+            if (requestGeneration == previewGeneration) {
+                displayPreview(previewTask.getValue(), previewType);
+                setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
+            } else {
+                clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
+            }
+        });
+        previewTask.setOnFailed(event -> {
+            setEncryptionControlsDisabled(false);
+            setPreviewControlsDisabled(false);
+            setOperationProgressVisible(false);
+            if (requestGeneration == previewGeneration) {
+                clearPreviewContent();
+                String message = translateFailure(
+                        previewTask.getException(), "No se pudo mostrar la vista previa.");
+                previewMessageLabel.setText(message);
+                setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
+            } else {
+                clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
+            }
+        });
+        previewTask.setOnCancelled(event -> {
+            setEncryptionControlsDisabled(false);
+            setPreviewControlsDisabled(false);
+            setOperationProgressVisible(false);
+            if (requestGeneration == previewGeneration) {
+                clearPreview("La vista previa se ha cancelado.");
+            } else {
+                clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
+            }
+        });
+
+        Thread worker = new Thread(previewTask, "enigma-aes-preview");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void displayPreview(FileService.PreviewResult result, PreviewType previewType) {
+        byte[] content = result.content();
+        try {
+            if (previewType == PreviewType.TEXT) {
+                textPreviewArea.setText(new String(content, StandardCharsets.UTF_8));
+                imagePreview.setImage(null);
+                if (result.truncated()) {
+                    setPreviewMessage(
+                            "Vista previa autenticada. Se muestran los primeros {0} bytes de {1}.",
+                            content.length, result.totalBytes());
+                } else {
+                    setPreviewMessage(
+                            "Vista previa autenticada. Contenido completo ({0} bytes).",
+                            result.totalBytes());
+                }
+                setStatus("Vista previa autenticada.");
+                return;
+            }
+
+            if (result.truncated()) {
+                clearPreviewContent();
+                setPreviewMessage(
+                        "El PNG supera el límite de vista previa de {0} MiB; no se muestra.",
+                        PNG_PREVIEW_LIMIT / (1024 * 1024));
+                setStatus("Vista previa autenticada; la imagen supera el límite de tamaño.");
+                return;
+            }
+            if (!hasSafePngDimensions(content)) {
+                clearPreviewContent();
+                showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
+                setStatus("El contenido no se puede mostrar como imagen PNG.");
+                return;
+            }
+
+            Image image = new Image(new ByteArrayInputStream(content),
+                    360, 220, true, true);
+            if (image.isError() || image.getWidth() <= 0 || image.getHeight() <= 0) {
+                clearPreviewContent();
+                showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
+                setStatus("El contenido no se puede mostrar como imagen PNG.");
+                return;
+            }
+            textPreviewArea.clear();
+            imagePreview.setImage(image);
+            setPreviewMessage("Vista previa autenticada. La imagen PNG se ha cargado.");
+            setStatus("Vista previa autenticada.");
+        } finally {
+            Arrays.fill(content, (byte) 0);
+        }
+    }
+
+    private static boolean hasSafePngDimensions(byte[] content) {
+        if (content.length < 24) {
+            return false;
+        }
+        for (int index = 0; index < PNG_SIGNATURE.length; index++) {
+            if (content[index] != PNG_SIGNATURE[index]) {
+                return false;
+            }
+        }
+        if (content[12] != 'I' || content[13] != 'H'
+                || content[14] != 'D' || content[15] != 'R') {
+            return false;
+        }
+        long width = Integer.toUnsignedLong(ByteBuffer.wrap(content, 16, 4).getInt());
+        long height = Integer.toUnsignedLong(ByteBuffer.wrap(content, 20, 4).getInt());
+        return width > 0 && height > 0
+                && width <= PNG_MAX_DIMENSION && height <= PNG_MAX_DIMENSION
+                && width * height <= PNG_MAX_PIXELS;
+    }
+
+    private static PreviewType previewType(Path encryptedFile) {
+        String fileName = encryptedFile.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (fileName.endsWith(".txt.enc")) {
+            return PreviewType.TEXT;
+        }
+        if (fileName.endsWith(".png.enc")) {
+            return PreviewType.IMAGE;
+        }
+        return null;
+    }
+
+    private void clearPreview(String spanishMessage) {
+        clearPreviewContent();
+        previewMessageLabel.setText(translate(spanishMessage));
+    }
+
+    private void clearPreviewContent() {
+        textPreviewArea.clear();
+        imagePreview.setImage(null);
+    }
+
+    private void showPreviewMessage(String spanishMessage) {
+        clearPreviewContent();
+        previewMessageLabel.setText(translate(spanishMessage));
+    }
+
+    private void setPreviewMessage(String spanishTemplate, Object... arguments) {
+        previewMessageLabel.setText(
+                LanguageService.format(selectedLanguage, spanishTemplate, arguments));
+    }
+
+    private void setPreviewControlsDisabled(boolean disabled) {
+        decryptSourcePathField.setDisable(disabled);
+        decryptPasswordField.setDisable(disabled);
+        visibleDecryptPasswordField.setDisable(disabled);
+        showPasswordToggle.setDisable(disabled);
+    }
+
+    private void setOperationProgressVisible(boolean visible) {
+        progressIndicator.setVisible(visible);
+        progressIndicator.setManaged(visible);
+        progressBar.setVisible(visible);
+        progressBar.setManaged(visible);
     }
 
     /** Abre el selector para elegir el contenedor .enc que se va a descifrar. */
@@ -459,13 +731,14 @@ public class MainController {
         chooser.setTitle(translate("Seleccionar archivo cifrado"));
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(
-                        translate("Contenedores Enigma (*.enc)"), "*.enc"));
-        setInitialDirectory(chooser, decryptSourcePathField, sourcePathField);
+                        translate("Contenedores Enigma (*.txt.enc, *.png.enc)"),
+                        "*.txt.enc", "*.png.enc"));
+        setInitialDirectory(chooser, LAST_ENCRYPTED_DIRECTORY,
+                decryptSourcePathField, sourcePathField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(decryptSourcePathField));
         if (selectedFile != null) {
-            decryptSourcePathField.setText(selectedFile.getAbsolutePath());
-            setStatus("Archivo cifrado seleccionado.");
+            setEncryptedFile(selectedFile);
         }
     }
 
@@ -474,19 +747,46 @@ public class MainController {
     private void chooseReferenceFile() {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(translate("Seleccionar archivo original"));
-        setInitialDirectory(chooser, referencePathField, sourcePathField);
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                translate("Archivos de texto e imágenes (*.txt, *.png)"), "*.txt", "*.png"));
+        setInitialDirectory(chooser, LAST_REFERENCE_DIRECTORY,
+                referencePathField, sourcePathField);
 
         File selectedFile = chooser.showOpenDialog(getOwnerWindow(referencePathField));
         if (selectedFile != null) {
-            referencePathField.setText(selectedFile.getAbsolutePath());
-            setStatus("Archivo original seleccionado.");
+            setReferenceFile(selectedFile);
         }
     }
 
     /** Actualiza la ruta de origen después de elegir o arrastrar un archivo. */
     private void setSourceFile(File file) {
+        if (!isSupportedSourceFile(file)) {
+            setStatus("Selecciona un archivo .txt o .png.");
+            return;
+        }
         sourcePathField.setText(file.getAbsolutePath());
+        rememberDirectory(LAST_SOURCE_DIRECTORY, file);
         setStatus("Archivo de entrada seleccionado.");
+    }
+
+    private void setEncryptedFile(File file) {
+        if (!isSupportedEncryptedContainer(file)) {
+            setStatus("Arrastra un único contenedor .txt.enc o .png.enc.");
+            return;
+        }
+        decryptSourcePathField.setText(file.getAbsolutePath());
+        rememberDirectory(LAST_ENCRYPTED_DIRECTORY, file);
+        setStatus("Archivo cifrado seleccionado.");
+    }
+
+    private void setReferenceFile(File file) {
+        if (!isSupportedSourceFile(file)) {
+            setStatus("Selecciona un archivo .txt o .png.");
+            return;
+        }
+        referencePathField.setText(file.getAbsolutePath());
+        rememberDirectory(LAST_REFERENCE_DIRECTORY, file);
+        setStatus("Archivo original seleccionado.");
     }
 
     /**
@@ -495,10 +795,56 @@ public class MainController {
      * @param dragboard contenido que el sistema operativo entrega al arrastrar
      * @return {@code true} si el contenido puede usarse como archivo de origen
      */
-    private boolean hasSingleRegularFile(Dragboard dragboard) {
+    private static boolean isSupportedSourceFile(File file) {
+        if (file == null || !file.isFile()) {
+            return false;
+        }
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        return name.endsWith(".txt") || name.endsWith(".png");
+    }
+
+    private static boolean isSupportedEncryptedContainer(File file) {
+        if (file == null || !file.isFile()) {
+            return false;
+        }
+        String name = file.getName().toLowerCase(Locale.ROOT);
+        return name.endsWith(".txt.enc") || name.endsWith(".png.enc");
+    }
+
+    private void configureFileDropTarget(TextField target, Predicate<File> acceptedFile,
+                                         Consumer<File> selectionConsumer,
+                                         String rejectedMessage) {
+        target.setOnDragOver(event -> {
+            boolean accepted = hasSingleAcceptedFile(event.getDragboard(), acceptedFile);
+            target.pseudoClassStateChanged(DRAG_OVER, accepted);
+            if (accepted) {
+                event.acceptTransferModes(TransferMode.COPY);
+            }
+            event.consume();
+        });
+        target.setOnDragExited(event -> {
+            target.pseudoClassStateChanged(DRAG_OVER, false);
+            event.consume();
+        });
+        target.setOnDragDropped(event -> {
+            Dragboard dragboard = event.getDragboard();
+            boolean accepted = hasSingleAcceptedFile(dragboard, acceptedFile);
+            if (accepted) {
+                selectionConsumer.accept(dragboard.getFiles().get(0));
+            } else {
+                setStatus(rejectedMessage);
+            }
+            target.pseudoClassStateChanged(DRAG_OVER, false);
+            event.setDropCompleted(accepted);
+            event.consume();
+        });
+    }
+
+    private static boolean hasSingleAcceptedFile(Dragboard dragboard,
+                                                 Predicate<File> acceptedFile) {
         return dragboard.hasFiles()
                 && dragboard.getFiles().size() == 1
-                && dragboard.getFiles().get(0).isFile();
+                && acceptedFile.test(dragboard.getFiles().get(0));
     }
 
     /**
@@ -509,6 +855,17 @@ public class MainController {
      */
     private void setInitialDirectory(FileChooser chooser, TextField... pathFields) {
         File directory = findInitialDirectory(pathFields);
+        if (directory != null) {
+            chooser.setInitialDirectory(directory);
+        }
+    }
+
+    private void setInitialDirectory(FileChooser chooser, String preferenceKey,
+                                     TextField... pathFields) {
+        File directory = findInitialDirectory(pathFields);
+        if (directory == null) {
+            directory = rememberedDirectory(preferenceKey);
+        }
         if (directory != null) {
             chooser.setInitialDirectory(directory);
         }
@@ -525,6 +882,33 @@ public class MainController {
         if (directory != null) {
             chooser.setInitialDirectory(directory);
         }
+    }
+
+    private void setInitialDirectory(DirectoryChooser chooser, String preferenceKey,
+                                     TextField... pathFields) {
+        File directory = findInitialDirectory(pathFields);
+        if (directory == null) {
+            directory = rememberedDirectory(preferenceKey);
+        }
+        if (directory != null) {
+            chooser.setInitialDirectory(directory);
+        }
+    }
+
+    private static void rememberDirectory(String preferenceKey, File selected) {
+        File directory = selected.isDirectory() ? selected : selected.getParentFile();
+        if (directory != null && directory.isDirectory()) {
+            PREFERENCES.put(preferenceKey, directory.getAbsolutePath());
+        }
+    }
+
+    private static File rememberedDirectory(String preferenceKey) {
+        String path = PREFERENCES.get(preferenceKey, null);
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        File directory = new File(path);
+        return directory.isDirectory() ? directory : null;
     }
 
     /**
@@ -595,7 +979,8 @@ public class MainController {
     /** Informa si alguna de las operaciones criptográficas sigue ejecutándose. */
     private boolean isOperationRunning() {
         return encryptionTask != null && encryptionTask.isRunning()
-                || decryptionTask != null && decryptionTask.isRunning();
+                || decryptionTask != null && decryptionTask.isRunning()
+                || previewTask != null && previewTask.isRunning();
     }
 
     /**
@@ -718,6 +1103,11 @@ public class MainController {
     }
 
     private record LocalizedText(String template, Object[] arguments) {
+    }
+
+    private enum PreviewType {
+        TEXT,
+        IMAGE
     }
 
     /**

@@ -12,7 +12,9 @@ import java.security.MessageDigest;
 import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FileServiceDecryptionTest {
     /** Servicio real usado para validar los flujos de archivos. */
@@ -95,6 +97,46 @@ class FileServiceDecryptionTest {
                 () -> fileService.decrypt(encrypted.outputPath(), destination,
                         encrypted.password().toCharArray()));
         assertDirectoryEmpty(destination);
+    }
+
+    @Test
+    void previewsOnlyTheRequestedPrefixAfterAuthenticatingTheWholeContainer() throws Exception {
+        byte[] original = "contenido de vista previa autenticado".getBytes(
+                java.nio.charset.StandardCharsets.UTF_8);
+        Path source = Files.write(temporaryDirectory.resolve("preview.txt"), original);
+        Path destination = Files.createDirectory(
+                temporaryDirectory.resolve("preview-destination"));
+        EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+
+        FileService.PreviewResult preview = fileService.preview(
+                encrypted.outputPath(), encrypted.password().toCharArray(), 12);
+
+        assertArrayEquals(java.util.Arrays.copyOf(original, 12), preview.content());
+        assertEquals(original.length, preview.totalBytes());
+        assertTrue(preview.truncated());
+        assertFalse(Files.exists(destination.resolve("preview.txt")));
+        assertThrows(IllegalArgumentException.class, () -> fileService.preview(
+                encrypted.outputPath(), encrypted.password().toCharArray(), 0));
+        assertThrows(IllegalArgumentException.class, () -> fileService.preview(
+                encrypted.outputPath(), encrypted.password().toCharArray(),
+                16 * 1024 * 1024 + 1));
+    }
+
+    @Test
+    void rejectsWrongPasswordAndTamperingInsteadOfReturningUnauthenticatedPreview()
+            throws Exception {
+        Path source = Files.writeString(
+                temporaryDirectory.resolve("preview-auth.txt"), "contenido protegido");
+        EncryptionResult encrypted = fileService.encrypt(source, temporaryDirectory);
+
+        assertThrows(java.security.GeneralSecurityException.class, () -> fileService.preview(
+                encrypted.outputPath(), "WrongPassword1234".toCharArray(), 1024));
+
+        byte[] tampered = Files.readAllBytes(encrypted.outputPath());
+        tampered[tampered.length - 1] ^= 1;
+        Files.write(encrypted.outputPath(), tampered);
+        assertThrows(java.security.GeneralSecurityException.class, () -> fileService.preview(
+                encrypted.outputPath(), encrypted.password().toCharArray(), 1024));
     }
 
     /** Conserva el contenido de un destino preexistente y rechaza contenedores inválidos. */

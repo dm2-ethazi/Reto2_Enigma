@@ -29,7 +29,7 @@ public final class LanguageService {
 
     static {
         add("RETO 02 · ENIGMA", "CHALLENGE 02 · ENIGMA", "02. ERRONKA · ENIGMA");
-        add("Gestor AES", "AES File Manager", "AES fitxategi-kudeatzailea");
+        add("Gestor Enigma AES", "Enigma AES Manager", "Enigma AES kudeatzailea");
         add("Cifra y recupera archivos localmente con AES-256-GCM.",
                 "Encrypt and recover files locally with AES-256-GCM.",
                 "Zifratu eta berreskuratu fitxategiak lokalean AES-256-GCM bidez.");
@@ -114,9 +114,9 @@ public final class LanguageService {
                 "The GCM tag validates the container. Optional comparison also checks size and SHA-256.",
                 "GCM etiketak edukiontzia baliozkotzen du. Aukerako konparazioak tamaina eta SHA-256 ere egiaztatzen ditu.");
         add("Vista previa", "Preview", "Aurrebista");
-        add("La vista previa se muestra después de descifrar un .txt o un .png.",
-                "The preview appears after decrypting a .txt or .png file.",
-                "Aurrebista .txt edo .png fitxategi bat deszifratu ondoren agertzen da.");
+        add("El contenido se mostrará aquí después de pulsar Descifrar archivo.",
+                "The contents will appear here after you click Decrypt file.",
+                "Edukia hemen agertuko da Deszifratu fitxategia sakatu ondoren.");
         add("Texto recuperado", "Recovered text", "Berreskuratutako testua");
         add("El texto descifrado aparecerá aquí.", "Decrypted text will appear here.",
                 "Deszifratutako testua hemen agertuko da.");
@@ -128,6 +128,48 @@ public final class LanguageService {
         add("La vista previa es limitada; la operación AES conserva siempre el archivo completo sin transformarlo.",
                 "The preview is limited; AES always preserves the complete file without transforming it.",
                 "Aurrebista mugatua da; AES eragiketak fitxategi osoa bere horretan gordetzen du.");
+        add("La vista previa solo está disponible para archivos .txt.enc y .png.enc.",
+                "Preview is only available for .txt.enc and .png.enc files.",
+                "Aurrebista .txt.enc eta .png.enc fitxategietarako bakarrik dago erabilgarri.");
+        add("Selecciona el contenedor .enc e introduce su contraseña para generar la vista previa.",
+                "Choose the .enc container and enter its password to generate the preview.",
+                "Aukeratu .enc edukiontzia eta sartu pasahitza aurrebista sortzeko.");
+        add("Vista previa autenticada. Se muestran los primeros {0} bytes de {1}.",
+                "Authenticated preview. Showing the first {0} bytes of {1}.",
+                "Autentifikatutako aurrebista. {1} byteetatik lehenengo {0} erakusten dira.");
+        add("Vista previa autenticada. Contenido completo ({0} bytes).",
+                "Authenticated preview. Full contents ({0} bytes).",
+                "Autentifikatutako aurrebista. Eduki osoa ({0} byte).");
+        add("El PNG supera el límite de vista previa de {0} MiB; no se muestra.",
+                "The PNG exceeds the {0} MiB preview limit and will not be displayed.",
+                "PNGak {0} MiB-ko aurrebista-muga gainditzen du; ez da erakutsiko.");
+        add("El archivo descifrado no es un PNG válido o supera el tamaño permitido.",
+                "The decrypted file is not a valid PNG or exceeds the allowed dimensions.",
+                "Deszifratutako fitxategia ez da PNG baliozkoa edo baimendutako tamaina gainditzen du.");
+        add("Vista previa autenticada. La imagen PNG se ha cargado.",
+                "Authenticated preview. The PNG image has been loaded.",
+                "Autentifikatutako aurrebista. PNG irudia kargatu da.");
+        add("Validando el contenedor para preparar la vista previa...",
+                "Authenticating the container for preview...",
+                "Edukiontzia baliozkotzen aurrebista prestatzeko...");
+        add("Validando archivo para vista previa: {0}%",
+                "Authenticating file for preview: {0}%",
+                "Fitxategia baliozkotzen aurrebistarako: {0}%");
+        add("Vista previa autenticada.", "Preview authenticated.",
+                "Aurrebista autentifikatuta.");
+        add("No se pudo mostrar la vista previa.", "The preview could not be displayed.",
+                "Ezin izan da aurrebista erakutsi.");
+        add("La vista previa se ha cancelado.", "The preview was cancelled.",
+                "Aurrebista bertan behera utzi da.");
+        add("No se pudo validar el contenedor para la vista previa.",
+                "The container could not be authenticated for preview.",
+                "Ezin izan da edukiontzia baliozkotu aurrebistarako.");
+        add("Vista previa autenticada; la imagen supera el límite de tamaño.",
+                "Preview authenticated; the image exceeds the size limit.",
+                "Aurrebista autentifikatuta; irudiak tamaina-muga gainditzen du.");
+        add("El contenido no se puede mostrar como imagen PNG.",
+                "The contents cannot be displayed as a PNG image.",
+                "Edukia ezin da PNG irudi gisa erakutsi.");
         add("Estado de la aplicación", "Application status", "Aplikazioaren egoera");
         add("Listo para trabajar.", "Ready.", "Prest.");
         add("Progreso de la operación", "Operation progress", "Eragiketaren aurrerapena");
@@ -137,6 +179,7 @@ public final class LanguageService {
 
         add("Seleccionar archivo de origen", "Choose source file",
                 "Aukeratu sarrerako fitxategia");
+        add("Escudo de Enigma Hogwarts", "Enigma Hogwarts crest", "Enigma Hogwartsen armarria");
         add("Seleccionar carpeta de destino", "Choose destination folder",
                 "Aukeratu helburuko karpeta");
         add("Seleccionar archivo cifrado", "Choose encrypted file",
@@ -145,12 +188,23 @@ public final class LanguageService {
                 "Aukeratu jatorrizko fitxategia");
         add("Contenedores Enigma (*.enc)", "Enigma containers (*.enc)",
                 "Enigma edukiontziak (*.enc)");
+        add("Contenedores Enigma (*.txt.enc, *.png.enc)",
+                "Enigma containers (*.txt.enc, *.png.enc)",
+                "Enigma edukiontziak (*.txt.enc, *.png.enc)");
+        add("Archivos de texto e imágenes (*.txt, *.png)",
+                "Text and image files (*.txt, *.png)",
+                "Testu eta irudi fitxategiak (*.txt, *.png)");
         add("Error de cifrado", "Encryption error", "Zifratze-errorea");
         add("Esta función todavía no está implementada.",
                 "This feature has not been implemented yet.",
                 "Funtzio hau oraindik ez dago inplementatuta.");
         add("Arrastra un único archivo válido.", "Drop exactly one valid file.",
                 "Arrastatu eta jaregin baliozko fitxategi bakarra.");
+        add("Arrastra un único archivo .txt o .png.", "Drop exactly one .txt or .png file.",
+                "Arrastatu eta jaregin .txt edo .png fitxategi bakarra.");
+        add("Arrastra un único contenedor .txt.enc o .png.enc.",
+                "Drop exactly one .txt.enc or .png.enc container.",
+                "Arrastatu eta jaregin .txt.enc edo .png.enc edukiontzi bakarra.");
         add("Carpeta de destino seleccionada.", "Destination folder selected.",
                 "Helburuko karpeta aukeratu da.");
         add("Selección limpiada.", "Selection cleared.", "Hautapena garbitu da.");
@@ -185,6 +239,8 @@ public final class LanguageService {
         add("Selecciona un fichero de origen y una carpeta de destino.",
                 "Choose a source file and a destination folder.",
                 "Aukeratu jatorrizko fitxategi bat eta helburuko karpeta bat.");
+        add("Selecciona un archivo .txt o .png.", "Choose a .txt or .png file.",
+                "Aukeratu .txt edo .png fitxategi bat.");
         add("Selecciona el contenedor .enc y una carpeta de destino.",
                 "Choose the .enc container and a destination folder.",
                 "Aukeratu .enc edukiontzia eta helburuko karpeta bat.");
