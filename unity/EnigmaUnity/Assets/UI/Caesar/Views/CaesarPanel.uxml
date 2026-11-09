@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Caesar/Styles/CaesarPanel.uss?fileID=7433441132597879392&amp;guid=adc133a33560e14438729d398691ab91&amp;type=3#CaesarPanel"/>
+    <ui:VisualElement name="caesarScreen" picking-mode="Ignore" class="caesar-screen">
+        <ui:VisualElement name="sceneViewport" picking-mode="Ignore" class="scene-viewport">
+            <ui:VisualElement picking-mode="Ignore">
+                <ui:Label text="ENIGMA / CÁMARA I" picking-mode="Ignore" class="scene-kicker"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="cipherPanel" class="cipher-panel">
+            <ui:VisualElement class="panel-heading">
+                <ui:VisualElement>
+                    <ui:Label text="CRIPTOGRAFÍA" class="eyebrow"/>
+                    <ui:Label text="Alfabeto César" class="panel-title"/>
+                </ui:VisualElement>
+                <ui:Label text="A → Z" class="alphabet-badge"/>
+            </ui:VisualElement>
+            <ui:Label text="Desplaza todas las letras con las flechas." class="instructions"/>
+            <ui:ScrollView name="alphabetScroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="alphabet-scroll">
+                <ui:VisualElement name="alphabetGrid" class="alphabet-grid"/>
+            </ui:ScrollView>
+            <ui:VisualElement class="panel-footer">
+                <ui:VisualElement class="alphabet-controls">
+                    <ui:Button name="previousLetter" text="‹  Anterior" tooltip="Retroceder todo el alfabeto una posición" class="step-button"/>
+                    <ui:Button name="nextLetter" text="Siguiente  ›" tooltip="Avanzar todo el alfabeto una posición" class="step-button"/>
+                </ui:VisualElement>
+                <ui:Label text="PEQUEÑA · letra original     GRANDE · letra desplazada" class="legend"/>
+                <ui:Label name="shiftFeedback" text="A–Z · Al llegar al final, el alfabeto vuelve a empezar." class="feedback"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
