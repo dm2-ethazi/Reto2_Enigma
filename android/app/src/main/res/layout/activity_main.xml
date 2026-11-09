@@ -1,68 +1,106 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Inicio: un pergamino sobre la mesa, con el título y los dos accesos. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/fondo_mesa"
     android:fillViewport="true"
-    android:background="@color/bg_app">
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingStart="14dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="18dp">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="72dp"
-            android:text="CriptoApp"
-            android:textSize="36sp"
-            android:textColor="@color/text_primary"
-            android:gravity="center"
-            android:textStyle="bold" />
+            android:background="@drawable/pergamino"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingStart="26dp"
+            android:paddingTop="64dp"
+            android:paddingEnd="26dp"
+            android:paddingBottom="54dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="40dp"
-            android:text="Herramientas de descifrado"
-            android:textSize="17sp"
-            android:textColor="@color/azul_texto"
-            android:gravity="center" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:letterSpacing="0.04"
+                android:text="CriptoApp"
+                android:textColor="@color/pergamino_tinta"
+                android:textSize="42sp"
+                android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnAesImagenes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/enigma_boton"
-            android:backgroundTint="@null"
-            android:minHeight="56dp"
-            android:padding="16dp"
-            android:text="▧   AES Imágenes   ›"
-            android:textAllCaps="false"
-            android:textColor="@color/magenta_texto"
-            android:textSize="18sp"
-            app:backgroundTint="@null"
-            android:onClick="pantalla_aes"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:letterSpacing="0.06"
+                android:text="Herramientas de descifrado"
+                android:textColor="@color/pergamino_tinta_suave"
+                android:textSize="15sp"
+                android:textStyle="italic" />
 
-        <Button
-            android:id="@+id/btnCesarTexto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/enigma_boton"
-            android:backgroundTint="@null"
-            android:minHeight="56dp"
-            android:padding="16dp"
-            android:text="▤   César Texto   ›"
-            android:textAllCaps="false"
-            android:textColor="@color/magenta_texto"
-            android:textSize="18sp"
-            app:backgroundTint="@null"
-            android:onClick="pantalla_cesar"/>
+            <View
+                android:layout_width="180dp"
+                android:layout_height="2dp"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="32dp"
+                android:background="@drawable/linea_pergamino" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnAesImagenes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/boton_pergamino"
+                android:backgroundTint="@null"
+                android:fontFamily="serif"
+                android:letterSpacing="0.02"
+                android:minHeight="68dp"
+                android:onClick="pantalla_aes"
+                android:paddingStart="22dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="22dp"
+                android:paddingBottom="17dp"
+                android:stateListAnimator="@null"
+                android:text="AES · Imágenes"
+                android:textAllCaps="false"
+                android:textColor="@color/tinta_azul"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnCesarTexto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/boton_pergamino"
+                android:backgroundTint="@null"
+                android:fontFamily="serif"
+                android:letterSpacing="0.02"
+                android:minHeight="68dp"
+                android:onClick="pantalla_cesar"
+                android:paddingStart="22dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="22dp"
+                android:paddingBottom="17dp"
+                android:stateListAnimator="@null"
+                android:text="César · Texto"
+                android:textAllCaps="false"
+                android:textColor="@color/tinta_magenta"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mesa oscura donde se apoya el pergamino. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="@color/mesa"
+                android:endColor="@color/mesa_oscura" />
+        </shape>
+    </item>
+
+    <item android:gravity="top" android:height="420dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="300dp"
+                android:centerX="0.5"
+                android:centerY="0.05"
+                android:startColor="#33F0C27A"
+                android:endColor="#00F0C27A" />
+        </shape>
+    </item>
+</layer-list>

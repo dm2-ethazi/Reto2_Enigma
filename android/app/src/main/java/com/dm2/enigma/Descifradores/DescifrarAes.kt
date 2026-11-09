@@ -45,6 +45,12 @@ class DescifrarAes {
         comprobarContrasena(contrasena)
 
         val tamano = consultar(context, origen, OpenableColumns.SIZE)?.toLongOrNull() ?: -1L
+        if (tamano > TAMANO_MAXIMO) {
+            throw ErrorDescifradoException(
+                "Archivo demasiado grande",
+                "El máximo es ${formatearBytes(TAMANO_MAXIMO)} y este archivo pesa ${formatearBytes(tamano)}."
+            )
+        }
         if (tamano in 1 until SOBRECARGA) {
             throw ErrorDescifradoException(
                 "Archivo no válido",
@@ -194,6 +200,9 @@ class DescifrarAes {
         /** Cabecera + etiqueta: lo que no es texto cifrado. */
         private const val SOBRECARGA = TAMANO_CABECERA + TAMANO_ETIQUETA
 
+        /** Tamaño máximo del contenedor que la app acepta descifrar. */
+        const val TAMANO_MAXIMO = 100L * 1024 * 1024
+
         private const val SUFIJO_TEMPORAL = ".part"
         private const val SUFIJO_CACHE = ".tmp"
         private const val CARPETA_TEMPORAL = "descifrado"
@@ -205,7 +214,7 @@ class DescifrarAes {
 
         fun formatearBytes(bytes: Long): String {
             if (bytes < 1024) return "$bytes B"
-            val unidades = arrayOf("KB", "MB", "GB")
+            val unidades = arrayOf("KiB", "MiB", "GiB")
             var valor = bytes.toDouble()
             var indice = -1
             while (valor >= 1024 && indice < unidades.lastIndex) {
