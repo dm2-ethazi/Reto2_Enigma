@@ -1,0 +1,27 @@
+<resources>
+    <!-- Tabletas: el pergamino deja más mesa a los lados y el contenido crece -->
+    <dimen name="mesa_margen_h">46dp</dimen>
+    <dimen name="mesa_margen_sup">18dp</dimen>
+    <dimen name="mesa_margen_inf">30dp</dimen>
+
+    <dimen name="pergamino_padding_h">46dp</dimen>
+    <dimen name="pergamino_padding_v">74dp</dimen>
+
+    <dimen name="texto_titulo_app">54sp</dimen>
+    <dimen name="texto_subtitulo_app">18sp</dimen>
+    <dimen name="texto_titulo_pantalla">28sp</dimen>
+    <dimen name="texto_etiqueta">14sp</dimen>
+    <dimen name="texto_boton">24sp</dimen>
+    <dimen name="texto_boton_secundario">18sp</dimen>
+    <dimen name="texto_campo">18sp</dimen>
+    <dimen name="texto_mensaje">19sp</dimen>
+
+    <dimen name="alto_imagen">340dp</dimen>
+    <dimen name="alto_mensaje">380dp</dimen>
+    <dimen name="alto_boton">74dp</dimen>
+    <dimen name="alto_boton_secundario">66dp</dimen>
+    <dimen name="alto_campo">62dp</dimen>
+    <dimen name="espacio_seccion">28dp</dimen>
+    <dimen name="espacio_linea">26dp</dimen>
+    <dimen name="ancho_minimo_contenido">520dp</dimen>
+</resources>

@@ -1,0 +1,29 @@
+<resources>
+    <!-- En horizontal hay menos alto: rollos finos y controles compactos -->
+    <dimen name="mesa_margen_h">12dp</dimen>
+    <dimen name="mesa_margen_sup">4dp</dimen>
+    <dimen name="mesa_margen_inf">8dp</dimen>
+
+    <dimen name="pergamino_padding_h">22dp</dimen>
+    <dimen name="pergamino_padding_v">34dp</dimen>
+
+    <dimen name="texto_titulo_app">30sp</dimen>
+    <dimen name="texto_subtitulo_app">13sp</dimen>
+    <dimen name="texto_titulo_pantalla">19sp</dimen>
+    <dimen name="texto_etiqueta">11sp</dimen>
+    <dimen name="texto_boton">17sp</dimen>
+    <dimen name="texto_boton_secundario">14sp</dimen>
+    <dimen name="texto_campo">14sp</dimen>
+    <dimen name="texto_mensaje">15sp</dimen>
+
+    <dimen name="alto_imagen">150dp</dimen>
+    <dimen name="alto_mensaje">150dp</dimen>
+    <dimen name="alto_boton">46dp</dimen>
+    <dimen name="alto_boton_secundario">46dp</dimen>
+    <dimen name="alto_campo">46dp</dimen>
+    <dimen name="ancho_boton_volver">46dp</dimen>
+    <dimen name="alto_boton_volver">38dp</dimen>
+    <dimen name="espacio_seccion">14dp</dimen>
+    <dimen name="espacio_linea">12dp</dimen>
+    <dimen name="ancho_minimo_contenido">420dp</dimen>
+</resources>

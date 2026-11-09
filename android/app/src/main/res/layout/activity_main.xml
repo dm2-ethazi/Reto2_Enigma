@@ -1,106 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Inicio: un pergamino sobre la mesa, con el título y los dos accesos. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/fondo_mesa"
-    android:fillViewport="true"
-    android:fitsSystemWindows="true">
+    android:orientation="vertical"
+    android:paddingStart="@dimen/mesa_margen_h"
+    android:paddingTop="@dimen/mesa_margen_sup"
+    android:paddingEnd="@dimen/mesa_margen_h"
+    android:paddingBottom="@dimen/mesa_margen_inf">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/pergamino"
+        android:gravity="center_horizontal|center_vertical"
         android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="18dp">
+        android:paddingStart="@dimen/pergamino_padding_h"
+        android:paddingTop="@dimen/pergamino_padding_v"
+        android:paddingEnd="@dimen/pergamino_padding_h"
+        android:paddingBottom="@dimen/pergamino_padding_v">
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/pergamino"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:paddingStart="26dp"
-            android:paddingTop="64dp"
-            android:paddingEnd="26dp"
-            android:paddingBottom="54dp">
+            android:fontFamily="serif"
+            android:gravity="center"
+            android:letterSpacing="0.04"
+            android:text="CriptoApp"
+            android:textColor="@color/pergamino_tinta"
+            android:textSize="@dimen/texto_titulo_app"
+            android:textStyle="bold" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="serif"
-                android:gravity="center"
-                android:letterSpacing="0.04"
-                android:text="CriptoApp"
-                android:textColor="@color/pergamino_tinta"
-                android:textSize="42sp"
-                android:textStyle="bold" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="serif"
+            android:gravity="center"
+            android:letterSpacing="0.06"
+            android:text="Herramientas de descifrado"
+            android:textColor="@color/pergamino_tinta_suave"
+            android:textSize="@dimen/texto_subtitulo_app"
+            android:textStyle="italic" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:fontFamily="serif"
-                android:gravity="center"
-                android:letterSpacing="0.06"
-                android:text="Herramientas de descifrado"
-                android:textColor="@color/pergamino_tinta_suave"
-                android:textSize="15sp"
-                android:textStyle="italic" />
+        <View
+            android:layout_width="180dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/linea_pergamino" />
 
-            <View
-                android:layout_width="180dp"
-                android:layout_height="2dp"
-                android:layout_marginTop="28dp"
-                android:layout_marginBottom="32dp"
-                android:background="@drawable/linea_pergamino" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnAesImagenes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/boton_pergamino"
+            android:backgroundTint="@null"
+            android:fontFamily="serif"
+            android:letterSpacing="0.02"
+            android:minHeight="@dimen/alto_boton"
+            android:paddingStart="22dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="15dp"
+            android:stateListAnimator="@null"
+            android:text="AES · Imágenes"
+            android:textAllCaps="false"
+            android:textColor="@color/tinta_azul"
+            android:textSize="@dimen/texto_boton"
+            android:textStyle="bold" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnAesImagenes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/boton_pergamino"
-                android:backgroundTint="@null"
-                android:fontFamily="serif"
-                android:letterSpacing="0.02"
-                android:minHeight="68dp"
-                android:onClick="pantalla_aes"
-                android:paddingStart="22dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="22dp"
-                android:paddingBottom="17dp"
-                android:stateListAnimator="@null"
-                android:text="AES · Imágenes"
-                android:textAllCaps="false"
-                android:textColor="@color/tinta_azul"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnCesarTexto"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:background="@drawable/boton_pergamino"
-                android:backgroundTint="@null"
-                android:fontFamily="serif"
-                android:letterSpacing="0.02"
-                android:minHeight="68dp"
-                android:onClick="pantalla_cesar"
-                android:paddingStart="22dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="22dp"
-                android:paddingBottom="17dp"
-                android:stateListAnimator="@null"
-                android:text="César · Texto"
-                android:textAllCaps="false"
-                android:textColor="@color/tinta_magenta"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnCesarTexto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/boton_pergamino"
+            android:backgroundTint="@null"
+            android:fontFamily="serif"
+            android:letterSpacing="0.02"
+            android:minHeight="@dimen/alto_boton"
+            android:paddingStart="22dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="15dp"
+            android:stateListAnimator="@null"
+            android:text="César · Texto"
+            android:textAllCaps="false"
+            android:textColor="@color/tinta_magenta"
+            android:textSize="@dimen/texto_boton"
+            android:textStyle="bold" />
     </LinearLayout>
-</ScrollView>
+</LinearLayout>

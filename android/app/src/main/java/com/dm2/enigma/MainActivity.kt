@@ -18,9 +18,13 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.dm2.enigma.Descifradores.DescifrarAes
 import com.dm2.enigma.Descifradores.DescifrarCesar
 import java.io.File
@@ -81,6 +85,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Coloca el layout y aparta su contenido de la barra de estado, la cámara frontal,
+     * los botones de navegación y el teclado: el pergamino nunca queda debajo.
+     */
+    private fun ponerLayout(@LayoutRes layout: Int) {
+        setContentView(layout)
+        val raiz = findViewById<View>(R.id.main) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(raiz) { vista, insets ->
+            val barras = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            val teclado = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            vista.updatePadding(
+                left = barras.left,
+                top = barras.top,
+                right = barras.right,
+                bottom = maxOf(barras.bottom, teclado)
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(raiz)
+    }
+
     private fun Bundle.uri(clave: String): Uri? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelable(clave, Uri::class.java)
@@ -96,7 +123,7 @@ class MainActivity : AppCompatActivity() {
     fun mostrarMenu() {
         pantallaActual = "menu"
         limpiarEstado()
-        setContentView(R.layout.activity_main)
+        ponerLayout(R.layout.activity_main)
         findViewById<Button>(R.id.btnAesImagenes).setOnClickListener { mostrarAes() }
         findViewById<Button>(R.id.btnCesarTexto).setOnClickListener { mostrarCesar() }
     }
@@ -146,7 +173,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun mostrarAes(textoRecuperado: String = "") {
         pantallaActual = "aes"
-        setContentView(R.layout.activity_aes)
+        ponerLayout(R.layout.activity_aes)
 
         findViewById<Button>(R.id.btnVolver).setOnClickListener { mostrarMenu() }
         findViewById<Button>(R.id.btnImportarEnc).setOnClickListener { abrirSelectorEnc() }
@@ -203,7 +230,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun mostrarCesar(textoRecuperado: String = "") {
         pantallaActual = "cesar"
-        setContentView(R.layout.activity_cesar)
+        ponerLayout(R.layout.activity_cesar)
 
         findViewById<Button>(R.id.btnVolver).setOnClickListener { mostrarMenu() }
         findViewById<Button>(R.id.btnImportarTxt).setOnClickListener { abrirSelectorTxt() }
