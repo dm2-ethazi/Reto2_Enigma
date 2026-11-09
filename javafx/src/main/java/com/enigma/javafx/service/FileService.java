@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.LongConsumer;
 
 /**
@@ -15,6 +16,7 @@ import java.util.function.LongConsumer;
  * solo si la operación termina correctamente.
  */
 public class FileService {
+    private static final int MAX_PREVIEW_BUFFER_BYTES = 16 * 1024 * 1024;
     /** Servicio criptográfico usado para crear la contraseña y cifrar el contenido. */
     private final CryptoService cryptoService;
 
@@ -126,12 +128,7 @@ public class FileService {
         if (password == null || password.length == 0) {
             throw new IOException("Introduce la contraseña del contenedor.");
         }
-        if (!encryptedFile.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".enc")) {
-            throw new IOException("Selecciona un contenedor cifrado con extensión .enc.");
-        }
-        if (Files.size(encryptedFile) < CryptoService.HEADER_LENGTH + 16L) {
-            throw new IOException("El contenedor R2AE está incompleto.");
-        }
+        validateEncryptedContainer(encryptedFile);
 
         Path outputFile = outputDirectory.resolve(decryptedFileName(encryptedFile));
         if (Files.exists(outputFile)) {
@@ -157,6 +154,71 @@ public class FileService {
             if (!published) {
                 Files.deleteIfExists(temporaryFile);
             }
+        }
+    }
+
+    /**
+     * Descifra un contenedor para previsualizar una cantidad limitada de bytes.
+     * El flujo completo se procesa para validar la autenticidad GCM, pero solo
+     * se conserva en memoria el prefijo indicado.
+     *
+     * @param source contenedor cifrado
+     * @param password contraseña usada para cifrar el contenedor
+     * @param maximumBytes máximo de bytes que se conservarán para la vista previa
+     * @return bytes conservados, tamaño descifrado total e indicador de truncamiento
+     * @throws IOException si el contenedor no es válido o no se puede leer
+     * @throws GeneralSecurityException si la contraseña o la autenticidad no son válidas
+     * @throws IllegalArgumentException si el límite o el callback no son válidos
+     */
+    public PreviewResult preview(Path source, char[] password, int maximumBytes)
+            throws IOException, GeneralSecurityException {
+        return preview(source, password, maximumBytes, ignored -> { });
+    }
+
+    /**
+     * Descifra y autentica completamente un contenedor sin escribir el archivo resultante.
+     *
+     * @param source contenedor cifrado
+     * @param password contraseña usada para cifrar el contenedor
+     * @param maximumBytes máximo de bytes que se conservarán para la vista previa
+     * @param processedBytes callback con el total de bytes cifrados procesados
+     * @return bytes conservados, tamaño descifrado total e indicador de truncamiento
+     * @throws IOException si el contenedor no es válido o no se puede leer
+     * @throws GeneralSecurityException si la contraseña o la autenticidad no son válidas
+     * @throws IllegalArgumentException si el límite o el callback no son válidos
+     */
+    public PreviewResult preview(Path source, char[] password, int maximumBytes,
+                                 LongConsumer processedBytes)
+            throws IOException, GeneralSecurityException {
+        Path encryptedFile = validateSource(source);
+        if (password == null || password.length == 0) {
+            throw new IOException("Introduce la contraseña del contenedor.");
+        }
+        if (maximumBytes <= 0 || maximumBytes > MAX_PREVIEW_BUFFER_BYTES) {
+            throw new IllegalArgumentException(
+                    "El límite de la vista previa debe estar entre 1 y 16777216 bytes.");
+        }
+        if (processedBytes == null) {
+            throw new IllegalArgumentException("El callback de progreso es obligatorio.");
+        }
+        validateEncryptedContainer(encryptedFile);
+
+        PreviewOutputStream previewOutput = new PreviewOutputStream(maximumBytes);
+        try (InputStream input = Files.newInputStream(encryptedFile)) {
+            cryptoService.decrypt(input, previewOutput, password, processedBytes);
+            return previewOutput.toResult();
+        } finally {
+            previewOutput.clear();
+        }
+    }
+
+    private static void validateEncryptedContainer(Path encryptedFile) throws IOException {
+        String fileName = encryptedFile.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+        if (!fileName.endsWith(".enc")) {
+            throw new IOException("Selecciona un contenedor cifrado con extensión .enc.");
+        }
+        if (Files.size(encryptedFile) < CryptoService.HEADER_LENGTH + 16L) {
+            throw new IOException("El contenedor R2AE está incompleto.");
         }
     }
 
@@ -213,5 +275,51 @@ public class FileService {
 
     /** Ruta del archivo publicado tras validar correctamente la autenticidad del contenedor. */
     public record DecryptionResult(Path outputPath) {
+    }
+
+    /** Prefijo autenticado disponible para la vista previa de un archivo. */
+    public record PreviewResult(byte[] content, long totalBytes, boolean truncated) {
+    }
+
+    private static final class PreviewOutputStream extends OutputStream {
+        private final byte[] previewBuffer;
+        private int storedBytes;
+        private long totalBytes;
+
+        private PreviewOutputStream(int maximumBytes) {
+            previewBuffer = new byte[maximumBytes];
+        }
+
+        @Override
+        public void write(int value) {
+            if (storedBytes < previewBuffer.length) {
+                previewBuffer[storedBytes++] = (byte) value;
+            }
+            totalBytes++;
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) {
+            Objects.checkFromIndexSize(offset, length, bytes.length);
+            int bytesToStore = Math.min(length, previewBuffer.length - storedBytes);
+            if (bytesToStore > 0) {
+                System.arraycopy(bytes, offset, previewBuffer, storedBytes, bytesToStore);
+                storedBytes += bytesToStore;
+            }
+            totalBytes += length;
+        }
+
+        private PreviewResult toResult() {
+            return new PreviewResult(
+                    Arrays.copyOf(previewBuffer, storedBytes),
+                    totalBytes,
+                    totalBytes > previewBuffer.length);
+        }
+
+        private void clear() {
+            Arrays.fill(previewBuffer, (byte) 0);
+            storedBytes = 0;
+            totalBytes = 0;
+        }
     }
 }

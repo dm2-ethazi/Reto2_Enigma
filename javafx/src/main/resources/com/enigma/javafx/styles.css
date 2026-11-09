@@ -18,6 +18,10 @@
     -fx-background-color: #1E234F;
 }
 
+.app-crest {
+    -fx-opacity: 0.96;
+}
+
 .eyebrow {
     -fx-text-fill: #A5B4FC;
     -fx-font-size: 11px;

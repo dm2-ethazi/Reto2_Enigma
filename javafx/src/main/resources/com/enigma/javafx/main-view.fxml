@@ -13,6 +13,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -21,7 +22,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <!--
-  Vista principal declarativa de Gestor AES.
+  Vista principal declarativa de Gestor Enigma AES.
   MainApplication carga este archivo y FXMLLoader conecta los fx:id con MainController.
   Las clases CSS aquí declaradas se definen en styles.css.
 -->
@@ -33,9 +34,15 @@
     <top>
         <!-- Cabecera persistente: identidad de la aplicación y acciones informativas. -->
         <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="app-header">
+            <ImageView accessibleText="Escudo de Enigma Hogwarts" fitHeight="68.0" fitWidth="68.0"
+                       preserveRatio="true" smooth="true" styleClass="app-crest">
+                <image>
+                    <Image url="@enigma-hogwarts-crest.png"/>
+                </image>
+            </ImageView>
             <VBox spacing="4.0">
                 <Label styleClass="eyebrow" text="RETO 02 · ENIGMA"/>
-                <Label styleClass="app-title" text="Gestor AES"/>
+                <Label styleClass="app-title" text="Gestor Enigma AES"/>
                 <Label styleClass="subtitle" text="Cifra y recupera archivos localmente con AES-256-GCM."/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
@@ -204,7 +211,7 @@
                         <VBox spacing="4.0">
                             <Label styleClass="section-title" text="Vista previa"/>
                             <Label fx:id="previewMessageLabel" styleClass="section-description"
-                                   text="La vista previa se muestra después de descifrar un .txt o un .png."/>
+                                   text="El contenido se mostrará aquí después de pulsar Descifrar archivo."/>
                         </VBox>
                         <Separator/>
                         <HBox spacing="14.0">
@@ -244,9 +251,9 @@
             <!-- Indicadores visuales reservados para mostrar el avance de las operaciones. -->
             <ProgressIndicator fx:id="progressIndicator" accessibleText="Progreso de la operación"
                                maxHeight="22.0" maxWidth="22.0" minHeight="22.0" minWidth="22.0"
-                               progress="-1.0"/>
+                               managed="false" progress="-1.0" visible="false"/>
             <ProgressBar fx:id="progressBar" accessibleText="Porcentaje de progreso"
-                         prefWidth="150.0" progress="-1.0"/>
+                         managed="false" prefWidth="150.0" progress="-1.0" visible="false"/>
             <Label styleClass="status-note" text="Procesamiento local · R2AE v1"/>
         </HBox>
     </bottom>

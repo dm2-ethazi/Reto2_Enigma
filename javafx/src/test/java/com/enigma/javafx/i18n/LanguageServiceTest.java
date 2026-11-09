@@ -42,6 +42,12 @@ class LanguageServiceTest {
                 LanguageService.format(BASQUE, "Archivo cifrado: {0}", path));
         assertEquals("Encrypting file: 75%",
                 LanguageService.format(ENGLISH, "Cifrando archivo: {0}%", 75));
+        assertEquals("Authenticated preview. Full contents (42 bytes).",
+                LanguageService.format(ENGLISH,
+                        "Vista previa autenticada. Contenido completo ({0} bytes).", 42));
+        assertEquals("Autentifikatutako aurrebista. Eduki osoa (42 byte).",
+                LanguageService.format(BASQUE,
+                        "Vista previa autenticada. Contenido completo ({0} bytes).", 42));
     }
 
     @Test

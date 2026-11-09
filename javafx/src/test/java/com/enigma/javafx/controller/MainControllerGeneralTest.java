@@ -8,6 +8,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.stage.DirectoryChooser;
@@ -36,6 +39,8 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
         ToggleButton decryptVisibilityToggle = field(controller, "showPasswordToggle");
         assertTrue(maskedPassword.isVisible());
         assertFalse(visiblePassword.isVisible());
+        assertFalse(field(controller, "progressIndicator", ProgressIndicator.class).isVisible());
+        assertFalse(field(controller, "progressBar", ProgressBar.class).isVisible());
         assertTrue(visibilityToggle.isDisable());
         var showGeneratedIcon = field(controller, "showGeneratedPasswordIcon",
                 org.kordamp.ikonli.javafx.FontIcon.class);
@@ -68,6 +73,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
             field(controller, "referencePathField", TextField.class).setText("reference.txt");
             field(controller, "decryptPasswordField", PasswordField.class).setText("decrypt");
             field(controller, "visibleDecryptPasswordField", TextField.class).setText("decrypt");
+            field(controller, "textPreviewArea", TextArea.class).setText("contenido previsualizado");
             invoke(controller, "clearSelection");
             return null;
         });
@@ -80,6 +86,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
         assertFalse(showDecryptIcon.isVisible());
         assertTrue(hideDecryptIcon.isVisible());
         assertEquals("", field(controller, "decryptSourcePathField", TextField.class).getText());
+        assertEquals("", field(controller, "textPreviewArea", TextArea.class).getText());
         assertTrue(visibilityToggle.isDisable());
         assertEquals("Selección limpiada.", field(controller, "statusLabel", Label.class).getText());
     }
@@ -98,6 +105,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
             PasswordField password = field(controller, "decryptPasswordField", PasswordField.class);
             Button encryptButton = field(controller, "encryptButton", Button.class);
             Label status = field(controller, "statusLabel", Label.class);
+            Label previewMessage = field(controller, "previewMessageLabel", Label.class);
             ToggleButton passwordToggle = field(controller, "showPasswordToggle", ToggleButton.class);
             ToggleButton generatedPasswordToggle =
                     field(controller, "showGeneratedPasswordToggle", ToggleButton.class);
@@ -109,6 +117,8 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
             languageSelector.getSelectionModel().select(1);
             languageSelector.fireEvent(new ActionEvent());
             assertEquals("Encrypt file", encryptButton.getText());
+            assertEquals("The contents will appear here after you click Decrypt file.",
+                    previewMessage.getText());
             assertEquals("Language",
                     field(controller, "languageLabel", Label.class).getText());
             assertEquals("Ready.", status.getText());
@@ -123,12 +133,16 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
             languageSelector.getSelectionModel().select(2);
             languageSelector.fireEvent(new ActionEvent());
             assertEquals("Zifratu fitxategia", encryptButton.getText());
+            assertEquals("Edukia hemen agertuko da Deszifratu fitxategia sakatu ondoren.",
+                    previewMessage.getText());
             assertEquals("Prest.", status.getText());
             assertEquals("Arrastatu fitxategi bat hona edo aukeratu", sourcePath.getPromptText());
 
             languageSelector.getSelectionModel().select(0);
             languageSelector.fireEvent(new ActionEvent());
             assertEquals("Cifrar archivo", encryptButton.getText());
+            assertEquals("El contenido se mostrará aquí después de pulsar Descifrar archivo.",
+                    previewMessage.getText());
             assertEquals("Listo para trabajar.", status.getText());
             assertEquals(file.toString(), sourcePath.getText());
             assertEquals(file.getParent().toString(), destinationPath.getText());
@@ -203,6 +217,31 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
     }
 
     @Test
+    void acceptsOnlyTextAndPngFilesAsEncryptionSources() throws Exception {
+        Path directory = Files.createTempDirectory("enigma-source-types");
+        Path text = Files.createFile(directory.resolve("message.TXT"));
+        Path image = Files.createFile(directory.resolve("image.png"));
+        Path unsupported = Files.createFile(directory.resolve("archive.pdf"));
+        Path encryptedText = Files.createFile(directory.resolve("message.txt.enc"));
+        Path encryptedImage = Files.createFile(directory.resolve("image.png.enc"));
+
+        assertTrue((boolean) invoke(new MainController(), "isSupportedSourceFile",
+                new Class<?>[] {File.class}, text.toFile()));
+        assertTrue((boolean) invoke(new MainController(), "isSupportedSourceFile",
+                new Class<?>[] {File.class}, image.toFile()));
+        assertFalse((boolean) invoke(new MainController(), "isSupportedSourceFile",
+                new Class<?>[] {File.class}, unsupported.toFile()));
+        assertFalse((boolean) invoke(new MainController(), "isSupportedSourceFile",
+                new Class<?>[] {File.class}, directory.toFile()));
+        assertTrue((boolean) invoke(new MainController(), "isSupportedEncryptedContainer",
+                new Class<?>[] {File.class}, encryptedText.toFile()));
+        assertTrue((boolean) invoke(new MainController(), "isSupportedEncryptedContainer",
+                new Class<?>[] {File.class}, encryptedImage.toFile()));
+        assertFalse((boolean) invoke(new MainController(), "isSupportedEncryptedContainer",
+                new Class<?>[] {File.class}, unsupported.toFile()));
+    }
+
+    @Test
     void convertsOptionalPathsAndReportsMissingOwnerWindow() throws Exception {
         MainController controller = loadController();
         TextField pathField = field(controller, "sourcePathField");
@@ -258,6 +297,21 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
             return null;
         });
         assertControlsDisabled(controller, false);
+    }
+
+    @Test
+    void showsProgressIndicatorsOnlyWhileAnOperationIsRunning() throws Exception {
+        MainController controller = loadController();
+
+        runOnFxThread(() -> {
+            invoke(controller, "setOperationProgressVisible", new Class<?>[] {boolean.class}, true);
+            assertTrue(field(controller, "progressIndicator", ProgressIndicator.class).isVisible());
+            assertTrue(field(controller, "progressBar", ProgressBar.class).isVisible());
+            invoke(controller, "setOperationProgressVisible", new Class<?>[] {boolean.class}, false);
+            assertFalse(field(controller, "progressIndicator", ProgressIndicator.class).isVisible());
+            assertFalse(field(controller, "progressBar", ProgressBar.class).isVisible());
+            return null;
+        });
     }
 
     @Test
@@ -336,7 +390,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
         runOnFxThread(() -> {
             Stage stage = new Stage();
             new MainApplication().start(stage);
-            assertEquals("Enigma", stage.getTitle());
+            assertEquals("Gestor Enigma AES", stage.getTitle());
             assertNotNull(stage.getScene());
             assertEquals(1, stage.getScene().getStylesheets().size());
             stage.close();

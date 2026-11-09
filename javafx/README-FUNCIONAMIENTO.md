@@ -1,4 +1,4 @@
-# Gestor AES: funcionamiento de la aplicación
+# Gestor Enigma AES: funcionamiento de la aplicación
 
 Este documento explica el flujo actual de la aplicación JavaFX: selección de
 archivos, cifrado, descifrado, verificación y tratamiento de errores. No
@@ -31,7 +31,7 @@ comprobar que ambos archivos contienen exactamente los mismos bytes.
 
 ## Recorrido de cifrado
 
-1. En la pantalla principal se selecciona un archivo y una carpeta de destino.
+1. En la pantalla principal se selecciona un archivo `.txt` o `.png` y una carpeta de destino. El selector recuerda la última carpeta usada para cada tipo de selección, incluso al cerrar y volver a abrir la aplicación.
 2. `MainController` valida los campos básicos e inicia el trabajo en una tarea
    de JavaFX ejecutada en segundo plano.
 3. `FileService` comprueba que el origen sea un archivo normal y legible, y
@@ -46,6 +46,10 @@ comprobar que ambos archivos contienen exactamente los mismos bytes.
    debe guardarse de forma segura, separada del contenedor.
 7. Si algo falla antes de publicar el resultado, `FileService` intenta borrar
    el temporal.
+
+Los tres campos de ruta de archivo aceptan arrastrar y soltar un único fichero:
+el origen y la referencia admiten `.txt` o `.png`; el contenedor para descifrar
+admite `.txt.enc` o `.png.enc`. Los selectores aplican los mismos filtros.
 
 ## Recorrido de descifrado y verificación
 
@@ -67,6 +71,35 @@ La autenticación GCM comprueba la integridad del contenedor y que se utilizó l
 clave correcta; no identifica por sí misma a la persona que lo creó. La
 comparación opcional con una referencia añade una comprobación de igualdad con
 ese archivo, pero tampoco constituye una firma de identidad.
+
+## Vista previa después de descifrar
+
+La vista previa no se genera al seleccionar un contenedor ni al escribir la
+contraseña. Para mostrar su contenido, selecciona el contenedor `.enc`, indica
+la contraseña y pulsa **Descifrar archivo**. Primero se completa correctamente
+el descifrado y se guarda el archivo; después, si es un `.txt.enc` o `.png.enc`,
+se prepara la vista previa. Si se cambia la ruta o la contraseña, el contenido
+anterior se borra para evitar mostrar datos que ya no corresponden a la
+selección actual.
+
+La vista previa se descifra y autentica en segundo plano. Solo después de que
+AES-GCM valide el contenedor se enseña el resultado; si la contraseña no es
+correcta o el archivo está alterado, el panel queda vacío y muestra el error.
+No se crea un archivo de salida ni un temporal `.part` para esta operación.
+
+- Para `.txt.enc` se muestran como máximo los primeros 256 KiB, interpretados
+  como UTF-8. Si el archivo es mayor, la etiqueta indica que el texto está
+  truncado y muestra los tamaños.
+- Para `.png.enc` se conserva como máximo 8 MiB y se comprueba la firma y las
+  dimensiones antes de cargar la imagen. Si excede el límite o no es un PNG
+  válido, se informa sin mostrar una imagen parcial.
+- Otros formatos se pueden descifrar normalmente, pero no tienen vista previa
+  en esta versión.
+
+El límite de memoria controla los bytes que el servicio de archivos conserva
+para la interfaz. Como se explica en la sección de chunks, el proveedor
+criptográfico puede mantener adicionalmente texto claro hasta comprobar la
+etiqueta GCM; la vista previa no cambia esa característica del descifrado AES.
 
 ## Qué son los chunks y cómo se procesan
 
