@@ -85,7 +85,7 @@
 .instructions {
     color: var(--muted);
     white-space: normal;
-    font-size: 14px;
+    font-size: 18px;
     margin-top: 10px;
     margin-bottom: 16px;
 }
@@ -99,6 +99,40 @@
     flex-direction: row;
     flex-wrap: wrap;
     padding-right: 5px;
+}
+
+.alphabet-scroll .unity-scroller--vertical {
+    width: 12px;
+    margin-left: 4px;
+}
+
+.alphabet-scroll .unity-scroller__slider {
+    min-width: 12px;
+    margin: 0;
+}
+
+.alphabet-scroll .unity-scroller__low-button,
+.alphabet-scroll .unity-scroller__high-button {
+    display: none;
+}
+
+.alphabet-scroll .unity-base-slider__tracker {
+    width: 4px;
+    background-color: #26363e;
+    border-radius: 4px;
+}
+
+.alphabet-scroll .unity-base-slider__dragger {
+    width: 8px;
+    min-width: 8px;
+    max-width: 8px;
+    background-color: #ad986b;
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.alphabet-scroll .unity-base-slider__dragger-border {
+    display: none;
 }
 
 .letter-slot {
@@ -116,13 +150,13 @@
 }
 
 .letter-display {
-    height: 40px;
+    height: 50px;
     align-items: center;
     justify-content: center;
 }
 
 .shifted-letter {
-    font-size: 30px;
+    font-size: 40px;
     -unity-font-style: bold;
     color: #f5e4b8;
     margin: 0;
@@ -133,7 +167,7 @@
     position: absolute;
     top: 0;
     left: 1px;
-    font-size: 12px;
+    font-size: 16px;
     color: #b8c4c7;
 }
 
@@ -196,7 +230,7 @@
 
 .compact .cipher-panel {
     width: 34%;
-    padding: 10px;
+    padding: 8px;
 }
 
 .compact .scene-viewport {
@@ -212,21 +246,23 @@
 }
 
 .compact .instructions {
-    font-size: 12px;
+    font-size: 14px;
     margin-top: 5px;
     margin-bottom: 6px;
 }
 
 .compact .letter-slot {
+    width: 33.3333%;
     padding: 3px;
 }
 
 .compact .letter-display {
-    height: 34px;
+    height: 60px;
+    padding-top: 12px;
 }
 
 .compact .shifted-letter {
-    font-size: 28px;
+    font-size: 40px;
 }
 
 .compact .letter-card {
@@ -248,7 +284,7 @@
 }
 
 .compact .original-letter {
-    font-size: 10px;
+    font-size: 16px;
 }
 
 .compact .alphabet-badge {
@@ -256,9 +292,13 @@
 }
 
 .compact .step-button {
-    font-size: 13px;
+    font-size: 16px;
+}
+
+.compact .alphabet-controls {
+    margin-bottom: 6px;
 }
 
 .narrow .letter-slot {
-    width: 33.3333%;
+    width: 50%;
 }
