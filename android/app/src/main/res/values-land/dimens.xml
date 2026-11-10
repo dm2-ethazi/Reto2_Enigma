@@ -1,11 +1,11 @@
 <resources>
-    <!-- En horizontal hay menos alto: rollos finos y controles compactos -->
-    <dimen name="mesa_margen_h">12dp</dimen>
-    <dimen name="mesa_margen_sup">4dp</dimen>
-    <dimen name="mesa_margen_inf">8dp</dimen>
+    <!-- En horizontal: pergamino ancho, con un hueco de mesa a los lados para que los rollos no se corten -->
+    <dimen name="mesa_margen_h">30dp</dimen>
+    <dimen name="mesa_margen_sup">8dp</dimen>
+    <dimen name="mesa_margen_inf">10dp</dimen>
 
-    <dimen name="pergamino_padding_h">22dp</dimen>
-    <dimen name="pergamino_padding_v">34dp</dimen>
+    <dimen name="pergamino_padding_h">48dp</dimen>
+    <dimen name="pergamino_padding_v">26dp</dimen>
 
     <dimen name="texto_titulo_app">30sp</dimen>
     <dimen name="texto_subtitulo_app">13sp</dimen>

@@ -92,16 +92,21 @@ class MainActivity : AppCompatActivity() {
     private fun ponerLayout(@LayoutRes layout: Int) {
         setContentView(layout)
         val raiz = findViewById<View>(R.id.main) ?: return
+        // Márgenes de mesa definidos en el layout: las barras del sistema se SUMAN a ellos.
+        val margenIzq = raiz.paddingLeft
+        val margenSup = raiz.paddingTop
+        val margenDer = raiz.paddingRight
+        val margenInf = raiz.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(raiz) { vista, insets ->
             val barras = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
             val teclado = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
             vista.updatePadding(
-                left = barras.left,
-                top = barras.top,
-                right = barras.right,
-                bottom = maxOf(barras.bottom, teclado)
+                left = margenIzq + barras.left,
+                top = margenSup + barras.top,
+                right = margenDer + barras.right,
+                bottom = margenInf + maxOf(barras.bottom, teclado)
             )
             insets
         }

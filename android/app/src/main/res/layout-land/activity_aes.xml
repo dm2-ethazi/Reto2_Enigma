@@ -81,7 +81,7 @@
             <ScrollView
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_weight="1.3"
                 android:fillViewport="true"
                 android:scrollbars="vertical">
 
@@ -199,10 +199,10 @@
                             android:fontFamily="serif"
                             android:letterSpacing="0.03"
                             android:minHeight="@dimen/alto_campo"
-                            android:minWidth="140dp"
-                            android:paddingStart="16dp"
+                            android:minWidth="0dp"
+                            android:paddingStart="14dp"
                             android:paddingTop="8dp"
-                            android:paddingEnd="16dp"
+                            android:paddingEnd="14dp"
                             android:paddingBottom="11dp"
                             android:stateListAnimator="@null"
                             android:text="Descifrar"

@@ -5,7 +5,7 @@
     <dimen name="mesa_margen_inf">12dp</dimen>
 
     <!-- Interior del pergamino: separación del contenido respecto al borde -->
-    <dimen name="pergamino_padding_h">30dp</dimen>
+    <dimen name="pergamino_padding_h">40dp</dimen>
     <dimen name="pergamino_padding_v">56dp</dimen>
 
     <!-- Tipografías -->

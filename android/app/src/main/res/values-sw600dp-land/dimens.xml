@@ -1,9 +1,9 @@
 <resources>
-    <dimen name="mesa_margen_h">24dp</dimen>
+    <dimen name="mesa_margen_h">56dp</dimen>
     <dimen name="mesa_margen_sup">8dp</dimen>
     <dimen name="mesa_margen_inf">14dp</dimen>
 
-    <dimen name="pergamino_padding_h">32dp</dimen>
+    <dimen name="pergamino_padding_h">56dp</dimen>
     <dimen name="pergamino_padding_v">44dp</dimen>
 
     <dimen name="texto_titulo_app">40sp</dimen>
