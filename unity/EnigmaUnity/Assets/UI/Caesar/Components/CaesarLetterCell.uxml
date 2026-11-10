@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="../Styles/CaesarPanel.uss" />
+    <ui:VisualElement class="letter-card">
+        <ui:VisualElement class="letter-display">
+            <ui:Label name="originalLetter" class="original-letter" />
+            <ui:Label name="shiftedLetter" class="shifted-letter" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
