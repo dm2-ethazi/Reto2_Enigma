@@ -41,22 +41,36 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _EdgeStrength: 0.987
+    - _Crevice: 0
+    - _Dampness: 0
+    - _EdgeStrength: 0.18
+    - _Emission: 4
     - _EnableExternalAlpha: 0
-    - _Exposure: 1.051
-    - _Fabric: 1
-    - _HemFade: 1
+    - _Exposure: 1.5
+    - _Fabric: 0.7
+    - _FlameThreshold: 0.95
+    - _Flicker: 0.2
+    - _HemFade: 0.54
+    - _Metallic: 0
     - _Opacity: 0.98
-    - _Relief: 2
-    - _ShadowLift: 1
-    - _Sheen: 1
-    - _Wind: 0
-    - _WindSpeed: 3
+    - _Relief: 0.32
+    - _Roughness: 1
+    - _ShadowDepth: 0.55
+    - _ShadowLift: 0.33
+    - _Sheen: 0.035
+    - _SpectralSpeed: 0.35
+    - _SpectralStrength: 0.7
+    - _TatterStrength: 0.7
+    - _Variation: 0.2
+    - _Wind: 0.011
+    - _WindSpeed: 0.85
     - _ZWrite: 0
     m_Colors:
-    - _ClothTint: {r: 0.5377358, g: 0.5199804, b: 0.5199804, a: 1}
+    - _ClothTint: {r: 0.72, g: 0.77, b: 0.83, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EdgeTint: {r: 0, g: 0, b: 0, a: 1}
+    - _EdgeTint: {r: 0.24, g: 0.32, b: 0.38, a: 1}
+    - _EmissionColor: {r: 1, g: 0.62, b: 0.24, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _Tint: {r: 0.22068381, g: 1, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

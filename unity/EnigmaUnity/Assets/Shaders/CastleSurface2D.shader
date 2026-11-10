@@ -2,9 +2,20 @@ Shader "Enigma/Castle Surface 2D"
 {
     Properties
     {
+        [Header(Surface Plane)]
+        _FloorPlane("Horizontal floor treatment", Range(0,1)) = 0
+        _WallFoot("Wall base shading", Range(0,1)) = 0
+        _FloorTopY("Wall and floor junction (world Y)", Float) = -3.5
+        _FloorDepth("Visible floor depth", Float) = 2.5
+        _ContactShadow("Junction shadow", Range(0,1)) = 0.6
         _Tint("Surface tint", Color) = (1,1,1,1)
         _Exposure("Surface brightness", Range(0.5,1.8)) = 1
         _Relief("Stone and carved detail", Range(0,4)) = 0.6
+        _Volume("Broad surface volume", Range(0,1)) = 0.65
+        _DepthScale("Broad relief radius (texels)", Range(2,16)) = 8
+        _Cavity("Local cavity shadows", Range(0,0.7)) = 0.3
+        _Bevel("Sprite edge bevel", Range(0,1)) = 0.35
+        _VolumeLight("Volume light direction", Vector) = (-0.45,0.65,0.8,0)
         _Crevice("Crevice depth", Range(0,0.5)) = 0.12
         _Variation("Surface weathering", Range(0,0.2)) = 0.04
         _Dampness("Damp stone sheen", Range(0,1)) = 0
@@ -74,6 +85,9 @@ Shader "Enigma/Castle Surface 2D"
                 float _Exposure, _Relief, _Crevice, _Variation;
                 float _Dampness, _Roughness, _Metallic, _Emission;
                 float _FlameThreshold, _Flicker;
+                float _Volume, _DepthScale, _Cavity, _Bevel;
+                half4 _VolumeLight;
+                float _FloorPlane, _WallFoot, _FloorTopY, _FloorDepth, _ContactShadow;
             CBUFFER_END
             #include "CastleSurfaceCommon.hlsl"
 
@@ -92,10 +106,12 @@ Shader "Enigma/Castle Surface 2D"
 
             half4 LitFragment(Varyings input) : SV_Target
             {
-                half4 tex=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,input.uv);
-                half3 normalTS=CastleNormal(input.uv);
+                float2 surfaceUV = CastleSurfaceUV(input.uv);
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, surfaceUV);
+                CastleSurface surface = CastleEvaluateSurface(surfaceUV, tex);
+                half3 normalTS = surface.normalTS;
                 half4 main=tex*input.color;
-                main.rgb=CastleAlbedo(main.rgb,input.worldXY,normalTS);
+                main.rgb=CastleAlbedo(main.rgb, input.worldXY, surface);
                 SurfaceData2D surfaceData;
                 InputData2D inputData;
                 half4 mask=SAMPLE_TEXTURE2D(_MaskTex,sampler_MaskTex,input.uv);
@@ -152,6 +168,9 @@ Shader "Enigma/Castle Surface 2D"
                 float _Exposure, _Relief, _Crevice, _Variation;
                 float _Dampness, _Roughness, _Metallic, _Emission;
                 float _FlameThreshold, _Flicker;
+                float _Volume, _DepthScale, _Cavity, _Bevel;
+                half4 _VolumeLight;
+                float _FloorPlane, _WallFoot, _FloorTopY, _FloorDepth, _ContactShadow;
             CBUFFER_END
             #include "CastleSurfaceCommon.hlsl"
 
@@ -170,8 +189,9 @@ Shader "Enigma/Castle Surface 2D"
 
             half4 NormalsRenderingFragment(Varyings input) : SV_Target
             {
-                half4 main=input.color*SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,input.uv);
-                return NormalsRenderingShared(main,CastleNormal(input.uv),input.tangentWS,input.bitangentWS,input.normalWS);
+                float2 surfaceUV = CastleSurfaceUV(input.uv);
+                half4 main = input.color * SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, surfaceUV);
+                return NormalsRenderingShared(main,CastleNormal(surfaceUV),input.tangentWS,input.bitangentWS,input.normalWS);
             }
             ENDHLSL
         }
@@ -213,6 +233,9 @@ Shader "Enigma/Castle Surface 2D"
                 float _Exposure, _Relief, _Crevice, _Variation;
                 float _Dampness, _Roughness, _Metallic, _Emission;
                 float _FlameThreshold, _Flicker;
+                float _Volume, _DepthScale, _Cavity, _Bevel;
+                half4 _VolumeLight;
+                float _FloorPlane, _WallFoot, _FloorTopY, _FloorDepth, _ContactShadow;
             CBUFFER_END
             #include "CastleSurfaceCommon.hlsl"
 
@@ -230,9 +253,11 @@ Shader "Enigma/Castle Surface 2D"
 
             half4 UnlitFragment(Varyings input) : SV_Target
             {
-                half4 tex=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,input.uv);
+                float2 surfaceUV = CastleSurfaceUV(input.uv);
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, surfaceUV);
                 half4 main=tex*input.color;
-                main.rgb=CastleAlbedo(main.rgb,input.worldXY,CastleNormal(input.uv));
+                CastleSurface surface = CastleEvaluateSurface(surfaceUV, tex);
+                main.rgb = CastleAlbedo(main.rgb, input.worldXY, surface);
                 main.rgb+=CastleEmission(tex,input.worldXY)*input.color.rgb;
                 return main;
             }

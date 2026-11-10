@@ -14,6 +14,10 @@ Shader "Enigma/Dementor Cloth 2D"
         _Wind("Cloth drift", Range(0,0.012)) = 0.003
         _WindSpeed("Wind speed", Range(0,3)) = 1.65
         _HemFade("Tattered hem transparency", Range(0,1)) = 0.20
+        _ShadowDepth("Black cloth depth", Range(0,1)) = 0.55
+        _TatterStrength("Smoky tattered edges", Range(0,1)) = 0.45
+        _SpectralStrength("Spectral edge variation", Range(0,1)) = 0.65
+        _SpectralSpeed("Spectral flow speed", Range(0,2)) = 0.35
         [PerRendererData] _MainTex("Diffuse", 2D) = "white" {}
         _MaskTex("Mask", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
@@ -74,6 +78,8 @@ Shader "Enigma/Dementor Cloth 2D"
                 float _Opacity, _Fabric, _Relief, _Sheen;
                 float _EdgeStrength, _Wind, _WindSpeed, _HemFade;
                 float _Exposure, _ShadowLift;
+                float _SpectralStrength, _SpectralSpeed;
+                float _ShadowDepth, _TatterStrength;
             CBUFFER_END
             #include "DementorClothCommon.hlsl"
 
@@ -109,13 +115,7 @@ Shader "Enigma/Dementor Cloth 2D"
                 half3 key=normalize(half3(-0.45,0.6,1));
                 half sheen=pow(saturate(dot(normalTS,normalize(key+half3(0,0,1)))),12);
                 result.rgb+=main.rgb*sheen*_Sheen*0.22;
-                float2 d=_MainTex_TexelSize.xy*2;
-                half nearby=min(
-                    SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,uv+float2(d.x,0)).a,
-                    SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,uv+float2(0,d.y)).a);
-                half edge=saturate(tex.a-nearby)*tex.a;
-                half foldRim=pow(saturate(1-normalTS.z),1.5);
-                result.rgb+=_EdgeTint.rgb*_EdgeStrength*(edge*0.75+foldRim*0.25);
+                result.rgb += ClothSpectralEdge(uv, tex.a, normalTS);
                 result.a=main.a;
                 return result;
             }
@@ -159,6 +159,8 @@ Shader "Enigma/Dementor Cloth 2D"
                 float _Opacity, _Fabric, _Relief, _Sheen;
                 float _EdgeStrength, _Wind, _WindSpeed, _HemFade;
                 float _Exposure, _ShadowLift;
+                float _SpectralStrength, _SpectralSpeed;
+                float _ShadowDepth, _TatterStrength;
             CBUFFER_END
             #include "DementorClothCommon.hlsl"
 
@@ -222,6 +224,8 @@ Shader "Enigma/Dementor Cloth 2D"
                 float _Opacity, _Fabric, _Relief, _Sheen;
                 float _EdgeStrength, _Wind, _WindSpeed, _HemFade;
                 float _Exposure, _ShadowLift;
+                float _SpectralStrength, _SpectralSpeed;
+                float _ShadowDepth, _TatterStrength;
             CBUFFER_END
             #include "DementorClothCommon.hlsl"
 
@@ -241,7 +245,9 @@ Shader "Enigma/Dementor Cloth 2D"
                 float2 uv=ClothUV(input.uv);
                 half4 tex=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,uv);
                 half4 main=tex*input.color;
-                main.rgb=ClothColor(main.rgb,uv,ClothNormal(uv,tex));
+                half3 normalTS = ClothNormal(uv, tex);
+                main.rgb = ClothColor(main.rgb, uv, normalTS);
+                main.rgb += ClothSpectralEdge(uv, tex.a, normalTS);
                 main.a=ClothAlpha(main.a,uv);
                 return main;
             }

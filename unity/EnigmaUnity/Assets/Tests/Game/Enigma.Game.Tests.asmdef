@@ -1,0 +1,6 @@
+{
+    "name": "Enigma.Game.Tests",
+    "references": ["Enigma.Game", "Enigma.Physics"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}

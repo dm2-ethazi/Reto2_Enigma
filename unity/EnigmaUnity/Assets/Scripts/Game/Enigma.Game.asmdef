@@ -1,0 +1,5 @@
+{
+    "name": "Enigma.Game",
+    "rootNamespace": "Enigma.Game",
+    "references": ["Enigma.Physics"]
+}
