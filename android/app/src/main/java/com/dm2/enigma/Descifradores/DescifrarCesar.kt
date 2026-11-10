@@ -24,7 +24,8 @@ class DescifrarCesar {
                 var nuevo = codigo - num
 
                 if (nuevo < 32) {
-                    nuevo = 126
+                    val resta = 32 - nuevo
+                    nuevo = 127 - resta
                 }
 
                 sb.append(nuevo.toChar())
