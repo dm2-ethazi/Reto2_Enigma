@@ -7,13 +7,16 @@ from pathlib import Path
 from ..encrypt import vigenere
 from ..errors import OperationCancelled
 from ..utils.dialogs import TEXT_FILES, choose_path
-from ..utils.files import input_text_file, new_text_destination, temporary_parts, write_text
+from ..utils.files import (
+    input_text_file,
+    new_text_destination,
+    temporary_parts,
+    write_text,
+)
 from .loading import loading
 from .navigation import choose
 
-SCREENS = (
-    ("Cifrar Vigenère", ()),
-)
+SCREENS = (("Cifrar Vigenère", ()),)
 
 
 def run_encryption(*, interactive: bool = False) -> None:

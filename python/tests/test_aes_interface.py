@@ -50,14 +50,19 @@ class AesInterfaceTests(unittest.TestCase):
         self.assertIn("Cifrando AES...", output)
         self.assertIn(f"Archivo cifrado: {self.destination}", output)
         self.assertIn("Hasta pronto.", output)
-        self.assertEqual(picker.call_args_list[1].kwargs["default"], Path(f"{self.source}.enc"))
+        self.assertEqual(
+            picker.call_args_list[1].kwargs["default"], Path(f"{self.source}.enc")
+        )
         self.assertEqual(picker.call_args_list[1].kwargs["extension"], ".enc")
         self.assertTrue(picker.call_args_list[1].kwargs["save"])
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_cancel_either_picker_does_not_start_encryption(self):
         for paths in ([OperationCancelled()], [self.source, OperationCancelled()]):
-            with self.subTest(paths=len(paths)), patch.object(aes, "encrypt_file") as encrypt:
+            with (
+                self.subTest(paths=len(paths)),
+                patch.object(aes, "encrypt_file") as encrypt,
+            ):
                 output, _ = self.run_app(["2", "3"], paths)
                 encrypt.assert_not_called()
                 self.assertIn("Operación cancelada", output)

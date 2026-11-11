@@ -45,10 +45,14 @@ def _derive_key(password: str, salt: bytes) -> bytes:
     ).derive(password.encode("ascii"))
 
 
-def encrypt_file(source: str | Path, destination: str | Path | None = None) -> EncryptionResult:
+def encrypt_file(
+    source: str | Path, destination: str | Path | None = None
+) -> EncryptionResult:
     """Cifra cualquier archivo a partes de hasta 20 MiB y publica un único .enc."""
     source = input_file(source)
-    destination = new_destination(destination if destination is not None else f"{source}.enc")
+    destination = new_destination(
+        destination if destination is not None else f"{source}.enc"
+    )
     with source.open("rb") as original:
         if os.fstat(original.fileno()).st_size > MAX_PLAINTEXT_SIZE:
             raise ValidationError("El archivo supera el límite de un mensaje AES-GCM.")
@@ -56,7 +60,9 @@ def encrypt_file(source: str | Path, destination: str | Path | None = None) -> E
         salt = secrets.token_bytes(SALT_SIZE)
         nonce = secrets.token_bytes(NONCE_SIZE)
         header = HEADER.pack(MAGIC, VERSION, ITERATIONS, salt, nonce)
-        encryptor = Cipher(algorithms.AES(_derive_key(password, salt)), modes.GCM(nonce)).encryptor()
+        encryptor = Cipher(
+            algorithms.AES(_derive_key(password, salt)), modes.GCM(nonce)
+        ).encryptor()
         encryptor.authenticate_additional_data(header)
         with staged_output(destination) as output:
             output.write(header)
@@ -64,7 +70,9 @@ def encrypt_file(source: str | Path, destination: str | Path | None = None) -> E
             while block := original.read(CHUNK_SIZE):
                 total += len(block)
                 if total > MAX_PLAINTEXT_SIZE:
-                    raise ValidationError("El archivo supera el límite de un mensaje AES-GCM.")
+                    raise ValidationError(
+                        "El archivo supera el límite de un mensaje AES-GCM."
+                    )
                 output.write(encryptor.update(block))
             output.write(encryptor.finalize())
             output.write(encryptor.tag)

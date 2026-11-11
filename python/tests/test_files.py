@@ -22,7 +22,9 @@ class FileTests(unittest.TestCase):
         encrypted = self.folder / "cifrado.txt"
         files.write_text(encrypted, vigenere.encrypt(files.read_text(source), "B"))
         self.assertEqual(source.read_bytes(), data)
-        self.assertEqual(encrypted.read_bytes(), "\ufeffIpmb ñ\r\ntjhvjfouf\n".encode("utf-8"))
+        self.assertEqual(
+            encrypted.read_bytes(), "\ufeffIpmb ñ\r\ntjhvjfouf\n".encode("utf-8")
+        )
 
     def test_rejects_invalid_files(self):
         with self.assertRaises(FileNotFoundError):
@@ -78,13 +80,17 @@ class FileTests(unittest.TestCase):
 
                     def inspect_parts(parts, destination):
                         observed.extend(part.stat().st_size for part in parts)
-                        self.assertEqual(b"".join(part.read_bytes() for part in parts), data)
+                        self.assertEqual(
+                            b"".join(part.read_bytes() for part in parts), data
+                        )
                         self.assertFalse(destination.exists())
                         publish(parts, destination)
 
                     with (
                         patch.object(files, "MAX_PART_SIZE", 8),
-                        patch.object(files, "_publish_parts", side_effect=inspect_parts),
+                        patch.object(
+                            files, "_publish_parts", side_effect=inspect_parts
+                        ),
                     ):
                         with files.staged_output(target) as output:
                             for offset in range(0, size, write_size):
@@ -100,7 +106,10 @@ class FileTests(unittest.TestCase):
     def test_utf8_characters_can_cross_part_boundaries(self):
         target = self.folder / "unicode.txt"
         text = "\ufeffá😀ñ\r\n" * 5
-        with patch.object(files, "MAX_PART_SIZE", 8), patch.object(files, "COPY_CHUNK_SIZE", 2):
+        with (
+            patch.object(files, "MAX_PART_SIZE", 8),
+            patch.object(files, "COPY_CHUNK_SIZE", 2),
+        ):
             files.write_text(target, text)
         self.assertEqual(target.read_bytes(), text.encode("utf-8"))
         self.assertEqual(list(self.folder.glob("*.part")), [])
@@ -167,10 +176,14 @@ class FileTests(unittest.TestCase):
                         self.assertLessEqual(part.stat().st_size, files.MAX_PART_SIZE)
                 output.write(b"tail")
                 expected_hash.update(b"tail")
-        self.assertEqual(observed, [20 * 1024 * 1024, 20 * 1024 * 1024, 1024 * 1024 + 4])
+        self.assertEqual(
+            observed, [20 * 1024 * 1024, 20 * 1024 * 1024, 1024 * 1024 + 4]
+        )
         self.assertEqual(target.stat().st_size, 41 * 1024 * 1024 + 4)
         with target.open("rb") as stream:
-            self.assertEqual(hashlib.file_digest(stream, "sha256").digest(), expected_hash.digest())
+            self.assertEqual(
+                hashlib.file_digest(stream, "sha256").digest(), expected_hash.digest()
+            )
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_exact_20_mib_boundary_and_next_byte(self):

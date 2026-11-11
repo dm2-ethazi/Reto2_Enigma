@@ -40,14 +40,23 @@ class VigenereTests(unittest.TestCase):
         for block_size in (1, 2, 3, 7, 16, 31):
             for key in ("LEMON", "a", "MiClave", "Z" * 64):
                 with self.subTest(block_size=block_size, key=key):
-                    blocks = (data[offset : offset + block_size] for offset in range(0, len(data), block_size))
+                    blocks = (
+                        data[offset : offset + block_size]
+                        for offset in range(0, len(data), block_size)
+                    )
                     encrypted = b"".join(vigenere.encrypt_chunks(blocks, key))
-                    self.assertEqual(encrypted, vigenere.encrypt(text, key).encode("utf-8"))
+                    self.assertEqual(
+                        encrypted, vigenere.encrypt(text, key).encode("utf-8")
+                    )
 
     def test_stream_rejects_invalid_and_truncated_utf8(self):
         for data in (b"Hola\xff", b"Hola\xc3", b"Hola\xf0\x9f\x98"):
             with self.subTest(data=data), self.assertRaises(UnicodeDecodeError):
-                list(vigenere.encrypt_chunks((bytes([character]) for character in data), "KEY"))
+                list(
+                    vigenere.encrypt_chunks(
+                        (bytes([character]) for character in data), "KEY"
+                    )
+                )
 
     def test_stream_validates_key_even_when_empty(self):
         self.assertEqual(list(vigenere.encrypt_chunks([], "KEY")), [])
@@ -73,5 +82,7 @@ class VigenereTests(unittest.TestCase):
                 patch.object(Path, "open", return_value=BoundedReader(data)),
             ):
                 result = b"".join(vigenere.encrypt_file(source, "LEMON"))
-            self.assertEqual(result, vigenere.encrypt(data.decode("utf-8"), "LEMON").encode("utf-8"))
+            self.assertEqual(
+                result, vigenere.encrypt(data.decode("utf-8"), "LEMON").encode("utf-8")
+            )
         self.assertGreater(len(reads), 1)

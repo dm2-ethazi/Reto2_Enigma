@@ -26,7 +26,9 @@ def new_destination(path: str | Path) -> Path:
     destination = Path(path).expanduser().absolute()
     # lexists también detecta enlaces simbólicos cuyo destino ya no existe.
     if os.path.lexists(destination):
-        raise FileExistsError(f"El destino ya existe: {destination}. Elige otro nombre.")
+        raise FileExistsError(
+            f"El destino ya existe: {destination}. Elige otro nombre."
+        )
     if not destination.parent.is_dir():
         raise ValidationError("La carpeta de destino no existe.")
     return destination
@@ -186,4 +188,3 @@ def write_text(path: str | Path, text: str) -> Path:
         for offset in range(0, len(text), COPY_CHUNK_SIZE):
             stream.write(text[offset : offset + COPY_CHUNK_SIZE].encode("utf-8"))
     return Path(path).expanduser()
-

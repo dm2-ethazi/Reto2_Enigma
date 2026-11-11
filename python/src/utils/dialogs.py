@@ -10,7 +10,9 @@ TEXT_FILES = (("Archivos de texto", "*.txt"),) + ALL_FILES
 ENCRYPTED_FILES = (("Archivos cifrados", "*.enc"),) + ALL_FILES
 
 
-def _prompt_path(title: str, *, save: bool, default: Path | None, extension: str) -> Path:
+def _prompt_path(
+    title: str, *, save: bool, default: Path | None, extension: str
+) -> Path:
     print(f"{title}: selector de archivos en la terminal (sin escritorio disponible).")
     hint = f" [{default}]" if save and default is not None else ""
     value = input(f"Ruta{hint} (vacío para cancelar): ").strip()
@@ -49,7 +51,9 @@ def choose_path(
             "parent": root,
             "title": title,
             "filetypes": filetypes,
-            "initialdir": str(default.absolute().parent if default is not None else Path.cwd()),
+            "initialdir": str(
+                default.absolute().parent if default is not None else Path.cwd()
+            ),
         }
         if save:
             if default is not None:

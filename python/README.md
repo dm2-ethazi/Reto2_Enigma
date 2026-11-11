@@ -160,6 +160,18 @@ Los algoritmos residen en `src/encrypt/` y las utilidades de archivos en
 
 ## Pruebas
 
+La integración continua ejecuta Ruff y pytest con una cobertura mínima del 80 %.
+Desde la raíz del repositorio, instala uv y ejecuta la misma validación:
+
+```powershell
+python -m pip install uv
+python scripts/quality.py ci
+```
+
+Las dependencias de CI están fijadas en `pyproject.toml` y `uv.lock`.
+Consulta [la guía de CI](../docs/GUIA_CI_CD.md) para activar los hooks locales
+y localizar los informes de pruebas y cobertura.
+
 Desde esta carpeta, después de instalar `requirements.txt` en el entorno:
 
 ```powershell

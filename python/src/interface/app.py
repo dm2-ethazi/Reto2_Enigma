@@ -22,7 +22,9 @@ def run():
             except OperationCancelled:
                 print("Operación cancelada. Volviendo al menú.")
             except (EnigmaError, OSError, UnicodeError, MemoryError) as error:
-                message = str(error) or "Recursos insuficientes para completar la operación."
+                message = (
+                    str(error) or "Recursos insuficientes para completar la operación."
+                )
                 print(f"Error: {message}")
                 input("\nPulsa Enter para volver al menú principal.")
     except (EOFError, KeyboardInterrupt):

@@ -56,7 +56,8 @@ def main():
         return
     branch = (
         args.branch
-        or subprocess.check_output(
+        if args.branch is not None
+        else subprocess.check_output(
             ["git", "branch", "--show-current"], cwd=ROOT, text=True
         ).strip()
     )

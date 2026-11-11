@@ -11,8 +11,12 @@ FILE_BLOCK_SIZE = 1024 * 1024
 
 
 def validate_key(key: str) -> str:
-    if not 1 <= len(key) <= 64 or not all("A" <= c <= "Z" or "a" <= c <= "z" for c in key):
-        raise ValidationError("La clave Vigenère debe contener entre 1 y 64 letras A-Z.")
+    if not 1 <= len(key) <= 64 or not all(
+        "A" <= c <= "Z" or "a" <= c <= "z" for c in key
+    ):
+        raise ValidationError(
+            "La clave Vigenère debe contener entre 1 y 64 letras A-Z."
+        )
     return key.upper()
 
 

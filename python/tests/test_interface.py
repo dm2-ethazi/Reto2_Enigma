@@ -26,9 +26,17 @@ class InterfaceTests(unittest.TestCase):
         return output.getvalue()
 
     def test_console_encrypt(self):
-        output = self.run_app([
-            "1", "1", "ATTACKATDAWN", "LEMON", "1", "", "3",
-        ])
+        output = self.run_app(
+            [
+                "1",
+                "1",
+                "ATTACKATDAWN",
+                "LEMON",
+                "1",
+                "",
+                "3",
+            ]
+        )
         self.assertIn("Resultado:\nLXFOPVEFRNHR", output)
         self.assertLess(output.index("Cifrando..."), output.index("Resultado:\n"))
         self.assertNotIn("Descifrar Vigenère", output)
@@ -38,8 +46,12 @@ class InterfaceTests(unittest.TestCase):
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
             source.write_bytes("\ufeffHola ñ\r\n".encode("utf-8"))
-            output = self.run_app(["1", "2", "B", "3", "", "3"], paths=[source, destination])
-            self.assertEqual(destination.read_bytes(), "\ufeffIpmb ñ\r\n".encode("utf-8"))
+            output = self.run_app(
+                ["1", "2", "B", "3", "", "3"], paths=[source, destination]
+            )
+            self.assertEqual(
+                destination.read_bytes(), "\ufeffIpmb ñ\r\n".encode("utf-8")
+            )
             self.assertIn("Resultado guardado", output)
             self.assertIn("Resultado:\n", output)
 
@@ -56,19 +68,33 @@ class InterfaceTests(unittest.TestCase):
 
             def observe_parts(path, key):
                 for block in encrypt_file(path, key):
-                    observations.append([part.stat().st_size for part in Path(folder).glob("*.part")])
+                    observations.append(
+                        [part.stat().st_size for part in Path(folder).glob("*.part")]
+                    )
                     self.assertFalse(destination.exists())
                     yield block
 
             with (
                 patch.object(screen.vigenere, "FILE_BLOCK_SIZE", 5),
                 patch.object(files, "MAX_PART_SIZE", 8),
-                patch.object(screen.vigenere, "encrypt_file", side_effect=observe_parts),
-                patch.object(screen.vigenere, "encrypt", side_effect=AssertionError("Cifrado en memoria")),
-                patch.object(Path, "read_bytes", side_effect=AssertionError("Lectura completa")),
-                patch.object(Path, "read_text", side_effect=AssertionError("Lectura completa")),
+                patch.object(
+                    screen.vigenere, "encrypt_file", side_effect=observe_parts
+                ),
+                patch.object(
+                    screen.vigenere,
+                    "encrypt",
+                    side_effect=AssertionError("Cifrado en memoria"),
+                ),
+                patch.object(
+                    Path, "read_bytes", side_effect=AssertionError("Lectura completa")
+                ),
+                patch.object(
+                    Path, "read_text", side_effect=AssertionError("Lectura completa")
+                ),
             ):
-                output = self.run_app(["1", "2", "LEMON", "2", "", "3"], paths=[source, destination])
+                output = self.run_app(
+                    ["1", "2", "LEMON", "2", "", "3"], paths=[source, destination]
+                )
             self.assertEqual(destination.read_bytes(), expected)
             self.assertEqual(source.read_bytes(), data)
             self.assertTrue(any(sizes and sum(sizes) > 0 for sizes in observations))
@@ -95,8 +121,13 @@ class InterfaceTests(unittest.TestCase):
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
             source.write_bytes(b"ATTACKATDAWN\xc3")
-            with patch.object(files, "MAX_PART_SIZE", 8), patch.object(screen.vigenere, "FILE_BLOCK_SIZE", 3):
-                output = self.run_app(["1", "2", "LEMON", "2", "", "3"], paths=[source, destination])
+            with (
+                patch.object(files, "MAX_PART_SIZE", 8),
+                patch.object(screen.vigenere, "FILE_BLOCK_SIZE", 3),
+            ):
+                output = self.run_app(
+                    ["1", "2", "LEMON", "2", "", "3"], paths=[source, destination]
+                )
             self.assertIn("Error:", output)
             self.assertFalse(destination.exists())
             self.assertEqual(list(Path(folder).glob("*.part")), [])
@@ -113,7 +144,9 @@ class InterfaceTests(unittest.TestCase):
                 raise KeyboardInterrupt
 
             with patch.object(screen.vigenere, "encrypt_file", side_effect=interrupt):
-                output = self.run_app(["1", "2", "LEMON", "2"], paths=[source, destination])
+                output = self.run_app(
+                    ["1", "2", "LEMON", "2"], paths=[source, destination]
+                )
             self.assertIn("Hasta pronto.", output)
             self.assertFalse(destination.exists())
             self.assertEqual(list(Path(folder).glob("*.part")), [])
@@ -165,7 +198,9 @@ class InterfaceTests(unittest.TestCase):
 
     def test_submenus_have_no_main_menu_groups_or_colours(self):
         for interactive in (False, True):
-            output = layout.render("Origen del texto", ["Consola", "Archivo"], 0, (), interactive)
+            output = layout.render(
+                "Origen del texto", ["Consola", "Archivo"], 0, (), interactive
+            )
             self.assertNotIn("AES / ARCHIVOS", output)
             self.assertNotIn("VIGENÈRE / TEXTO", output)
             self.assertNotRegex(output, r"\x1b\[[0-9;]*m")

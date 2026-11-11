@@ -28,6 +28,10 @@ Una ejecución local explícita falla si falta ese código.
 
 ## Uso local
 
+La rama `feature-ci-cd/python` integra esta configuración sobre la aplicación
+de `features-contraseña-AES/python`, con AES, Vigenère y sus pruebas reales.
+Al hacer push a esta rama se ejecutan los dos jobs y se publican los informes.
+
 Instalar Python 3.14 y uv (`python -m pip install uv`). Cada clon activa los hooks:
 
 ```powershell
