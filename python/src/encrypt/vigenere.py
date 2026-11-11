@@ -21,6 +21,14 @@ def validate_key(key: str) -> str:
 
 
 def encrypt(text: str, key: str) -> str:
+    return _transform(text, key, 1)
+
+
+def decrypt(text: str, key: str) -> str:
+    return _transform(text, key, -1)
+
+
+def _transform(text: str, key: str, direction: int) -> str:
     key = validate_key(key)
     result = []
     index = 0
@@ -33,13 +41,22 @@ def encrypt(text: str, key: str) -> str:
             result.append(character)
             continue
         shift = ord(key[index % len(key)]) - ord("A")
-        result.append(chr(base + (ord(character) - base + shift) % 26))
+        result.append(chr(base + (ord(character) - base + direction * shift) % 26))
         index += 1
     return "".join(result)
 
 
 def encrypt_chunks(chunks: Iterable[bytes], key: str) -> Iterator[bytes]:
     """Cifra bloques UTF-8 manteniendo la posición de la clave entre bloques."""
+    yield from _transform_chunks(chunks, key, 1)
+
+
+def decrypt_chunks(chunks: Iterable[bytes], key: str) -> Iterator[bytes]:
+    """Descifra UTF-8 conservando la posición de clave, BOM y saltos de línea."""
+    yield from _transform_chunks(chunks, key, -1)
+
+
+def _transform_chunks(chunks, key, direction):
     shifts = [ord(letter) - ord("A") for letter in validate_key(key)]
     key_length = len(shifts)
     position = 0
@@ -55,7 +72,9 @@ def encrypt_chunks(chunks: Iterable[bytes], key: str) -> Iterator[bytes]:
                 base = 97
             else:
                 continue
-            result[index] = base + (character - base + shifts[position]) % 26
+            result[index] = (
+                base + (character - base + direction * shifts[position]) % 26
+            )
             position = (position + 1) % key_length
         yield bytes(result)
     decoder.decode(b"", final=True)
@@ -63,8 +82,17 @@ def encrypt_chunks(chunks: Iterable[bytes], key: str) -> Iterator[bytes]:
 
 def encrypt_file(path: str | Path, key: str) -> Iterator[bytes]:
     """Lee y cifra un .txt en bloques de 1 MiB sin cargar el archivo completo."""
+    yield from _transform_file(path, key, encrypt_chunks)
+
+
+def decrypt_file(path: str | Path, key: str) -> Iterator[bytes]:
+    """Lee y descifra un .txt por bloques para escribir o mostrar desde partes."""
+    yield from _transform_file(path, key, decrypt_chunks)
+
+
+def _transform_file(path, key, transform):
     source = input_text_file(path)
     key = validate_key(key)
     with source.open("rb") as stream:
         blocks = iter(lambda: stream.read(FILE_BLOCK_SIZE), b"")
-        yield from encrypt_chunks(blocks, key)
+        yield from transform(blocks, key)

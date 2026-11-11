@@ -1,8 +1,8 @@
 # Enigma — interfaz de terminal
 
-Aplicación de terminal sin colores para cifrar texto con Vigenère y cualquier
-archivo con AES-256-GCM. El menú ofrece **Cifrar Vigenère**, **Cifrar archivo AES**
-y **Salir**. Esta fase incluye solo cifrado.
+Aplicación de terminal sin colores para cifrar y descifrar texto con Vigenère
+y cualquier archivo con AES-256-GCM. El menú ofrece **Cifrar Vigenère**,
+**Cifrar archivo AES**, **Descifrar Vigenère**, **Descifrar archivo AES** y **Salir**.
 
 Necesita Python 3.14 o posterior. AES utiliza `cryptography`, fijado en
 `requirements.txt`; Vigenère y la interfaz usan la biblioteca estándar.
@@ -81,6 +81,39 @@ sin sobrescribir archivos existentes. El cifrado usa las primitivas de
 [cryptography](https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/).
 
 ## Selección y guardado de archivos
+
+### Descifrado
+
+Para Vigenère, elige **Descifrar Vigenère** e introduce el texto cifrado por consola
+o selecciona un `.txt` UTF-8. Usa la misma clave del cifrado y elige mostrar,
+guardar o ambas opciones. Por ejemplo, `LXFOPVEFRNHR` con `LEMON` recupera
+`ATTACKATDAWN`. Se conservan BOM, Unicode y saltos de línea; la clave mantiene
+su posición entre bloques. Vigenère no autentica los datos: una clave equivocada
+produce otro texto y no puede detectarse automáticamente.
+
+Para AES, elige **Descifrar archivo AES**, selecciona el contenedor R2AE e introduce
+la contraseña original de 16 letras o números (oculta en terminal interactiva).
+Elige un destino nuevo; se propone quitar la extensión `.enc`. El nombre original
+no está almacenado en R2AE, por lo que puedes elegirlo manualmente.
+
+El descifrado AES verifica el formato, versión y número de iteraciones antes de
+derivar la clave. Usa los 37 bytes exactos de cabecera como AAD y verifica la
+etiqueta GCM antes de publicar el resultado. Una contraseña incorrecta o un
+archivo alterado/truncado devuelve un error y elimina las partes sin publicar
+el archivo final. El archivo cifrado original se conserva.
+
+Ambos descifrados trabajan en bloques de 1 MiB y usan `.part` de hasta 20 MiB,
+igual que el cifrado, sin cargar archivos completos en memoria. En AES las partes
+del descifrado contienen texto en claro pendiente de autenticación y se eliminan
+al terminar, fallar o cancelar; un cierre abrupto puede dejar partes en disco.
+
+Después de guardar correctamente un resultado de cifrado o descifrado, se abre
+el explorador: Windows y macOS seleccionan el archivo; Linux abre su carpeta
+con `xdg-open`. El archivo generado no se ejecuta. Al mostrar solo por consola
+no se abre el explorador. Si no se puede iniciar, se mantiene el resultado y
+se muestra su ruta.
+
+### Selectores y publicación
 
 La función reutilizable `choose_path` de `src/utils/dialogs.py` abre un selector
 nativo mediante Tkinter. Admite filtros, nombre sugerido y extensión para guardar.

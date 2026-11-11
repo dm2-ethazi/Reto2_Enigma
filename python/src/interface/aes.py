@@ -1,15 +1,26 @@
-"""Selección de archivos y cifrado AES, sin colores."""
+"""Selección de archivos, cifrado y descifrado autenticado AES, sin colores."""
 
+import getpass
+import sys
 from pathlib import Path
 
 from ..errors import ValidationError
 from ..utils.dialogs import ENCRYPTED_FILES, choose_path
+from ..utils.explorer import reveal_file
 from .loading import loading
 
-SCREENS = (("Cifrar archivo AES", ()),)
+SCREENS = (("Cifrar archivo AES", ()), ("Descifrar archivo AES", ()))
 
 
 def run_encryption(*, interactive: bool = False) -> None:
+    _run(decrypt=False)
+
+
+def run_decryption(*, interactive: bool = False) -> None:
+    _run(decrypt=True)
+
+
+def _run(*, decrypt: bool) -> None:
     try:
         from ..encrypt import aes
     except ModuleNotFoundError as error:
@@ -19,6 +30,27 @@ def run_encryption(*, interactive: bool = False) -> None:
                 "de Python que ejecuta Enigma: python -m pip install -r requirements.txt"
             ) from error
         raise
+
+    if decrypt:
+        source = choose_path(
+            "Seleccionar archivo para descifrar con AES", filetypes=ENCRYPTED_FILES
+        )
+        prompt = "Contraseña AES (16 letras o números): "
+        password = getpass.getpass(prompt) if sys.stdin.isatty() else input(prompt)
+        default = (
+            source.with_suffix("")
+            if source.suffix.lower() == ".enc"
+            else Path(f"{source}.decrypted")
+        )
+        destination = choose_path(
+            "Guardar archivo descifrado", save=True, default=default
+        )
+        with loading("Descifrando AES y verificando autenticidad"):
+            path = aes.decrypt_file(source, password, destination)
+        print(f"Archivo descifrado y autenticado: {path}")
+        reveal_file(path)
+        input("\nPulsa Enter para volver al menú principal.")
+        return
 
     source = choose_path("Seleccionar archivo para cifrar con AES")
     destination = choose_path(
@@ -33,4 +65,5 @@ def run_encryption(*, interactive: bool = False) -> None:
     print(f"Archivo cifrado: {result.path}")
     print(f"Contraseña generada: {result.password}")
     print("Guarda esta contraseña: no se almacena en el archivo ni se puede recuperar.")
+    reveal_file(result.path)
     input("\nPulsa Enter para volver al menú principal.")

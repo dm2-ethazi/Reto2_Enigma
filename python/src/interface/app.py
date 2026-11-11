@@ -1,10 +1,12 @@
-"""Menú de cifrado Vigenère y AES, con errores y cancelación controlados."""
+"""Menú de cifrado y descifrado con errores y cancelación controlados."""
 
 from ..errors import EnigmaError, OperationCancelled
 from .aes import run_encryption as run_aes_encryption
+from .aes import run_decryption as run_aes_decryption
 from .menu import SCREENS, show_main_menu
 from .terminal import enable_cursor_control
 from .vigenere import run_encryption
+from .vigenere import run_decryption
 
 
 def run():
@@ -19,6 +21,10 @@ def run():
                     run_encryption(interactive=interactive)
                 elif selected == 1:
                     run_aes_encryption(interactive=interactive)
+                elif selected == 2:
+                    run_decryption(interactive=interactive)
+                elif selected == 3:
+                    run_aes_decryption(interactive=interactive)
             except OperationCancelled:
                 print("Operación cancelada. Volviendo al menú.")
             except (EnigmaError, OSError, UnicodeError, MemoryError) as error:

@@ -16,6 +16,7 @@ class InterfaceTests(unittest.TestCase):
         output = io.StringIO()
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
+            patch.object(screen, "reveal_file"),
             patch.object(screen.sys.stdin, "isatty", return_value=False),
             patch("builtins.input", side_effect=answers),
             patch.object(screen, "choose_path", side_effect=paths),
@@ -34,12 +35,12 @@ class InterfaceTests(unittest.TestCase):
                 "LEMON",
                 "1",
                 "",
-                "3",
+                "5",
             ]
         )
         self.assertIn("Resultado:\nLXFOPVEFRNHR", output)
         self.assertLess(output.index("Cifrando..."), output.index("Resultado:\n"))
-        self.assertNotIn("Descifrar Vigenère", output)
+        self.assertIn("Descifrar Vigenère", output)
 
     def test_file_show_and_save(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -47,7 +48,7 @@ class InterfaceTests(unittest.TestCase):
             destination = Path(folder) / "salida.txt"
             source.write_bytes("\ufeffHola ñ\r\n".encode("utf-8"))
             output = self.run_app(
-                ["1", "2", "B", "3", "", "3"], paths=[source, destination]
+                ["1", "2", "B", "3", "", "5"], paths=[source, destination]
             )
             self.assertEqual(
                 destination.read_bytes(), "\ufeffIpmb ñ\r\n".encode("utf-8")
@@ -93,7 +94,7 @@ class InterfaceTests(unittest.TestCase):
                 ),
             ):
                 output = self.run_app(
-                    ["1", "2", "LEMON", "2", "", "3"], paths=[source, destination]
+                    ["1", "2", "LEMON", "2", "", "5"], paths=[source, destination]
                 )
             self.assertEqual(destination.read_bytes(), expected)
             self.assertEqual(source.read_bytes(), data)
@@ -111,7 +112,7 @@ class InterfaceTests(unittest.TestCase):
                 patch.object(files, "MAX_PART_SIZE", 8),
                 patch.object(screen.vigenere, "FILE_BLOCK_SIZE", 3),
             ):
-                output = self.run_app(["1", "2", "LEMON", "1", "", "3"], paths=[source])
+                output = self.run_app(["1", "2", "LEMON", "1", "", "5"], paths=[source])
             self.assertIn("Resultado:\n\ufeffLXFOPVEFRNHR\r\nñ😀", output)
             self.assertNotIn("Resultado guardado", output)
             self.assertEqual(list(Path(folder).iterdir()), [source])
@@ -126,7 +127,7 @@ class InterfaceTests(unittest.TestCase):
                 patch.object(screen.vigenere, "FILE_BLOCK_SIZE", 3),
             ):
                 output = self.run_app(
-                    ["1", "2", "LEMON", "2", "", "3"], paths=[source, destination]
+                    ["1", "2", "LEMON", "2", "", "5"], paths=[source, destination]
                 )
             self.assertIn("Error:", output)
             self.assertFalse(destination.exists())
@@ -155,22 +156,22 @@ class InterfaceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             destination = Path(folder) / "salida.txt"
             output = self.run_app(
-                ["1", "1", "ATTACKATDAWN", "LEMON", "2", "", "3"], paths=[destination]
+                ["1", "1", "ATTACKATDAWN", "LEMON", "2", "", "5"], paths=[destination]
             )
             self.assertEqual(destination.read_text(encoding="utf-8"), "LXFOPVEFRNHR")
             self.assertNotIn("Resultado:\n", output)
 
     def test_invalid_key_returns_to_menu(self):
-        output = self.run_app(["1", "1", "texto", "ñ", "", "3"])
+        output = self.run_app(["1", "1", "texto", "ñ", "", "5"])
         self.assertIn("Error: La clave Vigenère", output)
         self.assertIn("Hasta pronto.", output)
 
     def test_cancel_submenus_and_file_picker(self):
         for answers, paths in (
-            (["1", "q", "3"], []),
-            (["1", "1", "texto", "A", "q", "3"], []),
-            (["1", "2", "3"], [OperationCancelled()]),
-            (["1", "1", "texto", "A", "2", "3"], [OperationCancelled()]),
+            (["1", "q", "5"], []),
+            (["1", "1", "texto", "A", "q", "5"], []),
+            (["1", "2", "5"], [OperationCancelled()]),
+            (["1", "1", "texto", "A", "2", "5"], [OperationCancelled()]),
         ):
             with self.subTest(answers=answers):
                 self.assertIn("Operación cancelada", self.run_app(answers, paths=paths))
@@ -178,7 +179,7 @@ class InterfaceTests(unittest.TestCase):
     def test_missing_file_returns_to_menu(self):
         with tempfile.TemporaryDirectory() as folder:
             output = self.run_app(
-                ["1", "2", "", "3"], paths=[Path(folder) / "ausente.txt"]
+                ["1", "2", "", "5"], paths=[Path(folder) / "ausente.txt"]
             )
         self.assertIn("Error:", output)
         self.assertIn("Hasta pronto.", output)
@@ -205,10 +206,11 @@ class InterfaceTests(unittest.TestCase):
             self.assertNotIn("VIGENÈRE / TEXTO", output)
             self.assertNotRegex(output, r"\x1b\[[0-9;]*m")
 
-    def test_menu_only_offers_vigenere_aes_encryption_and_exit(self):
-        output = self.run_app(["3"])
+    def test_menu_offers_encryption_decryption_and_exit(self):
+        output = self.run_app(["5"])
         self.assertIn("1. Cifrar Vigenère", output)
         self.assertIn("2. Cifrar archivo AES", output)
-        self.assertIn("3. Salir", output)
-        self.assertNotIn("Descifrar", output)
+        self.assertIn("3. Descifrar Vigenère", output)
+        self.assertIn("4. Descifrar archivo AES", output)
+        self.assertIn("5. Salir", output)
         self.assertIn("Hasta pronto.", output)

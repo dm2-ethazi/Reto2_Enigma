@@ -1,6 +1,7 @@
 # Contenedor R2AE v1
 
-Formato del proyecto de referencia, usado por `src/encrypt/aes.py` para cifrar.
+Formato del proyecto de referencia, usado por `src/encrypt/aes.py` para cifrar
+y descifrar con verificación de autenticidad.
 
 | Offset | Bytes | Campo |
 | --- | --- | --- |
@@ -30,6 +31,15 @@ No contienen texto en claro ni se cifran como mensajes separados. Se unen en
 orden para producir un único archivo y se eliminan al salir de la operación.
 El máximo admitido por mensaje GCM es `2**36 - 32` bytes de entrada; la aplicación
 lo comprueba al abrir el archivo y durante la lectura.
+
+Al descifrar se acepta solo R2AE v1 con 200 000 iteraciones; se verifica el tamaño
+antes de derivar la clave. Se autentican como AAD los 37 bytes originales de la
+cabecera y se usa la etiqueta final de 16 bytes. El contenido se descifra en
+bloques de 1 MiB a partes temporales de hasta 20 MiB. Estas partes contienen
+datos en claro aún no autenticados: el destino final solo se publica después
+de que `finalize()` verifique la etiqueta. Un fallo de autenticidad, error o
+cancelación controlada elimina las partes sin publicar el destino. No se
+sobrescribe el original ni ningún archivo existente.
 
 `tests/fixtures/r2ae-v1.json` contiene vectores públicos de prueba del proyecto
 original: archivo vacío, un byte, texto UTF-8, datos binarios y un PNG. Sus

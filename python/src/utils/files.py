@@ -140,7 +140,7 @@ def _publish_parts(parts: list[Path], destination: Path) -> None:
 
 @contextmanager
 def temporary_parts(directory: str | Path | None = None) -> Iterator[_PartWriter]:
-    """Mantiene los bloques cifrados en disco hasta mostrarlos o publicarlos."""
+    """Mantiene el resultado en partes hasta mostrarlo o publicarlo."""
     folder = Path(directory) if directory is not None else Path(tempfile.gettempdir())
     writer = _PartWriter(folder)
     try:
