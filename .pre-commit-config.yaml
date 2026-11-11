@@ -1,0 +1,20 @@
+# Native .githooks are installed; optional pre-commit framework equivalent.
+# Solo Python: python, python-cli y ramas terminadas en /python.
+default_install_hook_types: [pre-commit, pre-push]
+repos:
+  - repo: local
+    hooks:
+      - id: branch-tests-commit
+        name: Python - lint and tests
+        entry: python scripts/quality.py pre-commit
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      - id: branch-tests-push
+        name: Python - branch tests and coverage
+        entry: python scripts/quality.py pre-push
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

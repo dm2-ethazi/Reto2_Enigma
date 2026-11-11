@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+if command -v py >/dev/null 2>&1; then
+  exec py -3 scripts/quality.py pre-commit "$@"
+fi
+if command -v python3 >/dev/null 2>&1; then
+  exec python3 scripts/quality.py pre-commit "$@"
+fi
+exec python scripts/quality.py pre-commit "$@"
