@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c76535c0beed5f44cb49093d5b53a2b0, type: 3}
+  m_Name: Campaign
+  m_EditorClassIdentifier: Enigma.Game::Enigma.Game.CampaignSettings
+  levels:
+  - {fileID: 11400000, guid: 9cf2ec7f1224ec04f903494a01387a85, type: 2}
+  - {fileID: 11400000, guid: c6ddc75c108fc5d42ac965b6f6d27c63, type: 2}
+  - {fileID: 11400000, guid: 56b2278fae27a484f9711787622a7cf8, type: 2}
+  - {fileID: 11400000, guid: ffdb5726dace0e743b57495b0685352a, type: 2}
+  - {fileID: 11400000, guid: 1f3b3b6865ec4e04896f401f4f03981f, type: 2}
+  errorsPerAttempt: 4
+  resolutionSeconds: 1.15

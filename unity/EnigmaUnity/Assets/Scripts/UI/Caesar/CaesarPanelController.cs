@@ -19,6 +19,19 @@ namespace Enigma.Caesar
         private VisualElement boundRoot;
         private Button previous;
         private Button next;
+        private bool interactionEnabled = true;
+
+        /// <summary>Habilita las flechas cuando la partida admite interacción.</summary>
+        /// <param name="value">Estado de interacción del panel.</param>
+        public void SetInteractionEnabled(bool value)
+        {
+            interactionEnabled = value;
+            previous?.SetEnabled(value);
+            next?.SetEnabled(value);
+        }
+
+        /// <summary>Restaura el alfabeto original al comenzar otro nivel.</summary>
+        public void ResetShift() => alphabet.Shift(-alphabet.Offset);
 
         /// <summary>Detecta si UI Toolkit ha sustituido la raíz del documento para volver a vincularla.</summary>
         private void Update()
@@ -64,6 +77,7 @@ namespace Enigma.Caesar
             previous.clicked += MoveLeft;
             next.clicked += MoveRight;
             alphabet.ShiftChanged += ShowShift;
+            SetInteractionEnabled(interactionEnabled);
             ShowShift();
         }
 

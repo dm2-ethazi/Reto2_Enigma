@@ -18,7 +18,7 @@ namespace Enigma.Tests.Physics
         public IEnumerator LoadCorridor()
         {
             Time.timeScale = 1f;
-            yield return SceneManager.LoadSceneAsync("SampleScene", LoadSceneMode.Single);
+            yield return SceneManager.LoadSceneAsync("EnigmaGame", LoadSceneMode.Single);
             yield return new WaitForFixedUpdate();
             motor = Object.FindFirstObjectByType<DementorMotor2D>();
             Assert.That(motor, Is.Not.Null);

@@ -142,3 +142,9 @@ docs/.doctrees/
 .vscode/
 *.code-workspace
 .fleet/
+# Unity editor temporary state and recovered scenes
+unity/EnigmaUnity/.utmp/
+unity/EnigmaUnity/Assets/_Recovery/
+unity/EnigmaUnity/Assets/_Recovery.meta
+unity/EnigmaUnity/Assets/InitTestScene*.unity
+unity/EnigmaUnity/Assets/InitTestScene*.unity.meta
