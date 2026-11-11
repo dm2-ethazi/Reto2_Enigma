@@ -188,7 +188,7 @@ class InterfaceTests(unittest.TestCase):
         with (
             patch.object(screen, "choose", side_effect=[0, 0]),
             patch.object(screen.sys.stdin, "isatty", return_value=True),
-            patch.object(screen.getpass, "getpass", return_value="LEMON") as secret,
+            patch.object(screen, "read_password", return_value="LEMON") as secret,
             patch("builtins.input", side_effect=["ATTACKATDAWN", ""]) as prompt,
             redirect_stdout(io.StringIO()) as output,
         ):

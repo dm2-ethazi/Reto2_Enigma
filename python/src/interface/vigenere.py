@@ -1,6 +1,5 @@
 """Flujo de cifrado y descifrado Vigenère, sin colores."""
 
-import getpass
 import sys
 from pathlib import Path
 
@@ -16,6 +15,7 @@ from ..utils.files import (
 )
 from .loading import loading
 from .navigation import choose
+from .passwords import read_password
 
 SCREENS = (("Cifrar Vigenère", ()), ("Descifrar Vigenère", ()))
 
@@ -49,7 +49,7 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
         )
 
     prompt = "Clave Vigenère (1-64 letras A-Z): "
-    key = getpass.getpass(prompt) if sys.stdin.isatty() else input(prompt)
+    key = read_password(prompt)
     key = vigenere.validate_key(key)
     mode = choose(
         f"{title} / Qué hacer con el resultado",
@@ -73,10 +73,10 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
     if source is None:
         with loading(progress):
             result = transform(text, key)
+            if destination is not None:
+                write_text(destination, result)
         if mode in (0, 2):
             print(f"\nResultado:\n{result}")
-        if destination is not None:
-            write_text(destination, result)
     else:
         directory = destination.parent if destination is not None else None
         with temporary_parts(directory) as parts:

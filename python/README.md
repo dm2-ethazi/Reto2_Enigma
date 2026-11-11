@@ -40,14 +40,16 @@ escribe el número y pulsa Enter. `q` vuelve o sale. Ctrl+C también permite sal
 1. Elige **Cifrar Vigenère**.
 2. Introduce texto por consola o selecciona un archivo `.txt` UTF-8.
 3. Introduce una clave de 1 a 64 letras A-Z, sin espacios, números ni acentos.
-   La clave se oculta al escribirla en una terminal interactiva.
+   La clave muestra un `*` por carácter en una terminal interactiva; Retroceso
+   borra el último carácter y Esc cancela.
 4. Elige **Mostrar**, **Guardar .txt** o **Mostrar y guardar**.
 5. Si vas a guardar, selecciona el destino antes de iniciar el cifrado.
 6. Espera al resultado y pulsa Enter para volver al menú.
 
-Durante el cifrado se muestra `Cifrando.`, `Cifrando..`, `Cifrando...` en una
-misma línea, repitiendo los puntos sin colores. El indicador desaparece al
-terminar o cancelar. Si la salida se redirige a un archivo, solo se escribe
+Durante el cifrado o descifrado se muestra `Cifrando.` / `Descifrando.`,
+con un ciclo de uno, dos y tres puntos que vuelve a empezar en una
+misma línea, repitiendo los puntos sin colores. Al terminar se indica `Completado.`; si falla o se cancela,
+se retira el indicador sin anunciar éxito. Si la salida se redirige a un archivo, solo se escribe
 el mensaje `Cifrando...` una vez.
 
 Ejemplo: `ATTACKATDAWN` con clave `LEMON` produce `LXFOPVEFRNHR`.
@@ -93,7 +95,7 @@ su posición entre bloques. Vigenère no autentica los datos: una clave equivoca
 produce otro texto y no puede detectarse automáticamente.
 
 Para AES, elige **Descifrar archivo AES**, selecciona el contenedor R2AE e introduce
-la contraseña original de 16 letras o números (oculta en terminal interactiva).
+la contraseña original de 16 letras o números (con un `*` por carácter en terminal interactiva).
 Elige un destino nuevo; se propone quitar la extensión `.enc`. El nombre original
 no está almacenado en R2AE, por lo que puedes elegirlo manualmente.
 

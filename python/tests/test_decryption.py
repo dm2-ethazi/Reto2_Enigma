@@ -222,7 +222,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
     def run_app(self, answers, screen, paths):
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
-            patch.object(screen.sys.stdin, "isatty", return_value=False),
+            patch("src.interface.passwords.sys.stdin.isatty", return_value=False),
             patch("builtins.input", side_effect=answers),
             patch.object(screen, "choose_path", side_effect=paths),
             patch.object(screen, "reveal_file") as reveal,

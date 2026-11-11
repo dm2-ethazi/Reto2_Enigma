@@ -1,13 +1,12 @@
 """Selección de archivos, cifrado y descifrado autenticado AES, sin colores."""
 
-import getpass
-import sys
 from pathlib import Path
 
 from ..errors import ValidationError
 from ..utils.dialogs import ENCRYPTED_FILES, choose_path
 from ..utils.explorer import reveal_file
 from .loading import loading
+from .passwords import read_password
 
 SCREENS = (("Cifrar archivo AES", ()), ("Descifrar archivo AES", ()))
 
@@ -36,7 +35,7 @@ def _run(*, decrypt: bool) -> None:
             "Seleccionar archivo para descifrar con AES", filetypes=ENCRYPTED_FILES
         )
         prompt = "Contraseña AES (16 letras o números): "
-        password = getpass.getpass(prompt) if sys.stdin.isatty() else input(prompt)
+        password = read_password(prompt)
         default = (
             source.with_suffix("")
             if source.suffix.lower() == ".enc"
