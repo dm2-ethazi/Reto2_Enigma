@@ -15,6 +15,7 @@
         <javafx.version>25</javafx.version>
         <junit.version>5.12.1</junit.version>
         <ikonli.version>12.4.0</ikonli.version>
+        <app.platform>unsupported</app.platform>
     </properties>
 
     <dependencies>
@@ -27,13 +28,6 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
-        </dependency>
-        <!-- Añade las bibliotecas nativas Linux al Fatjar generado en Windows. -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>linux</classifier>
         </dependency>
         <dependency>
             <groupId>org.kordamp.ikonli</groupId>
@@ -59,8 +53,54 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>package-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <app.platform>windows</app.platform>
+            </properties>
+        </profile>
+        <profile>
+            <id>package-linux</id>
+            <activation>
+                <os>
+                    <name>linux</name>
+                </os>
+            </activation>
+            <properties>
+                <app.platform>linux</app.platform>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>[3.6.3,)</version>
+                                    <message>Este proyecto requiere Maven 3.6.3 o superior.</message>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -91,7 +131,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>Enigma-GestorAES-Java25</finalName>
+                            <finalName>Enigma-GestorAES-Java25-${app.platform}</finalName>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>

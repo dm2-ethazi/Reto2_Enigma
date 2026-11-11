@@ -11,8 +11,11 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -30,6 +33,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
@@ -58,10 +64,12 @@ import java.util.function.Predicate;
  * Controlador de la pantalla principal. Coordina la selección de archivos,
  * la ejecución asíncrona del cifrado y la entrega segura de la contraseña.
  *
- * <p>Los campos anotados con {@link FXML} se conectan con los elementos que
+ * <p>
+ * Los campos anotados con {@link FXML} se conectan con los elementos que
  * tienen el mismo {@code fx:id} en {@code main-view.fxml}. Los métodos de
  * interfaz anotados con {@link FXML} son invocados por los eventos definidos
- * en esa vista.</p>
+ * en esa vista.
+ * </p>
  */
 public class MainController {
     /** Estado visual aplicado al campo cuando se arrastra un archivo válido. */
@@ -73,12 +81,23 @@ public class MainController {
     private static final byte[] PNG_SIGNATURE = {
             (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
     };
-    private static final Preferences PREFERENCES =
-            Preferences.userNodeForPackage(MainController.class);
+    private static final Preferences PREFERENCES = Preferences.userNodeForPackage(MainController.class);
     private static final String LAST_SOURCE_DIRECTORY = "lastSourceDirectory";
     private static final String LAST_DESTINATION_DIRECTORY = "lastDestinationDirectory";
     private static final String LAST_ENCRYPTED_DIRECTORY = "lastEncryptedDirectory";
     private static final String LAST_REFERENCE_DIRECTORY = "lastReferenceDirectory";
+    private static final KeyCombination HELP_SHORTCUT =
+            new KeyCodeCombination(KeyCode.F1);
+    private static final KeyCombination ABOUT_SHORTCUT =
+            new KeyCodeCombination(KeyCode.F2);
+    private static final KeyCombination ENCRYPTION_SHORTCUT =
+            new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.CONTROL_DOWN);
+    private static final KeyCombination DECRYPTION_SHORTCUT =
+            new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.CONTROL_DOWN);
+    private static final KeyCombination RUN_OPERATION_SHORTCUT =
+            new KeyCodeCombination(KeyCode.ENTER, KeyCombination.CONTROL_DOWN);
+    private static final KeyCombination BACK_TO_MENU_SHORTCUT =
+            new KeyCodeCombination(KeyCode.ESCAPE);
     /** Operaciones de lectura y cifrado de ficheros. */
     private final FileService fileService = new FileService();
     /** Tarea activa de cifrado, si la hay. */
@@ -89,11 +108,19 @@ public class MainController {
     private Task<FileService.PreviewResult> previewTask;
     private long previewGeneration;
     private volatile Language selectedLanguage = Language.SPANISH;
-    private volatile LocalizedText currentStatus =
-            new LocalizedText("Listo para trabajar.", new Object[0]);
+    private volatile LocalizedText currentStatus = new LocalizedText("Listo para trabajar.", new Object[0]);
 
     @FXML
     private Parent rootPane;
+
+    @FXML
+    private Node menuView;
+
+    @FXML
+    private Node encryptionView;
+
+    @FXML
+    private Node decryptionView;
 
     @FXML
     private Label languageLabel;
@@ -109,7 +136,13 @@ public class MainController {
     @FXML
     private TextField destinationDirectoryField;
 
-    /** Ruta del contenedor .enc que se va a descifrar, independiente del origen de cifrado. */
+    @FXML
+    private TextField decryptDestinationDirectoryField;
+
+    /**
+     * Ruta del contenedor .enc que se va a descifrar, independiente del origen de
+     * cifrado.
+     */
     @FXML
     private TextField decryptSourcePathField;
 
@@ -121,7 +154,9 @@ public class MainController {
     @FXML
     private PasswordField decryptPasswordField;
 
-    /** Campo sincronizado que muestra la contraseña de descifrado cuando se revela. */
+    /**
+     * Campo sincronizado que muestra la contraseña de descifrado cuando se revela.
+     */
     @FXML
     private TextField visibleDecryptPasswordField;
 
@@ -141,15 +176,23 @@ public class MainController {
     @FXML
     private FontIcon hideDecryptPasswordIcon;
 
-    /** Campo de contraseña generada; PasswordField la oculta de forma predeterminada. */
+    /**
+     * Campo de contraseña generada; PasswordField la oculta de forma
+     * predeterminada.
+     */
     @FXML
     private PasswordField generatedPasswordField;
 
-    /** Campo sincronizado que presenta la contraseña generada cuando el usuario la revela. */
+    /**
+     * Campo sincronizado que presenta la contraseña generada cuando el usuario la
+     * revela.
+     */
     @FXML
     private TextField visibleGeneratedPasswordField;
 
-    /** Alterna entre la representación enmascarada y la contraseña en texto visible. */
+    /**
+     * Alterna entre la representación enmascarada y la contraseña en texto visible.
+     */
     @FXML
     private ToggleButton showGeneratedPasswordToggle;
 
@@ -173,6 +216,9 @@ public class MainController {
     @FXML
     private Button chooseDestinationButton;
 
+    @FXML
+    private Button chooseDecryptDestinationButton;
+
     /** Botón que inicia el descifrado. */
     @FXML
     private Button decryptButton;
@@ -181,7 +227,9 @@ public class MainController {
     @FXML
     private Button chooseEncryptedFileButton;
 
-    /** Botón para seleccionar el archivo original usado en la verificación opcional. */
+    /**
+     * Botón para seleccionar el archivo original usado en la verificación opcional.
+     */
     @FXML
     private Button chooseReferenceButton;
 
@@ -215,12 +263,16 @@ public class MainController {
     /**
      * Configura los controles después de que FXMLLoader los haya inyectado.
      *
-     * <p>Los dos campos de contraseña comparten su texto, pero solo uno se
+     * <p>
+     * Los dos campos de contraseña comparten su texto, pero solo uno se
      * muestra a la vez. También se registran los eventos de arrastrar y soltar
-     * para aceptar un único archivo normal como entrada.</p>
+     * para aceptar un único archivo normal como entrada.
+     * </p>
      */
     @FXML
     private void initialize() {
+        destinationDirectoryField.textProperty()
+                .bindBidirectional(decryptDestinationDirectoryField.textProperty());
         configurePasswordVisibility(
                 showPasswordToggle, showDecryptPasswordIcon, hideDecryptPasswordIcon,
                 decryptPasswordField, visibleDecryptPasswordField, "contraseña");
@@ -242,25 +294,111 @@ public class MainController {
                 (observable, oldValue, newValue) -> onPreviewInputChanged());
         clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
 
+        showView(menuView);
         configureFileDropTarget(sourcePathField, MainController::isSupportedSourceFile,
-                this::setSourceFile, "Arrastra un único archivo .txt o .png.");
+                this::setSourceFile, "Arrastra un único archivo normal y legible.");
         configureFileDropTarget(decryptSourcePathField,
                 MainController::isSupportedEncryptedContainer, this::setEncryptedFile,
-                "Arrastra un único contenedor .txt.enc o .png.enc.");
+                "Arrastra un único contenedor .enc.");
         configureFileDropTarget(referencePathField, MainController::isSupportedSourceFile,
-                this::setReferenceFile, "Arrastra un único archivo .txt o .png.");
+                this::setReferenceFile, "Arrastra un único archivo normal y legible.");
     }
 
-    /** Informa que la pantalla de ayuda todavía no forma parte de esta versión. */
+    @FXML
+    private void showEncryptionView() {
+        showView(encryptionView);
+    }
+
+    @FXML
+    private void showDecryptionView() {
+        showView(decryptionView);
+    }
+
+    @FXML
+    private void showMainMenu() {
+        showView(menuView);
+    }
+
+    private void showView(Node activeView) {
+        menuView.setVisible(activeView == menuView);
+        menuView.setManaged(activeView == menuView);
+        encryptionView.setVisible(activeView == encryptionView);
+        encryptionView.setManaged(activeView == encryptionView);
+        decryptionView.setVisible(activeView == decryptionView);
+        decryptionView.setManaged(activeView == decryptionView);
+    }
+
+    /** Registers the application shortcuts on its main scene. */
+    public void installKeyboardShortcuts(Scene scene) {
+        scene.getAccelerators().put(HELP_SHORTCUT, this::showHelp);
+        scene.getAccelerators().put(ABOUT_SHORTCUT, this::showAbout);
+        scene.getAccelerators().put(ENCRYPTION_SHORTCUT, this::showEncryptionView);
+        scene.getAccelerators().put(DECRYPTION_SHORTCUT, this::showDecryptionView);
+        scene.getAccelerators().put(RUN_OPERATION_SHORTCUT, this::runCurrentOperation);
+        scene.getAccelerators().put(BACK_TO_MENU_SHORTCUT, this::showMainMenu);
+    }
+
+    private void runCurrentOperation() {
+        if (encryptionView.isVisible()) {
+            encryptFile();
+        } else if (decryptionView.isVisible()) {
+            decryptFile();
+        }
+    }
+
     @FXML
     private void showHelp() {
-        showNotImplemented("Ayuda");
+        showInformationDialog(
+                "Ayuda - Gestor Enigma AES",
+                "Manual de uso local",
+                helpContent());
     }
 
-    /** Informa que la pantalla Acerca de todavía no está implementada. */
+    private String helpContent() {
+        return String.join("\n\n",
+                translate("Cifrado: selecciona un archivo .txt, .png o cualquier otro archivo binario y una carpeta "
+                        + "de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres."),
+                translate("Descifrado: selecciona el contenedor .enc, la carpeta de salida "
+                        + "y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional."),
+                translate("La vista previa se muestra después de un descifrado correcto para archivos de texto "
+                        + "e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados "
+                        + "existentes no se sobrescriben."),
+                translate("Atajos de teclado:"),
+                translate("F1: abrir esta ayuda."),
+                translate("F2: mostrar información acerca de la aplicación."),
+                translate("Ctrl+1: abrir la vista de cifrado."),
+                translate("Ctrl+2: abrir la vista de descifrado."),
+                translate("Ctrl+Enter: ejecutar la operación de la vista actual."),
+                translate("Esc: volver al menú principal."));
+    }
+
     @FXML
     private void showAbout() {
-        showNotImplemented("Acerca de");
+        showInformationDialog(
+                "Acerca de Gestor Enigma AES",
+                "Gestor Enigma AES",
+                "Gestor Enigma AES\n"
+                        + "Autoría: equipo Koldo, Kenneth y Carlos.\n"
+                        + "Versión del formato de contenedor: R2AE v1.\n"
+                        + "Cifrado y autenticación de archivos con AES-256-GCM. "
+                        + "El procesamiento se realiza localmente.");
+    }
+
+    private void showInformationDialog(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        styleAlert(alert, "app-alert-info");
+        alert.setTitle(translate(title));
+        alert.setHeaderText(translate(header));
+        alert.setContentText(translate(content));
+        alert.setResizable(true);
+        alert.getDialogPane().setPrefWidth(620.0);
+        alert.getButtonTypes().setAll(
+                new ButtonType(translate("Cerrar"), ButtonBar.ButtonData.OK_DONE));
+        Window owner = getOwnerWindow(sourcePathField);
+        if (owner != null) {
+            alert.initOwner(owner);
+        }
+        alert.showAndWait();
     }
 
     /** Abre el selector y carga el archivo que se cifrará. */
@@ -269,7 +407,7 @@ public class MainController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(translate("Seleccionar archivo de origen"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
-                translate("Archivos de texto e imágenes (*.txt, *.png)"), "*.txt", "*.png"));
+                translate("Todos los archivos"), "*"));
         setInitialDirectory(chooser, LAST_SOURCE_DIRECTORY,
                 sourcePathField, destinationDirectoryField);
 
@@ -297,7 +435,8 @@ public class MainController {
 
     /**
      * Limpia las rutas y credenciales visibles sin modificar ni borrar archivos.
-     * La contraseña generada también queda oculta y el control Mostrar se desactiva.
+     * La contraseña generada también queda oculta y el control Mostrar se
+     * desactiva.
      */
     @FXML
     private void clearSelection() {
@@ -317,9 +456,11 @@ public class MainController {
     /**
      * Valida la entrada y ejecuta el cifrado fuera del hilo gráfico de JavaFX.
      *
-     * <p>Mientras la tarea trabaja, publica mensajes de progreso y deshabilita
+     * <p>
+     * Mientras la tarea trabaja, publica mensajes de progreso y deshabilita
      * los controles que podrían modificar sus rutas. Al finalizar, presenta la
-     * contraseña solo en la vista enmascarada; ante un error la limpia.</p>
+     * contraseña solo en la vista enmascarada; ante un error la limpia.
+     * </p>
      */
     @FXML
     private void encryptFile() {
@@ -343,7 +484,7 @@ public class MainController {
             return;
         }
         if (!isSupportedSourceFile(source.toFile())) {
-            showError(translate("Selecciona un archivo .txt o .png."));
+            showError(translate("Selecciona un archivo normal y legible."));
             return;
         }
 
@@ -539,7 +680,8 @@ public class MainController {
 
         long requestGeneration = previewGeneration;
         int previewLimit = previewType == PreviewType.TEXT
-                ? TEXT_PREVIEW_LIMIT : PNG_PREVIEW_LIMIT;
+                ? TEXT_PREVIEW_LIMIT
+                : PNG_PREVIEW_LIMIT;
         char[] password = decryptPasswordField.getText().toCharArray();
         clearPreview("Validando el contenedor para preparar la vista previa...");
         setEncryptionControlsDisabled(true);
@@ -731,8 +873,7 @@ public class MainController {
         chooser.setTitle(translate("Seleccionar archivo cifrado"));
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(
-                        translate("Contenedores Enigma (*.txt.enc, *.png.enc)"),
-                        "*.txt.enc", "*.png.enc"));
+                        translate("Contenedores Enigma (*.enc)"), "*.enc"));
         setInitialDirectory(chooser, LAST_ENCRYPTED_DIRECTORY,
                 decryptSourcePathField, sourcePathField);
 
@@ -748,7 +889,7 @@ public class MainController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle(translate("Seleccionar archivo original"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
-                translate("Archivos de texto e imágenes (*.txt, *.png)"), "*.txt", "*.png"));
+                translate("Todos los archivos"), "*"));
         setInitialDirectory(chooser, LAST_REFERENCE_DIRECTORY,
                 referencePathField, sourcePathField);
 
@@ -761,7 +902,7 @@ public class MainController {
     /** Actualiza la ruta de origen después de elegir o arrastrar un archivo. */
     private void setSourceFile(File file) {
         if (!isSupportedSourceFile(file)) {
-            setStatus("Selecciona un archivo .txt o .png.");
+            setStatus("Selecciona un archivo normal y legible.");
             return;
         }
         sourcePathField.setText(file.getAbsolutePath());
@@ -771,7 +912,7 @@ public class MainController {
 
     private void setEncryptedFile(File file) {
         if (!isSupportedEncryptedContainer(file)) {
-            setStatus("Arrastra un único contenedor .txt.enc o .png.enc.");
+            setStatus("Arrastra un único contenedor .enc.");
             return;
         }
         decryptSourcePathField.setText(file.getAbsolutePath());
@@ -781,7 +922,7 @@ public class MainController {
 
     private void setReferenceFile(File file) {
         if (!isSupportedSourceFile(file)) {
-            setStatus("Selecciona un archivo .txt o .png.");
+            setStatus("Selecciona un archivo normal y legible.");
             return;
         }
         referencePathField.setText(file.getAbsolutePath());
@@ -796,24 +937,20 @@ public class MainController {
      * @return {@code true} si el contenido puede usarse como archivo de origen
      */
     private static boolean isSupportedSourceFile(File file) {
-        if (file == null || !file.isFile()) {
-            return false;
-        }
-        String name = file.getName().toLowerCase(Locale.ROOT);
-        return name.endsWith(".txt") || name.endsWith(".png");
+        return file != null && file.isFile() && file.canRead();
     }
 
     private static boolean isSupportedEncryptedContainer(File file) {
-        if (file == null || !file.isFile()) {
+        if (file == null || !file.isFile() || !file.canRead()) {
             return false;
         }
         String name = file.getName().toLowerCase(Locale.ROOT);
-        return name.endsWith(".txt.enc") || name.endsWith(".png.enc");
+        return name.endsWith(".enc");
     }
 
     private void configureFileDropTarget(TextField target, Predicate<File> acceptedFile,
-                                         Consumer<File> selectionConsumer,
-                                         String rejectedMessage) {
+            Consumer<File> selectionConsumer,
+            String rejectedMessage) {
         target.setOnDragOver(event -> {
             boolean accepted = hasSingleAcceptedFile(event.getDragboard(), acceptedFile);
             target.pseudoClassStateChanged(DRAG_OVER, accepted);
@@ -841,27 +978,14 @@ public class MainController {
     }
 
     private static boolean hasSingleAcceptedFile(Dragboard dragboard,
-                                                 Predicate<File> acceptedFile) {
+            Predicate<File> acceptedFile) {
         return dragboard.hasFiles()
                 && dragboard.getFiles().size() == 1
                 && acceptedFile.test(dragboard.getFiles().get(0));
     }
 
-    /**
-     * Ajusta la carpeta inicial del selector de archivos a partir de las rutas actuales.
-     *
-     * @param chooser selector de archivo que se va a mostrar
-     * @param pathFields campos de ruta en los que buscar una carpeta existente
-     */
-    private void setInitialDirectory(FileChooser chooser, TextField... pathFields) {
-        File directory = findInitialDirectory(pathFields);
-        if (directory != null) {
-            chooser.setInitialDirectory(directory);
-        }
-    }
-
     private void setInitialDirectory(FileChooser chooser, String preferenceKey,
-                                     TextField... pathFields) {
+            TextField... pathFields) {
         File directory = findInitialDirectory(pathFields);
         if (directory == null) {
             directory = rememberedDirectory(preferenceKey);
@@ -871,21 +995,8 @@ public class MainController {
         }
     }
 
-    /**
-     * Ajusta la carpeta inicial del selector de carpetas a partir de las rutas actuales.
-     *
-     * @param chooser selector de carpetas que se va a mostrar
-     * @param pathFields campos de ruta en los que buscar una carpeta existente
-     */
-    private void setInitialDirectory(DirectoryChooser chooser, TextField... pathFields) {
-        File directory = findInitialDirectory(pathFields);
-        if (directory != null) {
-            chooser.setInitialDirectory(directory);
-        }
-    }
-
     private void setInitialDirectory(DirectoryChooser chooser, String preferenceKey,
-                                     TextField... pathFields) {
+            TextField... pathFields) {
         File directory = findInitialDirectory(pathFields);
         if (directory == null) {
             directory = rememberedDirectory(preferenceKey);
@@ -957,9 +1068,11 @@ public class MainController {
     }
 
     /**
-     * Bloquea o habilita los controles que no deben usarse mientras la tarea trabaja.
+     * Bloquea o habilita los controles que no deben usarse mientras la tarea
+     * trabaja.
      *
-     * @param disabled {@code true} para bloquearlas; {@code false} para habilitarlas
+     * @param disabled {@code true} para bloquearlas; {@code false} para
+     *                 habilitarlas
      */
     private void setEncryptionControlsDisabled(boolean disabled) {
         encryptButton.setDisable(disabled);
@@ -967,6 +1080,8 @@ public class MainController {
         chooseEncryptedFileButton.setDisable(disabled);
         chooseSourceButton.setDisable(disabled);
         chooseDestinationButton.setDisable(disabled);
+        chooseDecryptDestinationButton.setDisable(disabled);
+        decryptDestinationDirectoryField.setDisable(disabled);
         chooseReferenceButton.setDisable(disabled);
         decryptPasswordField.setDisable(disabled);
         visibleDecryptPasswordField.setDisable(disabled);
@@ -984,7 +1099,8 @@ public class MainController {
     }
 
     /**
-     * Presenta un mensaje de error y lo asocia a la ventana principal si está disponible.
+     * Presenta un mensaje de error y lo asocia a la ventana principal si está
+     * disponible.
      *
      * @param message explicación del problema para la persona usuaria
      */
@@ -998,20 +1114,6 @@ public class MainController {
         if (owner != null) {
             alert.initOwner(owner);
         }
-        alert.showAndWait();
-    }
-
-    /**
-     * Presenta un aviso informativo para una acción que aún no está disponible.
-     *
-     * @param action nombre de la acción seleccionada
-     */
-    private void showNotImplemented(String action) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        styleAlert(alert, "app-alert-info");
-        alert.setTitle("Enigma");
-        alert.setHeaderText(translate(action));
-        alert.setContentText(translate("Esta función todavía no está implementada."));
         alert.showAndWait();
     }
 
@@ -1099,7 +1201,8 @@ public class MainController {
         String translated = translate(failure.getMessage());
         return translated.equals(failure.getMessage())
                 && (failure instanceof IOException || failure instanceof GeneralSecurityException)
-                ? translate(fallback) : translated;
+                        ? translate(fallback)
+                        : translated;
     }
 
     private record LocalizedText(String template, Object[] arguments) {
@@ -1113,7 +1216,7 @@ public class MainController {
     /**
      * Aplica a los diálogos la misma paleta que usa la ventana principal.
      *
-     * @param alert diálogo que se va a mostrar
+     * @param alert      diálogo que se va a mostrar
      * @param styleClass clase CSS que identifica el tipo de aviso
      */
     private void styleAlert(Alert alert, String styleClass) {
@@ -1126,15 +1229,17 @@ public class MainController {
     }
 
     /**
-     * Sincroniza los campos de contraseña y alterna el texto y los iconos del botón.
-     * El ojo indica que se puede mostrar el valor; el ojo tachado, que se puede ocultar.
+     * Sincroniza los campos de contraseña y alterna el texto y los iconos del
+     * botón.
+     * El ojo indica que se puede mostrar el valor; el ojo tachado, que se puede
+     * ocultar.
      */
     private void configurePasswordVisibility(ToggleButton toggle, FontIcon showIcon,
-                                            FontIcon hideIcon, PasswordField maskedField,
-                                            TextField visibleField, String accessibleName) {
-        Color magenta = Color.web("#D63378");
-        showIcon.setIconColor(magenta);
-        hideIcon.setIconColor(magenta);
+            FontIcon hideIcon, PasswordField maskedField,
+            TextField visibleField, String accessibleName) {
+        Color iconColor = Color.web("#8c6f47");
+        showIcon.setIconColor(iconColor);
+        hideIcon.setIconColor(iconColor);
         visibleField.textProperty().bindBidirectional(maskedField.textProperty());
         visibleField.visibleProperty().bind(toggle.selectedProperty());
         visibleField.managedProperty().bind(toggle.selectedProperty());
@@ -1145,8 +1250,7 @@ public class MainController {
         hideIcon.visibleProperty().bind(toggle.selectedProperty());
         hideIcon.managedProperty().bind(toggle.selectedProperty());
         toggle.selectedProperty().addListener(
-                (observable, wasSelected, isSelected) ->
-                        updatePasswordVisibilityText(toggle, accessibleName));
+                (observable, wasSelected, isSelected) -> updatePasswordVisibilityText(toggle, accessibleName));
         updatePasswordVisibilityText(toggle, accessibleName);
     }
 }

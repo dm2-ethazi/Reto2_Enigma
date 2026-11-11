@@ -5,8 +5,10 @@ import javafx.application.Application;
 /**
  * Punto de entrada estable de la aplicación.
  *
- * <p>Se separa de {@link MainApplication} para que el lanzador de Java no
- * tenga que resolver directamente clases que heredan de JavaFX al iniciar.</p>
+ * <p>
+ * Se separa de {@link MainApplication} para que el lanzador de Java no
+ * tenga que resolver directamente clases que heredan de JavaFX al iniciar.
+ * </p>
  */
 public class Launcher {
     /**
@@ -18,4 +20,3 @@ public class Launcher {
         Application.launch(MainApplication.class, args);
     }
 }
-           

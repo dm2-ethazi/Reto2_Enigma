@@ -33,6 +33,97 @@ public final class LanguageService {
         add("Cifra y recupera archivos localmente con AES-256-GCM.",
                 "Encrypt and recover files locally with AES-256-GCM.",
                 "Zifratu eta berreskuratu fitxategiak lokalean AES-256-GCM bidez.");
+        add("GESTOR ENIGMA AES", "ENIGMA AES MANAGER", "ENIGMA AES KUDEATZAILEA");
+        add("¿Qué deseas hacer?", "What would you like to do?", "Zer egin nahi duzu?");
+        add("Elige una operación para continuar.", "Choose an operation to continue.",
+                "Aukeratu eragiketa bat jarraitzeko.");
+        add("CIFRADO AES", "AES ENCRYPTION", "AES ZIFRATZEA");
+        add("DESCIFRADO AES", "AES DECRYPTION", "AES DESZIFRATZEA");
+        add("Abrir la sección de cifrado AES", "Open the AES encryption section",
+                "Ireki AES zifratze-atala");
+        add("Abrir la sección de descifrado AES", "Open the AES decryption section",
+                "Ireki AES deszifratze-atala");
+        add("Protege un archivo y genera una contraseña segura",
+                "Protect a file and generate a secure password",
+                "Babestu fitxategi bat eta sortu pasahitz segurua");
+        add("Recupera el archivo original desde un contenedor .enc",
+                "Recover the original file from an .enc container",
+                "Berreskuratu jatorrizko fitxategia .enc edukiontzi batetik");
+        add("← Atrás", "← Back", "← Atzera");
+        add("Cifrado AES", "AES encryption", "AES zifratzea");
+        add("Selecciona cualquier archivo, define el destino y guarda la contraseña generada.",
+                "Choose any file and its destination, then save the generated password.",
+                "Aukeratu edozein fitxategi eta helburua, eta gorde sortutako pasahitza.");
+        add("Selecciona cualquier archivo", "Choose any file", "Aukeratu edozein fitxategi");
+        add("Fichero de origen. También puedes arrastrar y soltar un archivo aquí.",
+                "Source file. You can also drag and drop a file here.",
+                "Jatorrizko fitxategia. Fitxategi bat arrastatu eta jaregin dezakezu hemen.");
+        add("Suelta aquí un archivo o selecciona uno", "Drop a file here or choose one",
+                "Arrastatu fitxategi bat hona edo aukeratu");
+        add("Se admiten archivos de texto, imágenes y otros binarios. Los originales se conservan y no se sobrescriben resultados existentes.",
+                "Text files, images and other binary files are supported. Originals are kept and existing results are not overwritten.",
+                "Testu-fitxategiak, irudiak eta beste fitxategi bitar batzuk onartzen dira. Jatorrizkoak gordetzen dira eta lehendik dauden emaitzak ez dira gainidazten.");
+        add("Selecciona un archivo normal y legible.",
+                "Choose a regular, readable file.",
+                "Aukeratu fitxategi arrunt eta irakurgarri bat.");
+        add("Arrastra un único archivo normal y legible.",
+                "Drop a single regular, readable file.",
+                "Arrastatu fitxategi arrunt eta irakurgarri bakarra.");
+        add("Contenedores Enigma (*.enc)", "Enigma containers (*.enc)",
+                "Enigma edukiontziak (*.enc)");
+        add("Arrastra un único contenedor .enc.", "Drop a single .enc container.",
+                "Arrastatu .enc edukiontzi bakarra.");
+        add("Todos los archivos", "All files", "Fitxategi guztiak");
+        add("Selecciona el archivo, define el destino y guarda la contraseña generada.",
+                "Choose the file and destination, then save the generated password.",
+                "Aukeratu fitxategia eta helburua, eta gorde sortutako pasahitza.");
+        add("Archivo de origen", "Source file", "Jatorrizko fitxategia");
+        add("Elige el archivo que quieres proteger y la carpeta de destino.",
+                "Choose the file you want to protect and its destination folder.",
+                "Aukeratu babestu nahi duzun fitxategia eta helburuko karpeta.");
+        add("Contraseña segura", "Secure password", "Pasahitz segurua");
+        add("Se genera una contraseña segura de 16 caracteres para proteger el archivo.",
+                "A secure 16-character password is generated to protect the file.",
+                "16 karaktereko pasahitz segurua sortzen da fitxategia babesteko.");
+        add("Guarda la contraseña por separado: será necesaria para recuperar el archivo.",
+                "Store the password separately; it is required to recover the file.",
+                "Gorde pasahitza aparte; fitxategia berreskuratzeko beharrezkoa da.");
+        add("Descifrado AES", "AES decryption", "AES deszifratzea");
+        add("Introduce el contenedor y su contraseña para recuperar el archivo.",
+                "Enter the container and its password to recover the file.",
+                "Sartu edukiontzia eta haren pasahitza fitxategia berreskuratzeko.");
+        add("Datos del contenedor", "Container details", "Edukiontziaren datuak");
+        add("Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado.",
+                "Choose the .enc container and the folder where the recovered file will be saved.",
+                "Aukeratu .enc edukiontzia eta berreskuratutako fitxategia gordetzeko karpeta.");
+        add("Carpeta del archivo recuperado", "Folder for the recovered file",
+                "Berreskuratutako fitxategiaren karpeta");
+        add("Manual de uso local", "Local user guide", "Tokiko erabilera-gida");
+        add("Atajos de teclado:", "Keyboard shortcuts:", "Teklatuko lasterbideak:");
+        add("F1: abrir esta ayuda.", "F1: open this help.", "F1: ireki laguntza hau.");
+        add("F2: mostrar información acerca de la aplicación.",
+                "F2: show information about the application.",
+                "F2: erakutsi aplikazioari buruzko informazioa.");
+        add("Ctrl+1: abrir la vista de cifrado.", "Ctrl+1: open the encryption view.",
+                "Ctrl+1: ireki zifratze-ikuspegia.");
+        add("Ctrl+2: abrir la vista de descifrado.", "Ctrl+2: open the decryption view.",
+                "Ctrl+2: ireki deszifratze-ikuspegia.");
+        add("Ctrl+Enter: ejecutar la operación de la vista actual.",
+                "Ctrl+Enter: run the operation in the current view.",
+                "Ctrl+Enter: exekutatu uneko ikuspegiko eragiketa.");
+        add("Esc: volver al menú principal.", "Esc: return to the main menu.",
+                "Esc: itzuli menu nagusira.");
+        add("Ayuda - Gestor Enigma AES", "Help - Enigma AES Manager",
+                "Laguntza - Enigma AES kudeatzailea");
+        add("Acerca de Gestor Enigma AES", "About Enigma AES Manager",
+                "Enigma AES kudeatzaileari buruz");
+        add("Cifrado: selecciona un archivo .txt, .png o cualquier otro archivo binario y una carpeta de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres.\n\nDescifrado: selecciona el contenedor .enc, la carpeta de salida y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional.\n\nLa vista previa se muestra después de un descifrado correcto para archivos de texto e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados existentes no se sobrescriben.",
+                "Encryption: choose a .txt, .png or any other binary file and a destination folder; click Encrypt file and save the generated 16-character password.\n\nDecryption: choose the .enc container, an output folder and the password; click Decrypt file. Comparing with the original is optional.\n\nThe preview appears after successful decryption for supported text and PNG files. Files are processed locally and existing results are not overwritten.",
+                "Zifratzea: aukeratu .txt, .png edo beste fitxategi bat eta helburuko karpeta; sakatu Zifratu fitxategia eta gorde sortutako 16 karaktereko pasahitza.\n\nDeszifratzea: aukeratu .enc edukiontzia, irteerako karpeta eta pasahitza; sakatu Deszifratu fitxategia. Jatorrizkoarekin alderatzea aukerakoa da.\n\nAurrebista testu-fitxategi eta PNG bateragarriak behar bezala deszifratu ondoren agertzen da. Fitxategiak lokalean prozesatzen dira eta lehendik dauden emaitzak ez dira gainidazten.");
+        add("Gestor Enigma AES\nAutoría: equipo Koldo, Kenneth y Carlos.\nVersión del formato de contenedor: R2AE v1.\nCifrado y autenticación de archivos con AES-256-GCM. El procesamiento se realiza localmente.",
+                "Enigma AES Manager\nAuthors: Koldo, Kenneth and Carlos.\nContainer format version: R2AE v1.\nFile encryption and authentication with AES-256-GCM. Processing is performed locally.",
+                "Enigma AES kudeatzailea\nEgileak: Koldo, Kenneth eta Carlos.\nEdukiontzi-formatuaren bertsioa: R2AE v1.\nFitxategien zifratzea eta autentifikazioa AES-256-GCM bidez. Prozesamendua lokalean egiten da.");
+        add("Cerrar", "Close", "Itxi");
         add("Ayuda", "Help", "Laguntza");
         add("Ayuda sobre el uso de la aplicación", "Help with using the application",
                 "Aplikazioa erabiltzeko laguntza");
@@ -186,25 +277,9 @@ public final class LanguageService {
                 "Aukeratu zifratutako fitxategia");
         add("Seleccionar archivo original", "Choose original file",
                 "Aukeratu jatorrizko fitxategia");
-        add("Contenedores Enigma (*.enc)", "Enigma containers (*.enc)",
-                "Enigma edukiontziak (*.enc)");
-        add("Contenedores Enigma (*.txt.enc, *.png.enc)",
-                "Enigma containers (*.txt.enc, *.png.enc)",
-                "Enigma edukiontziak (*.txt.enc, *.png.enc)");
-        add("Archivos de texto e imágenes (*.txt, *.png)",
-                "Text and image files (*.txt, *.png)",
-                "Testu eta irudi fitxategiak (*.txt, *.png)");
         add("Error de cifrado", "Encryption error", "Zifratze-errorea");
-        add("Esta función todavía no está implementada.",
-                "This feature has not been implemented yet.",
-                "Funtzio hau oraindik ez dago inplementatuta.");
         add("Arrastra un único archivo válido.", "Drop exactly one valid file.",
                 "Arrastatu eta jaregin baliozko fitxategi bakarra.");
-        add("Arrastra un único archivo .txt o .png.", "Drop exactly one .txt or .png file.",
-                "Arrastatu eta jaregin .txt edo .png fitxategi bakarra.");
-        add("Arrastra un único contenedor .txt.enc o .png.enc.",
-                "Drop exactly one .txt.enc or .png.enc container.",
-                "Arrastatu eta jaregin .txt.enc edo .png.enc edukiontzi bakarra.");
         add("Carpeta de destino seleccionada.", "Destination folder selected.",
                 "Helburuko karpeta aukeratu da.");
         add("Selección limpiada.", "Selection cleared.", "Hautapena garbitu da.");
@@ -239,8 +314,6 @@ public final class LanguageService {
         add("Selecciona un fichero de origen y una carpeta de destino.",
                 "Choose a source file and a destination folder.",
                 "Aukeratu jatorrizko fitxategi bat eta helburuko karpeta bat.");
-        add("Selecciona un archivo .txt o .png.", "Choose a .txt or .png file.",
-                "Aukeratu .txt edo .png fitxategi bat.");
         add("Selecciona el contenedor .enc y una carpeta de destino.",
                 "Choose the .enc container and a destination folder.",
                 "Aukeratu .enc edukiontzia eta helburuko karpeta bat.");

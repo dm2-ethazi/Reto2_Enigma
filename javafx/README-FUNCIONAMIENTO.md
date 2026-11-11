@@ -29,9 +29,21 @@ descifrar, esto ocurre después de que GCM haya verificado la etiqueta de
 autenticación; si se indicó un archivo de referencia, también después de
 comprobar que ambos archivos contienen exactamente los mismos bytes.
 
+## Navegación con teclado
+
+Los siguientes atajos están disponibles en la ventana principal y también se
+muestran en **Ayuda**:
+
+- `F1`: abrir la ayuda.
+- `F2`: mostrar información acerca de la aplicación.
+- `Ctrl+1`: abrir la vista de cifrado.
+- `Ctrl+2`: abrir la vista de descifrado.
+- `Ctrl+Enter`: iniciar la operación de la vista actual.
+- `Esc`: volver al menú principal.
+
 ## Recorrido de cifrado
 
-1. En la pantalla principal se selecciona un archivo `.txt` o `.png` y una carpeta de destino. El selector recuerda la última carpeta usada para cada tipo de selección, incluso al cerrar y volver a abrir la aplicación.
+1. En la pantalla principal se selecciona un archivo `.txt`, `.png` u otro fichero binario y una carpeta de destino. El selector recuerda la última carpeta usada para cada tipo de selección, incluso al cerrar y volver a abrir la aplicación.
 2. `MainController` valida los campos básicos e inicia el trabajo en una tarea
    de JavaFX ejecutada en segundo plano.
 3. `FileService` comprueba que el origen sea un archivo normal y legible, y
@@ -48,8 +60,9 @@ comprobar que ambos archivos contienen exactamente los mismos bytes.
    el temporal.
 
 Los tres campos de ruta de archivo aceptan arrastrar y soltar un único fichero:
-el origen y la referencia admiten `.txt` o `.png`; el contenedor para descifrar
-admite `.txt.enc` o `.png.enc`. Los selectores aplican los mismos filtros.
+el origen y la referencia admiten cualquier fichero normal legible; el
+contenedor para descifrar debe terminar en `.enc`. Los selectores aplican los
+mismos criterios.
 
 ## Recorrido de descifrado y verificación
 
@@ -175,3 +188,25 @@ mvn test
 Incluyen pruebas de límites de chunk (justo antes, en y después de 64 KiB),
 progreso, autenticidad, contraseña incorrecta, referencia distinta, limpieza
 de temporales y round-trips de archivos de varios tamaños.
+
+## Crear el JAR ejecutable
+
+Se necesita JDK 25 y Maven 3.6.3 o superior. El POM comprueba la versión de
+Maven al iniciar la compilación y muestra un error claro si no se cumple el
+mínimo. Desde esta carpeta, ejecuta:
+
+```powershell
+mvn clean package
+```
+
+El POM selecciona automáticamente los componentes nativos de JavaFX para el
+sistema donde se ejecuta Maven y genera un JAR con ese destino:
+
+- Windows: `target/Enigma-GestorAES-Java25-windows.jar`
+- Ubuntu o Debian: `target/Enigma-GestorAES-Java25-linux.jar`
+
+Hay que construir el paquete en cada sistema operativo de destino; un JAR
+con librerías nativas de Windows no sustituye al de Linux, ni viceversa. Para
+obtener ambos, ejecuta el mismo comando una vez en Windows y otra en Ubuntu o
+Debian. El JAR incluye JavaFX, pero no el propio JDK: para ejecutarlo hace falta
+tener Java 25 instalado en el sistema.
