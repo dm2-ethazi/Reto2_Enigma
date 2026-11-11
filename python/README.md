@@ -1,172 +1,242 @@
-# Enigma — interfaz de terminal
+# Enigma · Python
 
-Aplicación de terminal sin colores para cifrar texto con Vigenère y cualquier
-archivo con AES-256-GCM. El menú ofrece **Cifrar Vigenère**, **Cifrar archivo AES**
-y **Salir**. Esta fase incluye solo cifrado.
+Aplicación de terminal del **Reto 2 de DAM** para cifrar y descifrar texto y
+archivos. Incluye Vigenère para texto UTF-8 y AES-256-GCM para archivos de
+cualquier tipo, con verificación de autenticidad al descifrar.
 
-Necesita Python 3.14 o posterior. AES utiliza `cryptography`, fijado en
-`requirements.txt`; Vigenère y la interfaz usan la biblioteca estándar.
+[Instalación](#instalación) · [Uso](#uso) · [Vigenère](#vigenère) ·
+[AES](#aes-256-gcm) · [Pruebas](#desarrollo-y-pruebas)
 
-## Instalación y arranque
+## Funcionalidades
 
-Desde esta carpeta, en Windows, crea el entorno e instala las dependencias una vez:
+| Función | Vigenère | AES-256-GCM |
+| --- | --- | --- |
+| Cifrar y descifrar | Sí | Sí |
+| Entrada | Consola o archivos `.txt` UTF-8 | Cualquier archivo |
+| Clave | Entre 1 y 64 letras A-Z | Contraseña aleatoria de 16 letras y números |
+| Resultado | Mostrar, guardar `.txt` o ambas opciones | Guardar archivo |
+| Autenticidad | Sin verificación | Verificación de etiqueta GCM y cabecera AAD |
+
+Ambos algoritmos procesan archivos por bloques y utilizan temporales `.part`
+de hasta **20 MiB**. Los destinos existentes se rechazan, se conservan los
+originales y el explorador se abre después de guardar correctamente.
+
+## Instalación
+
+El entorno reproducible del proyecto utiliza **Python 3.14.x**
+(`>=3.14,<3.15`) y las dependencias fijadas en `uv.lock`.
+Los comandos siguientes parten de la raíz del repositorio.
+
+### Con uv
 
 ```powershell
-py -3 -m venv .venv
+python -m pip install uv
+cd python
+python -m uv sync --locked
+python -m uv run --locked python main.py
+```
+
+En Linux o macOS, utiliza `python3` si ese es el nombre de tu intérprete
+Python 3.14. No necesitas activar manualmente el entorno creado por uv.
+
+### Con venv y pip
+
+Para ejecutar la aplicación sin instalar las herramientas de desarrollo:
+
+**Windows (PowerShell)**
+
+```powershell
+cd python
+py -3.14 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe main.py
 ```
 
-También puedes abrir `iniciar_enigma.bat` con doble clic: utiliza automáticamente
-`.venv` cuando existe. Si ejecutas `py -3 main.py` sin ese entorno, instala las
-dependencias en ese mismo intérprete para usar AES.
-
-En Debian o Ubuntu:
+**Linux / macOS**
 
 ```bash
-python3 -m venv .venv
+cd python
+python3.14 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python main.py
 ```
 
-Usa las flechas para navegar y Enter para elegir. También puedes pulsar
-el número de una opción. Esc vuelve al menú o sale desde la pantalla principal.
-Si la terminal no admite control de cursor, se muestran opciones numeradas:
-escribe el número y pulsa Enter. `q` vuelve o sale. Ctrl+C también permite salir.
+En Windows también puedes abrir `python/iniciar_enigma.bat` con doble clic
+después de instalar las dependencias. El lanzador utiliza `python/.venv` cuando
+existe; en caso contrario, intenta usar Python del sistema.
+
+Los selectores gráficos requieren Tcl/Tk y una sesión de escritorio. Tkinter
+es opcional y no se instala con pip: si no está disponible, la aplicación pide
+las rutas por terminal.
+
+## Uso
+
+El menú agrupa las operaciones por algoritmo:
+
+```text
+VIGENÈRE / TEXTO
+  1. Cifrar Vigenère
+  2. Descifrar Vigenère
+
+AES / ARCHIVOS
+  3. Cifrar archivo AES
+  4. Descifrar archivo AES
+
+  5. Salir
+```
+
+- **Navegar:** flechas y Enter, o el número de una opción.
+- **Volver o cancelar:** Esc. En el modo numerado, escribe `q` o `volver`.
+- **Contraseñas:** en terminal interactiva aparece un `*` por carácter;
+  Retroceso borra el último y Esc cancela. Los caracteres reales no se muestran.
+- **Progreso:** los puntos repiten `. → .. → ... → .` mientras se cifra o
+  descifra. Al terminar se muestra `Completado.`. Las operaciones rápidas
+  pueden terminar antes de completar un ciclo.
+- **Salida redirigida:** se utiliza un mensaje de progreso sencillo, sin animación.
+- **Finalizar:** selecciona Salir o pulsa Ctrl+C.
+
+Al guardar, Windows y macOS abren el explorador con el resultado seleccionado;
+Linux abre su carpeta mediante `xdg-open`. El resultado no se ejecuta. Si no se
+puede iniciar el explorador, se muestra la ruta y se conserva el archivo.
 
 ## Vigenère
 
-1. Elige **Cifrar Vigenère**.
-2. Introduce texto por consola o selecciona un archivo `.txt` UTF-8.
-3. Introduce una clave de 1 a 64 letras A-Z, sin espacios, números ni acentos.
-   La clave se oculta al escribirla en una terminal interactiva.
+1. Selecciona **Cifrar Vigenère** o **Descifrar Vigenère**.
+2. Elige texto por consola o un archivo `.txt` en UTF-8.
+3. Introduce la clave: de 1 a 64 letras A-Z, sin números, espacios ni acentos.
 4. Elige **Mostrar**, **Guardar .txt** o **Mostrar y guardar**.
-5. Si vas a guardar, selecciona el destino antes de iniciar el cifrado.
-6. Espera al resultado y pulsa Enter para volver al menú.
+5. Si guardas, selecciona un destino nuevo y espera al resultado.
+6. Pulsa Enter para volver al menú principal.
 
-Durante el cifrado se muestra `Cifrando.`, `Cifrando..`, `Cifrando...` en una
-misma línea, repitiendo los puntos sin colores. El indicador desaparece al
-terminar o cancelar. Si la salida se redirige a un archivo, solo se escribe
-el mensaje `Cifrando...` una vez.
-
-Ejemplo: `ATTACKATDAWN` con clave `LEMON` produce `LXFOPVEFRNHR`.
-Solo las letras A-Z/a-z se transforman y avanzan la clave. Se conservan las
-mayúsculas y minúsculas, los espacios, signos, números, acentos, ñ y otros
-caracteres Unicode. Los archivos conservan sus saltos de línea CRLF/LF y el
-BOM UTF-8, si existe. Vigenère es un cifrado educativo.
-
-## AES
-
-1. Elige **Cifrar archivo AES**.
-2. Selecciona cualquier archivo de origen: texto, imagen, documento o binario.
-3. Selecciona el destino; se propone `<nombre original>.enc`.
-4. Durante `Cifrando AES...` se leen bloques de 1 MiB y se escriben directamente
-   en `.part` de hasta 20 MiB en la carpeta de destino. Se mantienen una única
-   operación AES-GCM y su etiqueta de autenticación entre todos los bloques.
-5. Al completar el guardado se muestra una contraseña aleatoria de 16 caracteres
-   A-Z, a-z y 0-9. Guárdala: no se escribe en el archivo ni se puede recuperar.
-6. Pulsa Enter para volver al menú.
-
-Cada operación genera una contraseña, una sal de 16 bytes y un nonce de 12 bytes
-nuevos mediante `secrets`. Se deriva una clave de 256 bits con PBKDF2-HMAC-SHA256
-y 200 000 iteraciones, como en el proyecto de referencia. El resultado usa el
-contenedor R2AE v1: cabecera autenticada de 37 bytes, contenido cifrado y etiqueta
-GCM de 16 bytes. Su tamaño es el original más 53 bytes; también admite archivos
-vacíos. El límite de 20 MiB se aplica a todos los bytes de cada parte, incluida
-la cabecera y la etiqueta. Consulta [el formato R2AE](docs/R2AE.md).
-
-La contraseña solo se muestra después de guardar correctamente. Cancelar un
-selector vuelve al menú sin cifrar; los errores de lectura o guardado se comunican
-sin sobrescribir archivos existentes. El cifrado usa las primitivas de
-[cryptography](https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/).
-
-## Selección y guardado de archivos
-
-La función reutilizable `choose_path` de `src/utils/dialogs.py` abre un selector
-nativo mediante Tkinter. Admite filtros, nombre sugerido y extensión para guardar.
-Si Tkinter no está disponible o no hay escritorio, solicita la ruta en la terminal;
-admite rutas entre comillas, espacios y `~`. Una entrada vacía cancela.
-
-Cancelar el selector o pulsar Esc en un submenú vuelve al menú principal.
-Los errores de clave, lectura o guardado se muestran sin cerrar la aplicación.
-Los archivos originales se mantienen intactos y nunca se sobrescriben destinos
-existentes. El resultado se prepara en archivos temporales `.part` de hasta
-20 MiB (20 971 520 bytes) cada uno. Si supera ese tamaño, se crean tantas partes
-como sean necesarias y se unen en orden para obtener un único archivo de salida.
-El límite se aplica a bytes, también cuando el texto contiene caracteres UTF-8
-que ocupan varios bytes. Las partes se eliminan al completar o cancelar la
-operación, y también ante errores controlados. Al cifrar un archivo, las partes
-se escriben progresivamente mientras aparece `Cifrando...`, en la carpeta elegida
-para el resultado. Si eliges solo **Mostrar**, se crean en la carpeta temporal
-del sistema y también se eliminan después de mostrar el texto.
-
-Cuando basta una parte, se publica mediante un enlace duro atómico; el sistema
-de archivos de destino debe admitirlos, como NTFS o ext4. Cuando hay varias, se
-unen directamente en un archivo de destino nuevo, sin crear un temporal adicional
-mayor de 20 MiB. Ese archivo es visible mientras se completa: un error controlado
-lo elimina, pero un cierre abrupto del proceso puede dejarlo incompleto y conservar
-partes temporales. No se reemplaza ningún archivo existente, aunque otro proceso
-lo cree durante la operación.
-
-Los archivos de entrada se leen en bloques de 1 MiB y se cifran directamente a
-las partes, sin cargar el archivo ni el resultado completo en memoria. La clave
-continúa desde su posición anterior entre bloques y partes. La validación UTF-8
-también es incremental: admite caracteres divididos entre lecturas y rechaza
-secuencias inválidas o incompletas sin guardar un resultado. Para **Mostrar**, el
-resultado se lee de las partes por bloques. El texto escrito por consola sigue
-cifrándose en memoria.
-
-Tkinter es opcional y no se instala con pip. Para usar los selectores nativos,
-la instalación de Python debe incluir Tcl/Tk y disponer de una sesión gráfica.
-
-## Estructura
+Ejemplo con la misma clave en ambas direcciones:
 
 ```text
-python/
-  main.py                 # Punto de entrada
-  iniciar_enigma.bat       # Lanzador Windows
-  src/
-    __init__.py
-    errors.py             # Validación y cancelación controladas
-    encrypt/
-      __init__.py
-      vigenere.py         # Algoritmo de cifrado independiente de la interfaz
-      aes.py              # AES-256-GCM incremental con contenedor R2AE
-    utils/
-      __init__.py
-      dialogs.py          # Selector nativo con alternativa por terminal
-      files.py            # Lectura UTF-8 y guardado sin sobrescritura
-    interface/
-      __init__.py
-      app.py              # Flujo entre menú y pantallas
-      menu.py             # Opciones del menú principal
-      vigenere.py         # Flujo de cifrado Vigenère
-      aes.py              # Selección de origen/destino y cifrado AES
-      layout.py           # Marcos y composición visual sin colores
-      loading.py          # Indicador animado durante el cifrado
-      navigation.py       # Selección de opciones y navegación
-      terminal.py         # Lectura de teclas y compatibilidad Windows/Linux
-  requirements.txt        # Dependencia cryptography para AES
-  docs/R2AE.md            # Formato binario compartido con el proyecto original
-  tests/                  # Algoritmos, archivos, selectores e interfaz
-    fixtures/r2ae-v1.json  # Vectores públicos de prueba
+Texto original:  ATTACKATDAWN
+Clave:           LEMON
+Texto cifrado:   LXFOPVEFRNHR
+Texto descifrado: ATTACKATDAWN
 ```
 
-`main.py` es un lanzador mínimo en la raíz de la aplicación. La implementación
-se mantiene en `src/interface/`, con importaciones relativas entre sus módulos.
+Solo las letras A-Z/a-z se transforman y avanzan la posición de la clave.
+Se conservan mayúsculas, minúsculas, números, espacios, signos, acentos, ñ,
+Unicode, BOM UTF-8 y saltos de línea LF/CRLF. La posición de la clave se mantiene
+entre bloques y partes. Un archivo con UTF-8 inválido se rechaza sin publicar
+el resultado.
 
-Los algoritmos residen en `src/encrypt/` y las utilidades de archivos en
-`src/utils/`, para poder usarlos sin iniciar el menú.
+Vigenère es un cifrado educativo y no autentica los datos: una clave equivocada
+produce otro texto y no puede detectarse automáticamente.
 
-## Pruebas
+## AES-256-GCM
 
-Desde esta carpeta, después de instalar `requirements.txt` en el entorno:
+### Cifrar un archivo
+
+1. Selecciona **Cifrar archivo AES** y elige el origen.
+2. Elige un destino nuevo; se propone `<nombre original>.enc`.
+3. Espera a que termine el cifrado y el guardado.
+4. Guarda la contraseña generada de **16 caracteres A-Z, a-z y 0-9**.
+
+La contraseña solo aparece después de guardar correctamente. No se almacena
+en el contenedor ni se puede recuperar desde la aplicación.
+
+### Descifrar un archivo
+
+1. Selecciona **Descifrar archivo AES** y elige el archivo R2AE cifrado.
+2. Introduce la contraseña original, respetando mayúsculas y minúsculas.
+3. Elige un destino nuevo; para `.enc` se propone quitar esa extensión.
+4. Espera al mensaje **Archivo descifrado y autenticado**.
+
+El nombre original no se almacena en el contenedor. Si ya existe el destino
+propuesto, elige otro nombre para conservar ambos archivos.
+
+El descifrado comprueba formato, versión e iteraciones antes de derivar la
+clave. Autentica los **37 bytes exactos de cabecera como AAD** y verifica la
+etiqueta GCM de 16 bytes antes de publicar el resultado. Una contraseña
+incorrecta, una cabecera alterada o datos dañados producen un error sin publicar
+el archivo final.
+
+El contenedor **R2AE v1** utiliza PBKDF2-HMAC-SHA256 con 200 000 iteraciones,
+sal de 16 bytes y nonce de 12 bytes nuevos por cifrado. Añade 53 bytes al tamaño
+original y admite archivos vacíos. Consulta [la especificación R2AE](docs/R2AE.md)
+para ver el formato y los vectores de prueba.
+
+## Archivos y partes temporales
+
+- Las lecturas se hacen en bloques de **1 MiB**, sin cargar archivos completos
+  en memoria. El texto introducido por consola se procesa en memoria.
+- Cada `.part` ocupa como máximo **20 MiB (20 971 520 bytes)**. Las partes se
+  unen en orden para generar un único resultado; no son archivos cifrados
+  independientes.
+- Las partes se crean en la carpeta de destino. Para Vigenère con la opción
+  **Mostrar**, se utiliza la carpeta temporal del sistema.
+- Los temporales se eliminan al completar, cancelar o producirse un error
+  controlado. En el descifrado AES contienen datos en claro pendientes de
+  autenticación; el destino final se publica después de verificar la etiqueta.
+- Una única parte se publica mediante enlace duro, que requiere un sistema de
+  archivos compatible, como NTFS o ext4. Varias partes se unen en un archivo
+  nuevo visible mientras se completa; un error controlado elimina ese destino
+  incompleto. Un cierre abrupto puede dejar partes o un resultado incompleto.
+
+## Desarrollo y pruebas
+
+Desde la **raíz del repositorio**, ejecuta las mismas revisiones que CI:
+
+```powershell
+python -m pip install uv
+python -m unittest discover -s scripts -p 'test_*.py' -v
+python scripts/quality.py ci
+```
+
+La validación instala las dependencias con `uv sync --locked`, comprueba formato
+y lint con Ruff, y ejecuta pytest con cobertura de ramas mínima del **80 %**.
+Los informes JUnit y cobertura XML/HTML se guardan en `.artifacts/python/`.
+
+Para corregir el formato desde la raíz:
+
+```powershell
+python -m uv run --locked --project python ruff format python
+```
+
+Para ejecutar únicamente las pruebas de aplicación desde `python/`, después de
+crear el entorno e instalar `requirements.txt`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-En Linux, utiliza `.venv/bin/python`. Las pruebas de los selectores nativos
-simulan Tkinter y no abren ventanas. Las pruebas AES comparan el cifrado con
-vectores públicos y verifican el resultado con un consumidor independiente,
-incluidos los límites de las partes, archivos binarios, cancelación y errores.
+En Linux/macOS, sustituye el intérprete por `.venv/bin/python`. Las pruebas
+simulan los selectores y el explorador para no abrir ventanas. Cubren vectores
+AES de referencia, verificación AAD, contraseñas incorrectas, Vigenère, límites
+de partes, cancelación, errores y entrada de claves enmascaradas.
+
+Consulta [la guía de CI](../docs/GUIA_CI_CD.md) para activar los hooks locales,
+ver qué ramas se validan y localizar los artefactos en GitHub Actions.
+
+## Estructura
+
+```text
+python/
+├── main.py                  # Punto de entrada
+├── iniciar_enigma.bat        # Lanzador Windows
+├── pyproject.toml            # Dependencias y configuración de calidad
+├── uv.lock                   # Entorno reproducible de aplicación y desarrollo
+├── requirements.txt          # Dependencia de ejecución para instalación con pip
+├── docs/R2AE.md              # Especificación del contenedor AES
+├── src/
+│   ├── errors.py             # Validación y cancelación controladas
+│   ├── encrypt/              # Algoritmos AES y Vigenère por bloques
+│   ├── interface/            # Menú, pantallas, progreso y claves enmascaradas
+│   └── utils/                # Selectores, partes, publicación y explorador
+└── tests/
+    └── fixtures/r2ae-v1.json # Vectores públicos de referencia
+```
+
+## Problemas frecuentes
+
+| Problema | Qué hacer |
+| --- | --- |
+| Falta `cryptography` | Instala `requirements.txt` con el mismo intérprete que ejecuta `main.py`, o utiliza uv. |
+| No se abre el selector gráfico | Introduce la ruta por terminal; admite espacios, comillas y `~`. Una entrada vacía cancela. |
+| El destino ya existe | Elige un nombre nuevo; no se sobrescriben archivos. |
+| Vigenère rechaza un archivo | Usa un `.txt` válido en UTF-8 y una clave de 1 a 64 letras A-Z. |
+| AES no autentica el archivo | Comprueba la contraseña y que el archivo esté completo y sin modificar. |
+| No se abre el explorador | Usa la ruta mostrada para abrir la carpeta manualmente. |

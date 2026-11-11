@@ -26,11 +26,15 @@ class AesTests(unittest.TestCase):
         header = payload[:37]
         magic, version, iterations, salt, nonce = aes.HEADER.unpack(header)
         self.assertEqual((magic, version, iterations), (b"R2AE", 1, 200_000))
-        key = hashlib.pbkdf2_hmac("sha256", result.password.encode("ascii"), salt, iterations, 32)
+        key = hashlib.pbkdf2_hmac(
+            "sha256", result.password.encode("ascii"), salt, iterations, 32
+        )
         return AESGCM(key).decrypt(nonce, payload[37:], header)
 
     def test_binary_empty_unicode_and_layout(self):
-        for index, data in enumerate((b"", b"\x00", bytes(range(256)), "Hola ñ😀\r\n".encode())):
+        for index, data in enumerate(
+            (b"", b"\x00", bytes(range(256)), "Hola ñ😀\r\n".encode())
+        ):
             with self.subTest(size=len(data)):
                 source = self.folder / f"original-{index}.bin"
                 source.write_bytes(data)
@@ -40,7 +44,9 @@ class AesTests(unittest.TestCase):
                 self.assertEqual(self.decrypt_for_verification(result), data)
                 self.assertEqual(source.read_bytes(), data)
                 self.assertEqual(len(result.password), 16)
-                self.assertTrue(all(c in aes.PASSWORD_ALPHABET for c in result.password))
+                self.assertTrue(
+                    all(c in aes.PASSWORD_ALPHABET for c in result.password)
+                )
                 self.assertNotIn(result.password, repr(result))
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
@@ -52,19 +58,30 @@ class AesTests(unittest.TestCase):
                 source = self.folder / vector["name"]
                 source.write_bytes(bytes.fromhex(vector["plaintext_hex"]))
                 with (
-                    patch.object(aes, "generate_password", return_value=vector["password"]),
-                    patch.object(aes.secrets, "token_bytes", side_effect=[
-                        bytes.fromhex(vector["salt_hex"]), bytes.fromhex(vector["nonce_hex"]),
-                    ]),
+                    patch.object(
+                        aes, "generate_password", return_value=vector["password"]
+                    ),
+                    patch.object(
+                        aes.secrets,
+                        "token_bytes",
+                        side_effect=[
+                            bytes.fromhex(vector["salt_hex"]),
+                            bytes.fromhex(vector["nonce_hex"]),
+                        ],
+                    ),
                 ):
                     result = aes.encrypt_file(source)
-                self.assertEqual(result.path.read_bytes(), bytes.fromhex(vector["container_hex"]))
+                self.assertEqual(
+                    result.path.read_bytes(), bytes.fromhex(vector["container_hex"])
+                )
 
     def test_password_generation_uses_secrets(self):
         with patch.object(aes.secrets, "choice", return_value="Z") as choice:
             self.assertEqual(aes.generate_password(), "Z" * 16)
         self.assertEqual(choice.call_count, 16)
-        self.assertTrue(all(call.args == (aes.PASSWORD_ALPHABET,) for call in choice.call_args_list))
+        self.assertTrue(
+            all(call.args == (aes.PASSWORD_ALPHABET,) for call in choice.call_args_list)
+        )
 
     def test_fresh_password_salt_and_nonce(self):
         source = self.folder / "original.bin"
@@ -72,8 +89,12 @@ class AesTests(unittest.TestCase):
         first = aes.encrypt_file(source, self.folder / "first.enc")
         second = aes.encrypt_file(source, self.folder / "second.enc")
         self.assertNotEqual(first.password, second.password)
-        self.assertNotEqual(first.path.read_bytes()[9:25], second.path.read_bytes()[9:25])
-        self.assertNotEqual(first.path.read_bytes()[25:37], second.path.read_bytes()[25:37])
+        self.assertNotEqual(
+            first.path.read_bytes()[9:25], second.path.read_bytes()[9:25]
+        )
+        self.assertNotEqual(
+            first.path.read_bytes()[25:37], second.path.read_bytes()[25:37]
+        )
 
     def test_tampering_or_wrong_password_fails_authentication(self):
         source = self.folder / "original.bin"
@@ -82,7 +103,9 @@ class AesTests(unittest.TestCase):
         payload = result.path.read_bytes()
         header = payload[:37]
         _, _, iterations, salt, nonce = aes.HEADER.unpack(header)
-        key = hashlib.pbkdf2_hmac("sha256", result.password.encode(), salt, iterations, 32)
+        key = hashlib.pbkdf2_hmac(
+            "sha256", result.password.encode(), salt, iterations, 32
+        )
         wrong = hashlib.pbkdf2_hmac("sha256", b"wrong-password", salt, iterations, 32)
         with self.assertRaises(InvalidTag):
             AESGCM(wrong).decrypt(nonce, payload[37:], header)
@@ -91,7 +114,9 @@ class AesTests(unittest.TestCase):
                 modified = bytearray(payload)
                 modified[offset] ^= 1
                 with self.assertRaises(InvalidTag):
-                    AESGCM(key).decrypt(nonce, bytes(modified[37:]), bytes(modified[:37]))
+                    AESGCM(key).decrypt(
+                        nonce, bytes(modified[37:]), bytes(modified[:37])
+                    )
 
     def test_missing_directory_and_existing_sources_or_destinations(self):
         source = self.folder / "original.bin"
@@ -135,9 +160,13 @@ class AesTests(unittest.TestCase):
             def read(self, size=-1):
                 if not 0 < size <= 7:
                     raise AssertionError(f"Lectura sin límite: {size}")
-                observations.append([part.stat().st_size for part in source.parent.glob("*.part")])
+                observations.append(
+                    [part.stat().st_size for part in source.parent.glob("*.part")]
+                )
                 if destination.exists():
-                    raise AssertionError("Destino publicado antes de terminar el cifrado")
+                    raise AssertionError(
+                        "Destino publicado antes de terminar el cifrado"
+                    )
                 return self.stream.read(size)
 
         def open_path(path, *args, **kwargs):
@@ -166,7 +195,7 @@ class AesTests(unittest.TestCase):
                 block = bytes(range(256)) * 4096
                 with source.open("wb") as stream:
                     while remaining:
-                        chunk = block[:min(len(block), remaining)]
+                        chunk = block[: min(len(block), remaining)]
                         stream.write(chunk)
                         expected.update(chunk)
                         remaining -= len(chunk)
@@ -188,8 +217,12 @@ class AesTests(unittest.TestCase):
                     _, _, iterations, salt, nonce = aes.HEADER.unpack(header)
                     stream.seek(-16, 2)
                     tag = stream.read(16)
-                    key = hashlib.pbkdf2_hmac("sha256", result.password.encode(), salt, iterations, 32)
-                    decryptor = Cipher(algorithms.AES(key), modes.GCM(nonce, tag)).decryptor()
+                    key = hashlib.pbkdf2_hmac(
+                        "sha256", result.password.encode(), salt, iterations, 32
+                    )
+                    decryptor = Cipher(
+                        algorithms.AES(key), modes.GCM(nonce, tag)
+                    ).decryptor()
                     decryptor.authenticate_additional_data(header)
                     stream.seek(37)
                     actual = hashlib.sha256()

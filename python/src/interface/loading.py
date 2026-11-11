@@ -6,7 +6,7 @@ from threading import Event, Thread
 
 
 @contextmanager
-def loading(message: str = "Cifrando", *, interval: float = 0.35):
+def loading(message: str = "Cifrando", *, interval: float = 0.2):
     output = sys.stdout
     if not output.isatty():
         print(f"{message}...", file=output, flush=True)
@@ -28,10 +28,14 @@ def loading(message: str = "Cifrando", *, interval: float = 0.35):
     show(1)
     animation = Thread(target=animate, name="enigma-loading", daemon=True)
     animation.start()
+    completed = False
     try:
         yield
+        completed = True
     finally:
         stopped.set()
         animation.join()
         output.write("\r" + " " * (len(message) + 3) + "\r")
+        if completed:
+            output.write(f"{message}... Completado.\n")
         output.flush()

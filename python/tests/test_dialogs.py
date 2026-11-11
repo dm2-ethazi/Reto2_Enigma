@@ -21,7 +21,9 @@ class DialogTests(unittest.TestCase):
         self.native.asksaveasfilename = Mock(return_value="")
         tk.filedialog = self.native
         self.tk = tk
-        modules = patch.dict(sys.modules, {"tkinter": tk, "tkinter.filedialog": self.native})
+        modules = patch.dict(
+            sys.modules, {"tkinter": tk, "tkinter.filedialog": self.native}
+        )
         modules.start()
         self.addCleanup(modules.stop)
         output = redirect_stdout(io.StringIO())
@@ -31,16 +33,22 @@ class DialogTests(unittest.TestCase):
     def test_open_path_with_spaces(self):
         source = Path("carpeta con espacios") / "entrada.txt"
         self.native.askopenfilename.return_value = str(source)
-        self.assertEqual(dialogs.choose_path("Abrir", filetypes=dialogs.TEXT_FILES), source)
+        self.assertEqual(
+            dialogs.choose_path("Abrir", filetypes=dialogs.TEXT_FILES), source
+        )
         self.root.withdraw.assert_called_once()
         self.root.destroy.assert_called_once()
-        self.assertEqual(self.native.askopenfilename.call_args.kwargs["filetypes"], dialogs.TEXT_FILES)
+        self.assertEqual(
+            self.native.askopenfilename.call_args.kwargs["filetypes"],
+            dialogs.TEXT_FILES,
+        )
 
     def test_save_uses_proposed_name_directory_and_extension(self):
         target = Path.cwd() / "resultado.txt"
         self.native.asksaveasfilename.return_value = str(target)
         self.assertEqual(
-            dialogs.choose_path("Guardar", save=True, default=target, extension=".txt"), target
+            dialogs.choose_path("Guardar", save=True, default=target, extension=".txt"),
+            target,
         )
         options = self.native.asksaveasfilename.call_args.kwargs
         self.assertEqual(options["initialfile"], target.name)
@@ -59,7 +67,9 @@ class DialogTests(unittest.TestCase):
     def test_no_desktop_falls_back_to_terminal(self):
         self.tk.Tk.side_effect = self.tk.TclError("sin escritorio")
         with patch("builtins.input", return_value='"carpeta con espacios/entrada.txt"'):
-            self.assertEqual(dialogs.choose_path("Abrir"), Path("carpeta con espacios/entrada.txt"))
+            self.assertEqual(
+                dialogs.choose_path("Abrir"), Path("carpeta con espacios/entrada.txt")
+            )
 
     def test_dialog_failure_closes_window_before_fallback(self):
         self.native.askopenfilename.side_effect = self.tk.TclError("sin escritorio")
@@ -82,6 +92,9 @@ class DialogTests(unittest.TestCase):
     def test_empty_terminal_path_cancels(self):
         with patch.dict(sys.modules, {"tkinter": None}):
             for value in ("", "  ", '""', "''"):
-                with self.subTest(value=value), patch("builtins.input", return_value=value):
+                with (
+                    self.subTest(value=value),
+                    patch("builtins.input", return_value=value),
+                ):
                     with self.assertRaises(OperationCancelled):
                         dialogs.choose_path("Abrir")

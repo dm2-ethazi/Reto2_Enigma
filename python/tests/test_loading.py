@@ -42,11 +42,15 @@ class LoadingTests(unittest.TestCase):
 
                 def operation():
                     with (
-                        patch("src.interface.loading.Thread", side_effect=create_thread),
+                        patch(
+                            "src.interface.loading.Thread", side_effect=create_thread
+                        ),
                         redirect_stdout(output),
                         loading(interval=0.001),
                     ):
-                        self.assertTrue(ready.wait(timeout=2), "El indicador no se actualizó.")
+                        self.assertTrue(
+                            ready.wait(timeout=2), "El indicador no se actualizó."
+                        )
                         if error is not None:
                             raise error
 
@@ -55,8 +59,17 @@ class LoadingTests(unittest.TestCase):
                 else:
                     with self.assertRaises(type(error)):
                         operation()
-                self.assertEqual(frames[:4], ["Cifrando.", "Cifrando..", "Cifrando...", "Cifrando."])
+                self.assertEqual(
+                    frames[:4], ["Cifrando.", "Cifrando..", "Cifrando...", "Cifrando."]
+                )
                 self.assertTrue(threads)
                 self.assertTrue(all(not thread.is_alive() for thread in threads))
-                self.assertTrue(output.getvalue().endswith("\r" + " " * 11 + "\r"))
+                ending = (
+                    "Cifrando... Completado.\n"
+                    if error is None
+                    else "\r" + " " * 11 + "\r"
+                )
+                self.assertTrue(output.getvalue().endswith(ending))
+                if error is not None:
+                    self.assertNotIn("Completado", output.getvalue())
                 self.assertNotIn("\x1b", output.getvalue())

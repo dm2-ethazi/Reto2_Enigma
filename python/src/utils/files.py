@@ -26,7 +26,9 @@ def new_destination(path: str | Path) -> Path:
     destination = Path(path).expanduser().absolute()
     # lexists también detecta enlaces simbólicos cuyo destino ya no existe.
     if os.path.lexists(destination):
-        raise FileExistsError(f"El destino ya existe: {destination}. Elige otro nombre.")
+        raise FileExistsError(
+            f"El destino ya existe: {destination}. Elige otro nombre."
+        )
     if not destination.parent.is_dir():
         raise ValidationError("La carpeta de destino no existe.")
     return destination
@@ -138,7 +140,7 @@ def _publish_parts(parts: list[Path], destination: Path) -> None:
 
 @contextmanager
 def temporary_parts(directory: str | Path | None = None) -> Iterator[_PartWriter]:
-    """Mantiene los bloques cifrados en disco hasta mostrarlos o publicarlos."""
+    """Mantiene el resultado en partes hasta mostrarlo o publicarlo."""
     folder = Path(directory) if directory is not None else Path(tempfile.gettempdir())
     writer = _PartWriter(folder)
     try:
@@ -186,4 +188,3 @@ def write_text(path: str | Path, text: str) -> Path:
         for offset in range(0, len(text), COPY_CHUNK_SIZE):
             stream.write(text[offset : offset + COPY_CHUNK_SIZE].encode("utf-8"))
     return Path(path).expanduser()
-

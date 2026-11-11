@@ -30,6 +30,7 @@ class AesInterfaceTests(unittest.TestCase):
         output = io.StringIO()
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
+            patch.object(screen, "reveal_file"),
             patch("builtins.input", side_effect=answers),
             patch.object(screen, "choose_path", side_effect=paths) as picker,
             redirect_stdout(output),
@@ -39,7 +40,7 @@ class AesInterfaceTests(unittest.TestCase):
         return output.getvalue(), picker
 
     def test_encrypt_via_menu_and_show_password_after_success(self):
-        output, picker = self.run_app(["2", "", "3"], [self.source, self.destination])
+        output, picker = self.run_app(["3", "", "5"], [self.source, self.destination])
         password = re.search(r"Contraseña generada: ([A-Za-z0-9]{16})", output).group(1)
         payload = self.destination.read_bytes()
         header = payload[:37]
@@ -50,15 +51,20 @@ class AesInterfaceTests(unittest.TestCase):
         self.assertIn("Cifrando AES...", output)
         self.assertIn(f"Archivo cifrado: {self.destination}", output)
         self.assertIn("Hasta pronto.", output)
-        self.assertEqual(picker.call_args_list[1].kwargs["default"], Path(f"{self.source}.enc"))
+        self.assertEqual(
+            picker.call_args_list[1].kwargs["default"], Path(f"{self.source}.enc")
+        )
         self.assertEqual(picker.call_args_list[1].kwargs["extension"], ".enc")
         self.assertTrue(picker.call_args_list[1].kwargs["save"])
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_cancel_either_picker_does_not_start_encryption(self):
         for paths in ([OperationCancelled()], [self.source, OperationCancelled()]):
-            with self.subTest(paths=len(paths)), patch.object(aes, "encrypt_file") as encrypt:
-                output, _ = self.run_app(["2", "3"], paths)
+            with (
+                self.subTest(paths=len(paths)),
+                patch.object(aes, "encrypt_file") as encrypt,
+            ):
+                output, _ = self.run_app(["3", "5"], paths)
                 encrypt.assert_not_called()
                 self.assertIn("Operación cancelada", output)
                 self.assertNotIn("Contraseña generada:", output)
@@ -66,7 +72,7 @@ class AesInterfaceTests(unittest.TestCase):
 
     def test_existing_destination_returns_to_menu(self):
         self.destination.write_bytes(b"otro archivo")
-        output, _ = self.run_app(["2", "", "3"], [self.source, self.destination])
+        output, _ = self.run_app(["3", "", "5"], [self.source, self.destination])
         self.assertIn("Error:", output)
         self.assertNotIn("Contraseña generada:", output)
         self.assertEqual(self.destination.read_bytes(), b"otro archivo")
@@ -74,7 +80,7 @@ class AesInterfaceTests(unittest.TestCase):
 
     def test_disk_error_does_not_report_success_or_password(self):
         with patch.object(files.os, "fsync", side_effect=OSError("Disco lleno")):
-            output, _ = self.run_app(["2", "", "3"], [self.source, self.destination])
+            output, _ = self.run_app(["3", "", "5"], [self.source, self.destination])
         self.assertIn("Error: Disco lleno", output)
         self.assertNotIn("Contraseña generada:", output)
         self.assertNotIn("Archivo cifrado:", output)
@@ -83,7 +89,7 @@ class AesInterfaceTests(unittest.TestCase):
 
     def test_missing_source_returns_to_menu(self):
         output, _ = self.run_app(
-            ["2", "", "3"], [self.folder / "ausente.bin", self.destination]
+            ["3", "", "5"], [self.folder / "ausente.bin", self.destination]
         )
         self.assertIn("Error:", output)
         self.assertNotIn("Contraseña generada:", output)
