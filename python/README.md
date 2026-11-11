@@ -2,7 +2,8 @@
 
 Aplicación de terminal sin colores para cifrar y descifrar texto con Vigenère
 y cualquier archivo con AES-256-GCM. El menú ofrece **Cifrar Vigenère**,
-**Cifrar archivo AES**, **Descifrar Vigenère**, **Descifrar archivo AES** y **Salir**.
+**Descifrar Vigenère**, **Cifrar archivo AES**, **Descifrar archivo AES** y **Salir**.
+Las opciones están agrupadas bajo Vigenère / Texto y AES / Archivos.
 
 Necesita Python 3.14 o posterior. AES utiliza `cryptography`, fijado en
 `requirements.txt`; Vigenère y la interfaz usan la biblioteca estándar.

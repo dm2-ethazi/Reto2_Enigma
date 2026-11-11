@@ -233,7 +233,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
 
     def test_vigenere_console_decrypt(self):
         output, reveal = self.run_app(
-            ["3", "1", "LXFOPVEFRNHR", "LEMON", "1", "", "5"], vig_screen, []
+            ["2", "1", "LXFOPVEFRNHR", "LEMON", "1", "", "5"], vig_screen, []
         )
         self.assertIn("Resultado:\nATTACKATDAWN", output)
         self.assertIn("Descifrando...", output)
@@ -249,7 +249,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
             patch.object(vigenere, "FILE_BLOCK_SIZE", 3),
         ):
             output, reveal = self.run_app(
-                ["3", "2", "LEMON", "3", "", "5"], vig_screen, [source, destination]
+                ["2", "2", "LEMON", "3", "", "5"], vig_screen, [source, destination]
             )
         self.assertEqual(destination.read_bytes(), text.encode())
         self.assertIn("Resultado guardado", output)
@@ -286,9 +286,9 @@ class DecryptionInterfaceTests(unittest.TestCase):
         source = self.folder / "plain.bin"
         source.write_bytes(b"secret")
         destination = self.folder / "out.enc"
-        _, reveal = self.run_app(["2", "", "5"], aes_screen, [source, destination])
+        _, reveal = self.run_app(["3", "", "5"], aes_screen, [source, destination])
         reveal.assert_called_once_with(destination)
-        _, reveal = self.run_app(["2", "", "5"], aes_screen, [source, destination])
+        _, reveal = self.run_app(["3", "", "5"], aes_screen, [source, destination])
         reveal.assert_not_called()
 
 

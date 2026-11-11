@@ -209,8 +209,27 @@ class InterfaceTests(unittest.TestCase):
     def test_menu_offers_encryption_decryption_and_exit(self):
         output = self.run_app(["5"])
         self.assertIn("1. Cifrar Vigenère", output)
-        self.assertIn("2. Cifrar archivo AES", output)
-        self.assertIn("3. Descifrar Vigenère", output)
+        self.assertIn("3. Cifrar archivo AES", output)
+        self.assertIn("2. Descifrar Vigenère", output)
         self.assertIn("4. Descifrar archivo AES", output)
         self.assertIn("5. Salir", output)
         self.assertIn("Hasta pronto.", output)
+
+    def test_main_menu_keeps_each_algorithm_under_its_heading(self):
+        for interactive in (False, True):
+            from src.interface.menu import CHOICES
+
+            output = layout.render("Menú principal", CHOICES, 0, (), interactive)
+            positions = [
+                output.index(label)
+                for label in (
+                    "VIGENÈRE / TEXTO",
+                    "1. Cifrar Vigenère",
+                    "2. Descifrar Vigenère",
+                    "AES / ARCHIVOS",
+                    "3. Cifrar archivo AES",
+                    "4. Descifrar archivo AES",
+                    "5. Salir",
+                )
+            ]
+            self.assertEqual(positions, sorted(positions))

@@ -20,9 +20,9 @@ def run():
                 if selected == 0:
                     run_encryption(interactive=interactive)
                 elif selected == 1:
-                    run_aes_encryption(interactive=interactive)
-                elif selected == 2:
                     run_decryption(interactive=interactive)
+                elif selected == 2:
+                    run_aes_encryption(interactive=interactive)
                 elif selected == 3:
                     run_aes_decryption(interactive=interactive)
             except OperationCancelled:
