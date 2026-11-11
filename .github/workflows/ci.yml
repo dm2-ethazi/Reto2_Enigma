@@ -1,0 +1,79 @@
+name: CI Python
+
+on:
+  push:
+    branches: [python, '**/python', python-cli, ci/cd]
+    paths:
+      - 'python/**'
+      - 'scripts/**'
+      - '.githooks/**'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main, develop, python, '**/python', python-cli, ci/cd]
+    paths:
+      - 'python/**'
+      - 'scripts/**'
+      - '.githooks/**'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-infrastructure:
+    name: Python - alcance de las revisiones
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.head_ref || github.ref_name) == 'python' ||
+      endsWith(github.head_ref || github.ref_name, '/python') ||
+      (github.head_ref || github.ref_name) == 'python-cli' ||
+      (github.head_ref || github.ref_name) == 'ci/cd'
+    runs-on: ubuntu-latest
+    outputs:
+      application: ${{ steps.application.outputs.present }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Verificar alcance de las revisiones automáticas
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Comprobar si está integrada la aplicación Python
+        id: application
+        shell: bash
+        run: |
+          if [[ -d python/src && -d python/tests ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "### Pendiente: integrar python/src y python/tests; solo se ha validado la infraestructura." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  python-quality:
+    name: Python - lint, tests y cobertura >=80%
+    needs: python-infrastructure
+    if: needs.python-infrastructure.outputs.application == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.14'
+          enable-cache: true
+          cache-dependency-glob: python/uv.lock
+      - name: Formato, lint, tests y cobertura Python
+        run: python scripts/quality.py ci
+      - name: Informes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-informes-${{ github.run_id }}
+          path: .artifacts/python/
+          if-no-files-found: warn
