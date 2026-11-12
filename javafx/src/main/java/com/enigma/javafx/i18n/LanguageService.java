@@ -78,9 +78,9 @@ public final class LanguageService {
                 "Choose the file and destination, then save the generated password.",
                 "Aukeratu fitxategia eta helburua, eta gorde sortutako pasahitza.");
         add("Archivo de origen", "Source file", "Jatorrizko fitxategia");
-        add("Elige el archivo que quieres proteger y la carpeta de destino.",
-                "Choose the file you want to protect and its destination folder.",
-                "Aukeratu babestu nahi duzun fitxategia eta helburuko karpeta.");
+        add("Elige el archivo que quieres proteger y la carpeta de destino. Si la dejas vacía, se usará la carpeta del archivo.",
+                "Choose the file you want to protect and its destination folder. If left empty, the file's folder will be used.",
+                "Aukeratu babestu nahi duzun fitxategia eta helburuko karpeta. Hutsik uzten baduzu, fitxategiaren karpeta erabiliko da.");
         add("Contraseña segura", "Secure password", "Pasahitz segurua");
         add("Se genera una contraseña segura de 16 caracteres para proteger el archivo.",
                 "A secure 16-character password is generated to protect the file.",
@@ -93,9 +93,9 @@ public final class LanguageService {
                 "Enter the container and its password to recover the file.",
                 "Sartu edukiontzia eta haren pasahitza fitxategia berreskuratzeko.");
         add("Datos del contenedor", "Container details", "Edukiontziaren datuak");
-        add("Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado.",
-                "Choose the .enc container and the folder where the recovered file will be saved.",
-                "Aukeratu .enc edukiontzia eta berreskuratutako fitxategia gordetzeko karpeta.");
+        add("Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado. Si la dejas vacía, se usará la carpeta del contenedor.",
+                "Choose the .enc container and the folder where the recovered file will be saved. If left empty, the container's folder will be used.",
+                "Aukeratu .enc edukiontzia eta berreskuratutako fitxategia gordetzeko karpeta. Hutsik uzten baduzu, edukiontziaren karpeta erabiliko da.");
         add("Carpeta del archivo recuperado", "Folder for the recovered file",
                 "Berreskuratutako fitxategiaren karpeta");
         add("Manual de uso local", "Local user guide", "Tokiko erabilera-gida");
@@ -117,9 +117,9 @@ public final class LanguageService {
                 "Laguntza - Enigma AES kudeatzailea");
         add("Acerca de Gestor Enigma AES", "About Enigma AES Manager",
                 "Enigma AES kudeatzaileari buruz");
-        add("Cifrado: selecciona un archivo .txt, .png o cualquier otro archivo binario y una carpeta de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres.\n\nDescifrado: selecciona el contenedor .enc, la carpeta de salida y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional.\n\nLa vista previa se muestra después de un descifrado correcto para archivos de texto e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados existentes no se sobrescriben.",
-                "Encryption: choose a .txt, .png or any other binary file and a destination folder; click Encrypt file and save the generated 16-character password.\n\nDecryption: choose the .enc container, an output folder and the password; click Decrypt file. Comparing with the original is optional.\n\nThe preview appears after successful decryption for supported text and PNG files. Files are processed locally and existing results are not overwritten.",
-                "Zifratzea: aukeratu .txt, .png edo beste fitxategi bat eta helburuko karpeta; sakatu Zifratu fitxategia eta gorde sortutako 16 karaktereko pasahitza.\n\nDeszifratzea: aukeratu .enc edukiontzia, irteerako karpeta eta pasahitza; sakatu Deszifratu fitxategia. Jatorrizkoarekin alderatzea aukerakoa da.\n\nAurrebista testu-fitxategi eta PNG bateragarriak behar bezala deszifratu ondoren agertzen da. Fitxategiak lokalean prozesatzen dira eta lehendik dauden emaitzak ez dira gainidazten.");
+        add("Cifrado: selecciona un archivo .txt, .log, .png o cualquier otro archivo binario y una carpeta de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres.\n\nDescifrado: selecciona el contenedor .enc, la carpeta de salida y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional.\n\nLa vista previa se muestra después de un descifrado correcto para archivos de texto (.txt y .log) e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados existentes no se sobrescriben.",
+                "Encryption: choose a .txt, .log, .png or any other binary file and a destination folder; click Encrypt file and save the generated 16-character password.\n\nDecryption: choose the .enc container, an output folder and the password; click Decrypt file. Comparing with the original is optional.\n\nThe preview appears after successful decryption for supported text (.txt and .log) and PNG files. Files are processed locally and existing results are not overwritten.",
+                "Zifratzea: aukeratu .txt, .log, .png edo beste fitxategi bat eta helburuko karpeta; sakatu Zifratu fitxategia eta gorde sortutako 16 karaktereko pasahitza.\n\nDeszifratzea: aukeratu .enc edukiontzia, irteerako karpeta eta pasahitza; sakatu Deszifratu fitxategia. Jatorrizkoarekin alderatzea aukerakoa da.\n\nAurrebista testu-fitxategi (.txt eta .log) eta PNG bateragarriak behar bezala deszifratu ondoren agertzen da. Fitxategiak lokalean prozesatzen dira eta lehendik dauden emaitzak ez dira gainidazten.");
         add("Gestor Enigma AES\nAutoría: equipo Koldo, Kenneth y Carlos.\nVersión del formato de contenedor: R2AE v1.\nCifrado y autenticación de archivos con AES-256-GCM. El procesamiento se realiza localmente.",
                 "Enigma AES Manager\nAuthors: Koldo, Kenneth and Carlos.\nContainer format version: R2AE v1.\nFile encryption and authentication with AES-256-GCM. Processing is performed locally.",
                 "Enigma AES kudeatzailea\nEgileak: Koldo, Kenneth eta Carlos.\nEdukiontzi-formatuaren bertsioa: R2AE v1.\nFitxategien zifratzea eta autentifikazioa AES-256-GCM bidez. Prozesamendua lokalean egiten da.");
@@ -325,9 +325,27 @@ public final class LanguageService {
         add("Selecciona un fichero de origen y una carpeta de destino.",
                 "Choose a source file and a destination folder.",
                 "Aukeratu jatorrizko fitxategi bat eta helburuko karpeta bat.");
+        add("Selecciona un fichero de origen para cifrar.",
+                "Choose a source file to encrypt.",
+                "Aukeratu zifratzeko jatorrizko fitxategi bat.");
+        add("Selecciona un fichero de origen. Se usará su carpeta como destino predeterminado cuando lo elijas.",
+                "Choose a source file. Its folder will be used as the default destination once selected.",
+                "Aukeratu jatorrizko fitxategi bat. Aukeratzean, haren karpeta erabiliko da helburu lehenetsi gisa.");
         add("Selecciona el contenedor .enc y una carpeta de destino.",
                 "Choose the .enc container and a destination folder.",
                 "Aukeratu .enc edukiontzia eta helburuko karpeta bat.");
+        add("Selecciona un contenedor .enc para descifrar.",
+                "Choose a .enc container to decrypt.",
+                "Aukeratu deszifratzeko .enc edukiontzi bat.");
+        add("Selecciona un contenedor .enc. Se usará su carpeta como destino predeterminado cuando lo elijas.",
+                "Choose a .enc container. Its folder will be used as the default destination once selected.",
+                "Aukeratu .enc edukiontzi bat. Aukeratzean, haren karpeta erabiliko da helburu lehenetsi gisa.");
+        add("Selecciona una carpeta de destino.",
+                "Choose a destination folder.",
+                "Aukeratu helburuko karpeta bat.");
+        add("La vista previa solo está disponible para archivos .txt.enc, .log.enc y .png.enc.",
+                "Preview is only available for .txt.enc, .log.enc and .png.enc files.",
+                "Aurrebista .txt.enc, .log.enc eta .png.enc fitxategietarako bakarrik dago erabilgarri.");
         add("Introduce la contraseña del contenedor.", "Enter the container password.",
                 "Sartu edukiontziaren pasahitza.");
         add("Selecciona el archivo original para poder compararlo.",
@@ -345,8 +363,6 @@ public final class LanguageService {
         add("El fichero de origen no existe o no se puede leer.",
                 "The source file does not exist or cannot be read.",
                 "Jatorrizko fitxategia ez dago edo ezin da irakurri.");
-        add("Selecciona una carpeta de destino.", "Choose a destination folder.",
-                "Aukeratu helburuko karpeta bat.");
         add("La carpeta de destino no existe o no permite escribir.",
                 "The destination folder does not exist or is not writable.",
                 "Helburuko karpeta ez dago edo ezin da bertan idatzi.");

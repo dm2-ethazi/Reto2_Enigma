@@ -71,10 +71,11 @@
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuEncryptionTitle"
-                                   style="-fx-text-fill: #0003C9;"
+                                   style="-fx-text-fill: #0003C9; -fx-font-size: 28px; -fx-font-weight: bold;"
                                    styleClass="menu-option-title menu-encryption-title" text="CIFRADO AES"
                                    textOverrun="CLIP"/>
-                            <Label styleClass="menu-option-description" textOverrun="CLIP" wrapText="true"
+                            <Label style="-fx-font-size: 16px;" styleClass="menu-option-description"
+                                   textOverrun="CLIP" wrapText="true"
                                    text="Protege un archivo y genera una contraseña segura"/>
                         </VBox>
                     </graphic>
@@ -85,10 +86,11 @@
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuDecryptionTitle"
-                                   style="-fx-text-fill: #C90068;"
+                                   style="-fx-text-fill: #C90068; -fx-font-size: 28px; -fx-font-weight: bold;"
                                    styleClass="menu-option-title menu-decryption-title" text="DESCIFRADO AES"
                                    textOverrun="CLIP"/>
-                            <Label styleClass="menu-option-description" textOverrun="CLIP" wrapText="true"
+                            <Label style="-fx-font-size: 16px;" styleClass="menu-option-description"
+                                   textOverrun="CLIP" wrapText="true"
                                    text="Recupera el archivo original desde un contenedor .enc"/>
                         </VBox>
                     </graphic>
@@ -112,7 +114,7 @@
                             <VBox spacing="4.0">
                                 <Label styleClass="section-title encryption-title" text="Archivo de origen"/>
                                 <Label styleClass="section-description"
-                                       text="Elige el archivo que quieres proteger y la carpeta de destino."/>
+                                       text="Elige el archivo que quieres proteger y la carpeta de destino. Si la dejas vacía, se usará la carpeta del archivo."/>
                             </VBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
                                 <Label labelFor="$sourcePathField" minWidth="125.0" styleClass="field-label"
@@ -139,7 +141,7 @@
                                         text="Limpiar selección"/>
                             </HBox>
                             <Label styleClass="helper-text"
-                                   text="Se admiten archivos de texto, imágenes y otros binarios. Los originales se conservan y no se sobrescriben resultados existentes."/>
+                                   text="Se admiten archivos .txt, .log, imágenes y otros binarios. Los originales se conservan y no se sobrescriben resultados existentes."/>
                         </VBox>
 
                         <VBox spacing="14.0" styleClass="card">
@@ -204,7 +206,7 @@
                             <VBox spacing="4.0">
                                 <Label styleClass="section-title decryption-title" text="Datos del contenedor"/>
                                 <Label styleClass="section-description"
-                                       text="Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado."/>
+                                       text="Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado. Si la dejas vacía, se usará la carpeta del contenedor."/>
                             </VBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
                                 <Label labelFor="$decryptSourcePathField" minWidth="125.0"
@@ -244,13 +246,13 @@
                                         </StackPane>
                                     </graphic>
                                 </ToggleButton>
-                                <Button fx:id="decryptButton" onAction="#decryptFile"
-                                        styleClass="primary-button" text="Descifrar archivo"/>
                             </HBox>
-                            <HBox alignment="CENTER_LEFT" spacing="12.0">
+                            <HBox alignment="CENTER_LEFT">
                                 <CheckBox fx:id="verifyCheckbox"
                                           accessibleText="Comparar el archivo recuperado con el archivo original"
                                           text="Comparar con el archivo original"/>
+                            </HBox>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0">
                                 <Label labelFor="$referencePathField" styleClass="field-label"
                                        text="Archivo original"/>
                                 <TextField fx:id="referencePathField"
@@ -260,6 +262,11 @@
                             </HBox>
                             <Label styleClass="helper-text"
                                    text="La etiqueta GCM valida el contenedor. La comparación opcional comprueba tamaño y SHA-256."/>
+                            <HBox alignment="CENTER_LEFT">
+                                <Button fx:id="decryptButton" onAction="#decryptFile"
+                                        prefHeight="50.0" prefWidth="300.0"
+                                        styleClass="primary-button" text="Descifrar archivo"/>
+                            </HBox>
                         </VBox>
 
                         <VBox spacing="12.0" styleClass="card">

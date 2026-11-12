@@ -26,6 +26,41 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainControllerDecryptionTest extends JavaFxTestSupport {
     @Test
+    void defaultsDestinationToContainerDirectoryAndPreviewsLogFiles() throws Exception {
+        MainController controller = loadController();
+        Path directory = Files.createTempDirectory("enigma-log-preview");
+        Path source = Files.writeString(directory.resolve("application.log"), "línea de registro\n");
+        Path encryptedDirectory = Files.createDirectory(directory.resolve("encrypted"));
+        FileService.EncryptionResult encrypted = new FileService().encrypt(source, encryptedDirectory);
+
+        runOnFxThread(() -> {
+            field(controller, "decryptSourcePathField", TextField.class)
+                    .setText(encrypted.outputPath().toString());
+            field(controller, "decryptPasswordField", PasswordField.class).setText(encrypted.password());
+            invoke(controller, "decryptFile");
+            return null;
+        });
+
+        awaitDecryptionAndPreview(controller);
+
+        assertEquals("",
+                field(controller, "destinationDirectoryField", TextField.class).getText());
+        assertEquals("línea de registro\n",
+                field(controller, "textPreviewArea", TextArea.class).getText());
+        assertTrue(Files.exists(encryptedDirectory.resolve("application.log")));
+        assertTrue(field(controller, "imagePreviewPanel", javafx.scene.Node.class).isDisable());
+    }
+
+    @Test
+    void showsAlertAndDoesNotDecryptWhenContainerIsMissing() throws Exception {
+        MainController controller = loadController();
+
+        invokeWhileDismissingAlert(controller, "decryptFile");
+
+        assertNull(field(controller, "decryptionTask"));
+    }
+
+    @Test
     void acceptsPngPreviewFilesUpTo850Mebibytes() {
         long limit = 850L * 1024 * 1024;
         assertTrue(MainController.isWithinPngPreviewLimit(limit - 1));

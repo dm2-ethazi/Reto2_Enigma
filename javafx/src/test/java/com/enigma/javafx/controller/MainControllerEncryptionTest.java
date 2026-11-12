@@ -20,6 +20,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainControllerEncryptionTest extends JavaFxTestSupport {
     @Test
+    void defaultsDestinationToSourceDirectoryWhenNoDestinationIsSelected() throws Exception {
+        MainController controller = loadController();
+        Path directory = Files.createTempDirectory("enigma-default-encrypt-destination");
+        Path source = Files.writeString(directory.resolve("source.txt"), "texto");
+
+        runOnFxThread(() -> {
+            field(controller, "sourcePathField", TextField.class).setText(source.toString());
+            invoke(controller, "encryptFile");
+            return null;
+        });
+
+        Object task = field(controller, "encryptionTask");
+        task.getClass().getMethod("get", long.class, TimeUnit.class)
+                .invoke(task, FX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        runOnFxThread(() -> null);
+
+        assertEquals("",
+                field(controller, "destinationDirectoryField", TextField.class).getText());
+        assertTrue(Files.exists(directory.resolve("source.txt.enc")));
+    }
+
+    @Test
+    void showsAlertAndDoesNotEncryptWhenSourceIsMissing() throws Exception {
+        MainController controller = loadController();
+
+        invokeWhileDismissingAlert(controller, "encryptFile");
+
+        assertNull(field(controller, "encryptionTask"));
+    }
+
+    @Test
     void encryptsSelectedFileAndDisplaysGeneratedPassword() throws Exception {
         MainController controller = loadController();
         Path directory = Files.createTempDirectory("enigma-encrypt");

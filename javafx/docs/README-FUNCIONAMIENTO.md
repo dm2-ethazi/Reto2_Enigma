@@ -43,10 +43,11 @@ muestran en **Ayuda**:
 
 ## Recorrido de cifrado
 
-1. En la pantalla principal se selecciona un archivo `.txt`, `.png` u otro
-   fichero binario y una carpeta de destino. Al salir de la vista de cifrado o
-   descifrado se limpian sus rutas y estados; al volver, la pantalla queda
-   vacía. Esto no elimina archivos ya guardados.
+1. En la pantalla principal se selecciona un archivo `.txt`, `.log`, `.png` u
+   otro fichero binario. Si no se elige carpeta de destino, se utiliza la misma
+   carpeta que el archivo sin mostrarla en el campo de destino. Al salir de la
+   vista de cifrado o descifrado se limpian sus rutas y estados; al volver, la
+   pantalla queda vacía. Esto no elimina archivos ya guardados.
 2. `MainController` valida los campos básicos e inicia el trabajo en una tarea
    de JavaFX ejecutada en segundo plano.
 3. `FileService` comprueba que el origen sea un archivo normal y legible, y
@@ -71,7 +72,9 @@ y sus selectores en ambas vistas; vuelven a habilitarse al terminar la operació
 
 ## Recorrido de descifrado y verificación
 
-1. Se seleccionan el contenedor `.enc`, una carpeta de destino y la contraseña.
+1. Se seleccionan el contenedor `.enc` y la contraseña. Si no se elige una
+   carpeta de destino, se utiliza la carpeta del contenedor sin mostrarla en el
+   campo de destino.
 2. Opcionalmente, se activa la verificación y se selecciona el archivo original
    de referencia.
 3. `FileService` comprueba las rutas, la extensión y el tamaño mínimo del
@@ -95,7 +98,8 @@ ese archivo, pero tampoco constituye una firma de identidad.
 La vista previa no se genera al seleccionar un contenedor ni al escribir la
 contraseña. Para mostrar su contenido, selecciona el contenedor `.enc`, indica
 la contraseña y pulsa **Descifrar archivo**. Primero se completa correctamente
-el descifrado y se guarda el archivo; después, si es un `.txt.enc` o `.png.enc`,
+el descifrado y se guarda el archivo; después, si es un `.txt.enc`, `.log.enc`
+o `.png.enc`,
 se prepara la vista previa. Si se cambia la ruta o la contraseña, el contenido
 anterior se borra para evitar mostrar datos que ya no corresponden a la
 selección actual.
@@ -104,10 +108,10 @@ La vista previa se prepara en segundo plano. Solo se enseña después de que
 AES-GCM valide el contenedor; si la contraseña no es correcta o el archivo
 está alterado, el panel queda vacío y muestra el error.
 
-- Para `.txt.enc` se muestran como máximo los primeros 256 KiB, interpretados
-  como UTF-8. Si el archivo es mayor, la etiqueta indica que el texto está
-  truncado y muestra los tamaños. El panel de imagen permanece visible pero
-  desactivado.
+- Para `.txt.enc` y `.log.enc` se muestran como máximo los primeros 256 KiB,
+  interpretados como UTF-8. Si el archivo es mayor, la etiqueta indica que el
+  texto está truncado y muestra los tamaños. El panel de imagen permanece
+  visible pero desactivado.
 - Para `.png.enc` se pueden visualizar archivos descifrados de hasta 850 MiB.
   La imagen se carga desde el archivo de salida, evitando copiar todo su
   contenido a un arreglo en memoria; antes de cargarla se comprueban las
@@ -173,7 +177,7 @@ por bloque.
 
 La interfaz presenta un aviso si, entre otros casos:
 
-- faltan rutas o la contraseña;
+- falta el archivo de origen o el contenedor, o falta la contraseña;
 - una ruta no es válida, el archivo no existe o no se puede leer;
 - el destino no es un directorio escribible;
 - el contenedor no tiene el formato esperado o está incompleto;
