@@ -1,3 +1,5 @@
+"""Pruebas del menú y de los flujos Vigenère de consola y archivos."""
+
 import io
 import tempfile
 import unittest
@@ -12,7 +14,10 @@ from src.utils import files
 
 
 class InterfaceTests(unittest.TestCase):
+    """Comprueba el menú y los flujos Vigenère con entrada y archivos simulados."""
+
     def run_app(self, answers, *, paths=()):
+        """Ejecuta la interfaz con respuestas y rutas simuladas y captura su salida."""
         output = io.StringIO()
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
@@ -27,6 +32,7 @@ class InterfaceTests(unittest.TestCase):
         return output.getvalue()
 
     def test_console_encrypt(self):
+        """Cifra el vector Vigenère desde el menú y anuncia progreso antes del resultado."""
         output = self.run_app(
             [
                 "1",
@@ -43,6 +49,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Descifrar Vigenère", output)
 
     def test_file_show_and_save(self):
+        """Muestra y guarda el cifrado de un archivo conservando su formato UTF-8."""
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
@@ -57,6 +64,7 @@ class InterfaceTests(unittest.TestCase):
             self.assertIn("Resultado:\n", output)
 
     def test_file_creates_parts_while_encrypting_without_bulk_reads(self):
+        """Observa partes durante el cifrado sin permitir lecturas completas del origen."""
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
@@ -68,6 +76,7 @@ class InterfaceTests(unittest.TestCase):
             observations = []
 
             def observe_parts(path, key):
+                """Observa temporales durante el cifrado y exige que el destino siga sin publicar."""
                 for block in encrypt_file(path, key):
                     observations.append(
                         [part.stat().st_size for part in Path(folder).glob("*.part")]
@@ -104,6 +113,7 @@ class InterfaceTests(unittest.TestCase):
             self.assertIn("Resultado guardado", output)
 
     def test_file_show_only_reads_parts_and_removes_them(self):
+        """Muestra el texto desde partes y elimina los temporales sin guardar un destino."""
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "entrada.txt"
             source.write_bytes("\ufeffATTACKATDAWN\r\nñ😀".encode("utf-8"))
@@ -118,6 +128,7 @@ class InterfaceTests(unittest.TestCase):
             self.assertEqual(list(Path(folder).iterdir()), [source])
 
     def test_invalid_utf8_after_written_blocks_cleans_parts(self):
+        """Descarta las partes ya escritas si el UTF-8 resulta inválido al final."""
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
@@ -134,12 +145,14 @@ class InterfaceTests(unittest.TestCase):
             self.assertEqual(list(Path(folder).glob("*.part")), [])
 
     def test_interrupt_during_file_cipher_cleans_written_parts(self):
+        """Limpia las partes escritas al interrumpir el cifrado de un archivo."""
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "entrada.txt"
             destination = Path(folder) / "salida.txt"
             source.write_bytes(b"ATTACKATDAWN")
 
             def interrupt(path, key):
+                """Produce un bloque y después interrumpe para comprobar la limpieza de temporales."""
                 yield b"LXFOPVEF"
                 self.assertTrue(list(Path(folder).glob("*.part")))
                 raise KeyboardInterrupt
@@ -153,6 +166,7 @@ class InterfaceTests(unittest.TestCase):
             self.assertEqual(list(Path(folder).glob("*.part")), [])
 
     def test_console_save_without_showing_result(self):
+        """Guarda el resultado de consola sin mostrarlo cuando se solicita solo guardar."""
         with tempfile.TemporaryDirectory() as folder:
             destination = Path(folder) / "salida.txt"
             output = self.run_app(
@@ -162,11 +176,13 @@ class InterfaceTests(unittest.TestCase):
             self.assertNotIn("Resultado:\n", output)
 
     def test_invalid_key_returns_to_menu(self):
+        """Comunica la clave inválida y devuelve el control al menú principal."""
         output = self.run_app(["1", "1", "texto", "ñ", "", "5"])
         self.assertIn("Error: La clave Vigenère", output)
         self.assertIn("Hasta pronto.", output)
 
     def test_cancel_submenus_and_file_picker(self):
+        """Permite cancelar los submenús y los selectores sin terminar la aplicación."""
         for answers, paths in (
             (["1", "q", "5"], []),
             (["1", "1", "texto", "A", "q", "5"], []),
@@ -177,6 +193,7 @@ class InterfaceTests(unittest.TestCase):
                 self.assertIn("Operación cancelada", self.run_app(answers, paths=paths))
 
     def test_missing_file_returns_to_menu(self):
+        """Comunica la ausencia del archivo y permite continuar desde el menú."""
         with tempfile.TemporaryDirectory() as folder:
             output = self.run_app(
                 ["1", "2", "", "5"], paths=[Path(folder) / "ausente.txt"]
@@ -185,6 +202,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Hasta pronto.", output)
 
     def test_interactive_key_is_hidden_and_result_waits_for_acknowledgement(self):
+        """Oculta la clave interactiva y espera Enter después de mostrar el resultado."""
         with (
             patch.object(screen, "choose", side_effect=[0, 0]),
             patch.object(screen.sys.stdin, "isatty", return_value=True),
@@ -198,6 +216,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("LXFOPVEFRNHR", output.getvalue())
 
     def test_submenus_have_no_main_menu_groups_or_colours(self):
+        """Mantiene los submenús sin encabezados de algoritmos ni códigos de color."""
         for interactive in (False, True):
             output = layout.render(
                 "Origen del texto", ["Consola", "Archivo"], 0, (), interactive
@@ -207,6 +226,7 @@ class InterfaceTests(unittest.TestCase):
             self.assertNotRegex(output, r"\x1b\[[0-9;]*m")
 
     def test_menu_offers_encryption_decryption_and_exit(self):
+        """Conserva las opciones de cifrado, descifrado y salida con su numeración."""
         output = self.run_app(["5"])
         self.assertIn("1. Cifrar Vigenère", output)
         self.assertIn("3. Cifrar archivo AES", output)
@@ -216,6 +236,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertIn("Hasta pronto.", output)
 
     def test_main_menu_keeps_each_algorithm_under_its_heading(self):
+        """Agrupa las operaciones bajo el encabezado de su algoritmo."""
         for interactive in (False, True):
             from src.interface.menu import CHOICES
 

@@ -7,6 +7,17 @@ from src.interface.app import run
 
 
 def main(argv=None):
+    """Configura el idioma inicial y ejecuta la interfaz de terminal.
+
+    Args:
+        argv: Argumentos sin el nombre del programa; None utiliza sys.argv.
+
+    Returns:
+        Código de salida de la aplicación, normalmente 0.
+
+    Raises:
+        SystemExit: Si argparse recibe --help o argumentos no válidos.
+    """
     parser = argparse.ArgumentParser(description="Enigma — Español / Euskara / English")
     parser.add_argument(
         "--lang",

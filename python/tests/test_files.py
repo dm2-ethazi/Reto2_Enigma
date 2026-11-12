@@ -1,3 +1,5 @@
+"""Pruebas de archivos UTF-8, partes temporales y protección del destino."""
+
 import hashlib
 import tempfile
 import unittest
@@ -10,12 +12,16 @@ from src.utils import files
 
 
 class FileTests(unittest.TestCase):
+    """Comprueba validación, límites de partes y publicación sin sobrescrituras."""
+
     def setUp(self):
+        """Prepara los recursos aislados de la prueba y registra su limpieza automática."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.folder = Path(temporary.name)
 
     def test_encrypt_file_preserves_bom_line_endings_and_source(self):
+        """Conserva BOM, saltos de línea y origen al cifrar y guardar texto UTF-8."""
         source = self.folder / "entrada.TXT"
         data = "\ufeffHola ñ\r\nsiguiente\n".encode("utf-8")
         source.write_bytes(data)
@@ -27,6 +33,7 @@ class FileTests(unittest.TestCase):
         )
 
     def test_rejects_invalid_files(self):
+        """Rechaza rutas, extensiones y contenido UTF-8 no admitidos."""
         with self.assertRaises(FileNotFoundError):
             files.read_text(self.folder / "ausente.txt")
         with self.assertRaises(ValidationError):
@@ -45,6 +52,7 @@ class FileTests(unittest.TestCase):
             files.write_text(self.folder / "ausente" / "salida.txt", "texto")
 
     def test_existing_destination_is_not_overwritten(self):
+        """Conserva los bytes de un destino ya existente al intentar guardar."""
         target = self.folder / "salida.txt"
         target.write_bytes(b"original")
         with self.assertRaises(FileExistsError):
@@ -52,6 +60,7 @@ class FileTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(), b"original")
 
     def test_destination_created_during_write_is_not_overwritten(self):
+        """Protege un destino creado por otro proceso mientras se escriben las partes."""
         for limit in (20 * 1024 * 1024, 4):
             with self.subTest(limit=limit), patch.object(files, "MAX_PART_SIZE", limit):
                 target = self.folder / f"salida-{limit}.txt"
@@ -63,6 +72,7 @@ class FileTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_failed_publish_cleans_temporary_file(self):
+        """Elimina los temporales cuando falla la publicación mediante enlace duro."""
         target = self.folder / "salida.txt"
         with patch.object(files.os, "link", side_effect=PermissionError("Acceso")):
             with self.assertRaises(PermissionError):
@@ -70,6 +80,7 @@ class FileTests(unittest.TestCase):
         self.assertEqual(list(self.folder.iterdir()), [])
 
     def test_part_boundaries_and_multiple_write_calls(self):
+        """Comprueba tamaños y orden de partes con distintas escrituras y límites."""
         publish = files._publish_parts
         for size in (0, 7, 8, 9, 16, 17):
             for write_size in (3, 32):
@@ -79,6 +90,7 @@ class FileTests(unittest.TestCase):
                     observed = []
 
                     def inspect_parts(parts, destination):
+                        """Registra las partes observadas y delega su publicación en la función real."""
                         observed.extend(part.stat().st_size for part in parts)
                         self.assertEqual(
                             b"".join(part.read_bytes() for part in parts), data
@@ -104,6 +116,7 @@ class FileTests(unittest.TestCase):
                     self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_utf8_characters_can_cross_part_boundaries(self):
+        """Conserva caracteres UTF-8 divididos entre lecturas y partes temporales."""
         target = self.folder / "unicode.txt"
         text = "\ufeffá😀ñ\r\n" * 5
         with (
@@ -115,12 +128,14 @@ class FileTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_multipart_failure_or_interruption_removes_incomplete_destination(self):
+        """Elimina el destino incompleto si la unión de partes falla o se interrumpe."""
         real_fsync = files.os.fsync
         for error in (OSError("Disco lleno"), KeyboardInterrupt()):
             with self.subTest(error=type(error).__name__):
                 target = self.folder / "salida.txt"
 
                 def fail_on_destination(descriptor):
+                    """Fuerza un error al sincronizar el destino para comprobar su retirada."""
                     if target.exists():
                         self.assertEqual(target.read_bytes(), b"abcdefghijklmnopqrst")
                         raise error
@@ -136,6 +151,7 @@ class FileTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.iterdir()), [])
 
     def test_failure_syncing_part_cleans_all_parts(self):
+        """Limpia las partes si la sincronización de una de ellas falla."""
         target = self.folder / "salida.txt"
         with (
             patch.object(files, "MAX_PART_SIZE", 8),
@@ -147,6 +163,7 @@ class FileTests(unittest.TestCase):
         self.assertEqual(list(self.folder.iterdir()), [])
 
     def test_cancel_before_publish_cleans_all_parts(self):
+        """Limpia temporales al interrumpir la operación antes de publicar."""
         target = self.folder / "salida.txt"
         with patch.object(files, "MAX_PART_SIZE", 8):
             with self.assertRaises(KeyboardInterrupt):
@@ -156,6 +173,7 @@ class FileTests(unittest.TestCase):
         self.assertEqual(list(self.folder.iterdir()), [])
 
     def test_real_20_mib_limit_with_three_parts(self):
+        """Verifica tamaño e integridad al unir tres partes con el límite real de 20 MiB."""
         self.assertEqual(files.MAX_PART_SIZE, 20 * 1024 * 1024)
         target = self.folder / "grande.txt"
         expected_hash = hashlib.sha256()
@@ -163,6 +181,7 @@ class FileTests(unittest.TestCase):
         observed = []
 
         def inspect_parts(parts, destination):
+            """Registra las partes observadas y delega su publicación en la función real."""
             observed.extend(part.stat().st_size for part in parts)
             publish(parts, destination)
 
@@ -187,6 +206,7 @@ class FileTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_exact_20_mib_boundary_and_next_byte(self):
+        """Comprueba que un byte tras el límite exacto abre una nueva parte."""
         publish = files._publish_parts
         block = b"x" * (1024 * 1024)
         for extra in (0, 1):
@@ -195,6 +215,7 @@ class FileTests(unittest.TestCase):
                 observed = []
 
                 def inspect_parts(parts, destination):
+                    """Registra las partes observadas y delega su publicación en la función real."""
                     observed.extend(part.stat().st_size for part in parts)
                     publish(parts, destination)
 

@@ -22,6 +22,7 @@ ITERATIONS = 200_000
 SALT_SIZE = 16
 NONCE_SIZE = 12
 TAG_SIZE = 16
+# Orden de red: firma, versión, iteraciones, sal y nonce; 37 bytes de cabecera.
 HEADER = struct.Struct(">4sBI16s12s")
 HEADER_SIZE = HEADER.size
 OVERHEAD = HEADER_SIZE + TAG_SIZE
@@ -33,15 +34,25 @@ MAX_PLAINTEXT_SIZE = (1 << 36) - 32
 
 @dataclass(frozen=True)
 class EncryptionResult:
+    """Resultado de un cifrado publicado correctamente.
+
+    Attributes:
+        path: Ruta del archivo R2AE generado.
+        password: Contraseña aleatoria de 16 caracteres, excluida de repr para
+            evitar su exposición accidental en registros de depuración.
+    """
+
     path: Path
     password: str = field(repr=False)
 
 
 def generate_password() -> str:
+    """Genera 16 letras o dígitos ASCII usando el generador seguro secrets."""
     return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(16))
 
 
 def _derive_key(password: str, salt: bytes) -> bytes:
+    """Deriva una clave AES de 32 bytes con PBKDF2-HMAC-SHA256 y la sal indicada."""
     return PBKDF2HMAC(
         algorithm=hashes.SHA256(), length=32, salt=salt, iterations=ITERATIONS
     ).derive(password.encode("ascii"))
@@ -50,7 +61,24 @@ def _derive_key(password: str, salt: bytes) -> bytes:
 def encrypt_file(
     source: str | Path, destination: str | Path | None = None
 ) -> EncryptionResult:
-    """Cifra cualquier archivo a partes de hasta 20 MiB y publica un único .enc."""
+    """Cifra un archivo con AES-256-GCM y publica un contenedor R2AE v1.
+
+    Args:
+        source: Ruta del archivo regular de entrada, que se conserva intacto.
+        destination: Destino nuevo; por defecto añade .enc a la ruta original.
+
+    Returns:
+        Ruta del contenedor y contraseña generada, tras completar la publicación.
+
+    Raises:
+        ValidationError: Si el origen no es regular o supera el límite AES-GCM.
+        FileExistsError: Si el destino ya existe, incluso al publicar.
+        OSError: Si falla la lectura, la escritura o la publicación del archivo.
+
+    Lee bloques de 1 MiB y escribe temporales de hasta 20 MiB. La cabecera se
+    autentica como AAD y la etiqueta GCM se añade al final. La contraseña no se
+    guarda en el contenedor y debe conservarse fuera de él.
+    """
     source = input_file(source)
     destination = new_destination(
         destination if destination is not None else f"{source}.enc"
@@ -67,12 +95,14 @@ def encrypt_file(
         encryptor = Cipher(
             algorithms.AES(_derive_key(password, salt)), modes.GCM(nonce)
         ).encryptor()
+        # La cabecera viaja en claro, pero GCM detecta cualquier modificación.
         encryptor.authenticate_additional_data(header)
         with staged_output(destination) as output:
             output.write(header)
             total = 0
             while block := original.read(CHUNK_SIZE):
                 total += len(block)
+                # El origen puede crecer después de consultar su tamaño inicial.
                 if total > MAX_PLAINTEXT_SIZE:
                     raise ValidationError(
                         tr("El archivo supera el límite de un mensaje AES-GCM.")
@@ -86,7 +116,25 @@ def encrypt_file(
 def decrypt_file(
     source: str | Path, password: str, destination: str | Path | None = None
 ) -> Path:
-    """Descifra R2AE a partes; publica solo tras verificar la etiqueta y el AAD."""
+    """Descifra R2AE y publica el resultado solo tras autenticarlo.
+
+    Args:
+        source: Archivo R2AE v1 cifrado.
+        password: Contraseña original de 16 letras o números ASCII.
+        destination: Destino nuevo; por defecto elimina .enc o añade .decrypted.
+
+    Returns:
+        Ruta del archivo descifrado y autenticado.
+
+    Raises:
+        ValidationError: Si la contraseña, el formato, el tamaño o la
+            autenticación son incorrectos, o el archivo cambia al leerlo.
+        FileExistsError: Si el destino ya existe.
+        OSError: Si falla el acceso o la publicación de los archivos.
+
+    Los temporales contienen texto en claro pendiente de autenticación. Un error
+    impide su publicación y provoca su limpieza mediante staged_output.
+    """
     if len(password) != 16 or any(c not in PASSWORD_ALPHABET for c in password):
         raise ValidationError(
             tr("La contraseña AES debe contener 16 letras o números ASCII.")
@@ -106,6 +154,7 @@ def decrypt_file(
         if len(header) != HEADER_SIZE:
             raise ValidationError(tr("Cabecera R2AE incompleta."))
         magic, version, iterations, salt, nonce = HEADER.unpack(header)
+        # Rechazar parámetros ajenos al formato antes de ejecutar la KDF costosa.
         if (magic, version, iterations) != (MAGIC, VERSION, ITERATIONS):
             raise ValidationError(
                 tr("Cabecera R2AE no válida o versión no compatible.")
@@ -132,6 +181,8 @@ def decrypt_file(
             if original.read(TAG_SIZE) != tag or original.read(1):
                 raise ValidationError(tr("El archivo R2AE cambió durante la lectura."))
             try:
+                # update produce bytes antes de autenticar: aún siguen en partes.
+                # Salir de staged_output sin error permite publicar el resultado.
                 output.write(decryptor.finalize())
             except InvalidTag as error:
                 raise ValidationError(

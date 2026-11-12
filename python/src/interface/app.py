@@ -11,6 +11,14 @@ from .vigenere import run_decryption
 
 
 def run():
+    """Ejecuta el menú hasta salir, recibir EOF o interrumpir con Ctrl+C.
+
+    Returns:
+        0 tras cerrar la sesión de terminal.
+
+    Comunica errores controlados en el idioma activo y permite volver al menú.
+    Las cancelaciones no requieren confirmación y conservan la sesión.
+    """
     interactive = enable_cursor_control()
     try:
         while True:
@@ -43,6 +51,8 @@ def run():
                     and error.errno is not None
                     and get_language() != "es"
                 ):
+                    # El texto de OSError depende del sistema; traducir por tipo
+                    # y conservar la ruta sin pasar sus datos por el catálogo.
                     if isinstance(error, FileNotFoundError):
                         message = tr("El archivo o carpeta no existe.")
                     elif isinstance(error, PermissionError):

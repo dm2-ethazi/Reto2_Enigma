@@ -1,3 +1,5 @@
+"""Pruebas de cifrado AES, formato R2AE, límites y publicación segura."""
+
 import hashlib
 import json
 import tempfile
@@ -16,12 +18,16 @@ from src.utils import files
 
 
 class AesTests(unittest.TestCase):
+    """Comprueba el formato R2AE y las garantías del cifrado AES por bloques."""
+
     def setUp(self):
+        """Prepara los recursos aislados de la prueba y registra su limpieza automática."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.folder = Path(temporary.name)
 
     def decrypt_for_verification(self, result):
+        """Descifra el contenedor con una ruta de verificación independiente de Enigma."""
         payload = result.path.read_bytes()
         header = payload[:37]
         magic, version, iterations, salt, nonce = aes.HEADER.unpack(header)
@@ -32,6 +38,7 @@ class AesTests(unittest.TestCase):
         return AESGCM(key).decrypt(nonce, payload[37:], header)
 
     def test_binary_empty_unicode_and_layout(self):
+        """Comprueba el cifrado de datos binarios, vacíos y Unicode y el formato R2AE."""
         for index, data in enumerate(
             (b"", b"\x00", bytes(range(256)), "Hola ñ😀\r\n".encode())
         ):
@@ -51,6 +58,7 @@ class AesTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_portable_reference_vectors(self):
+        """Verifica los contenedores generados frente a vectores públicos de referencia."""
         fixture = Path(__file__).with_name("fixtures") / "r2ae-v1.json"
         vectors = json.loads(fixture.read_text(encoding="utf-8"))["vectors"]
         for vector in vectors:
@@ -76,6 +84,7 @@ class AesTests(unittest.TestCase):
                 )
 
     def test_password_generation_uses_secrets(self):
+        """Comprueba que la contraseña se construye con secrets y el alfabeto permitido."""
         with patch.object(aes.secrets, "choice", return_value="Z") as choice:
             self.assertEqual(aes.generate_password(), "Z" * 16)
         self.assertEqual(choice.call_count, 16)
@@ -84,6 +93,7 @@ class AesTests(unittest.TestCase):
         )
 
     def test_fresh_password_salt_and_nonce(self):
+        """Exige contraseñas, sales y nonces nuevos en cifrados consecutivos."""
         source = self.folder / "original.bin"
         source.write_bytes(b"contenido")
         first = aes.encrypt_file(source, self.folder / "first.enc")
@@ -97,6 +107,7 @@ class AesTests(unittest.TestCase):
         )
 
     def test_tampering_or_wrong_password_fails_authentication(self):
+        """Rechaza modificaciones del contenedor y contraseñas equivocadas al autenticar."""
         source = self.folder / "original.bin"
         source.write_bytes(b"contenido secreto")
         result = aes.encrypt_file(source)
@@ -119,6 +130,7 @@ class AesTests(unittest.TestCase):
                     )
 
     def test_missing_directory_and_existing_sources_or_destinations(self):
+        """Rechaza carpetas ausentes y destinos existentes sin modificar los originales."""
         source = self.folder / "original.bin"
         source.write_bytes(b"original")
         with self.assertRaises(FileNotFoundError):
@@ -137,6 +149,7 @@ class AesTests(unittest.TestCase):
         self.assertEqual(result.path.read_bytes(), container)
 
     def test_reads_are_bounded_and_parts_exist_during_encryption(self):
+        """Observa lecturas limitadas y temporales antes de publicar el cifrado."""
         source = self.folder / "original.bin"
         destination = self.folder / "out.enc"
         data = bytes(range(256))
@@ -145,19 +158,26 @@ class AesTests(unittest.TestCase):
         observations = []
 
         class Reader:
+            """Envuelve el archivo real para observar y limitar las lecturas de la prueba."""
+
             def __init__(self, stream):
+                """Conserva el flujo real que utilizará el lector instrumentado."""
                 self.stream = stream
 
             def __enter__(self):
+                """Devuelve el lector instrumentado al entrar en el contexto."""
                 return self
 
             def __exit__(self, *args):
+                """Cierra el flujo real al salir del contexto de lectura."""
                 self.stream.close()
 
             def fileno(self):
+                """Expone el descriptor real para que las consultas de tamaño sigan funcionando."""
                 return self.stream.fileno()
 
             def read(self, size=-1):
+                """Registra y comprueba el tamaño solicitado antes de leer del flujo de prueba."""
                 if not 0 < size <= 7:
                     raise AssertionError(f"Lectura sin límite: {size}")
                 observations.append(
@@ -170,6 +190,7 @@ class AesTests(unittest.TestCase):
                 return self.stream.read(size)
 
         def open_path(path, *args, **kwargs):
+            """Instrumenta solo el archivo origen y conserva la apertura real de los demás."""
             stream = original_open(path, *args, **kwargs)
             return Reader(stream) if path == source else stream
 
@@ -185,6 +206,7 @@ class AesTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_real_part_boundaries_include_header_and_tag(self):
+        """Incluye cabecera y etiqueta al comprobar los límites reales de las partes."""
         limit = 20 * 1024 * 1024
         self.assertEqual(files.MAX_PART_SIZE, limit)
         for size in (limit - 53, limit - 52, 2 * limit + 13):
@@ -203,6 +225,7 @@ class AesTests(unittest.TestCase):
                 publish = files._publish_parts
 
                 def inspect(parts, destination):
+                    """Observa los tamaños de las partes antes de delegar la publicación real."""
                     sizes.extend(part.stat().st_size for part in parts)
                     publish(parts, destination)
 
@@ -237,12 +260,14 @@ class AesTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_collision_at_publish_preserves_other_file(self):
+        """Simula una colisión al publicar y conserva el archivo creado por otro proceso."""
         source = self.folder / "original.bin"
         source.write_bytes(b"contenido")
         destination = self.folder / "out.enc"
         publish = files._publish_parts
 
         def collide(parts, path):
+            """Crea un destino ajeno justo antes de publicar para simular una carrera."""
             path.write_bytes(b"otro proceso")
             publish(parts, path)
 
@@ -259,6 +284,7 @@ class AesTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_failed_write_or_interruption_cleans_all_parts(self):
+        """Comprueba la limpieza de temporales ante errores de escritura e interrupciones."""
         source = self.folder / "original.bin"
         data = b"contenido secreto" * 20
         source.write_bytes(data)
@@ -275,6 +301,7 @@ class AesTests(unittest.TestCase):
                 self.assertEqual(source.read_bytes(), data)
 
     def test_size_limit_before_start_and_while_reading(self):
+        """Comprueba el límite AES-GCM antes y durante la lectura del origen."""
         source = self.folder / "original.bin"
         source.write_bytes(b"contenido")
         with patch.object(aes, "MAX_PLAINTEXT_SIZE", 4):

@@ -7,6 +7,19 @@ from ..i18n import tr
 
 
 def render(title, choices, selected, fields, interactive):
+    """Compone una pantalla de texto adaptada al tamaño de la terminal.
+
+    Args:
+        title: Título de la pantalla; admite las claves de traducción de la app.
+        choices: Etiquetas de opciones en el orden de selección.
+        selected: Índice desde cero de la opción marcada.
+        fields: Pares de etiqueta y texto de ayuda para campos informativos.
+        interactive: Muestra el marcador y la ayuda de navegación por teclas.
+
+    Returns:
+        Texto sin colores; añade un marco si hay espacio y divide líneas largas.
+        El menú principal incluye encabezados de Vigenère y AES.
+    """
     main_menu = title in ("Menú principal", tr("Menú principal"))
     columns = shutil.get_terminal_size().columns
     width = min(66, max(24, columns - 4))

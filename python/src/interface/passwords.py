@@ -8,6 +8,11 @@ from .terminal import keyboard
 
 
 def _read_character():
+    """Lee un carácter sin eco usando la API de la plataforma.
+
+    Consume las teclas extendidas de Windows y devuelve una cadena vacía para
+    ignorarlas. En POSIX conserva Unicode y lanza EOFError si termina la entrada.
+    """
     if os.name == "nt":
         import msvcrt
 
@@ -23,6 +28,22 @@ def _read_character():
 
 
 def read_password(prompt: str) -> str:
+    """Lee una contraseña mostrando un asterisco por carácter imprimible.
+
+    Args:
+        prompt: Pregunta que se escribe antes de recoger la entrada.
+
+    Returns:
+        Contraseña tal como se introdujo, sin validarla ni eliminar espacios.
+
+    Raises:
+        OperationCancelled: Si el usuario pulsa Esc en modo interactivo.
+        EOFError: Si termina la entrada o se recibe una tecla de fin de archivo.
+        KeyboardInterrupt: Si el usuario pulsa Ctrl+C.
+
+    Retroceso elimina el último carácter. Restaura el modo de terminal al salir.
+    Con entrada redirigida utiliza input en lugar de capturar teclas sin eco.
+    """
     if not sys.stdin.isatty():
         return input(prompt)
     output = sys.stdout
@@ -44,6 +65,7 @@ def read_password(prompt: str) -> str:
                 if character in ("\b", "\x7f"):
                     if characters:
                         characters.pop()
+                        # Retroceder, borrar el asterisco y recuperar su posición.
                         output.write("\b \b")
                         output.flush()
                 elif character and character.isprintable():

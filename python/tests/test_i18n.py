@@ -25,6 +25,7 @@ from src.utils import dialogs, explorer, files
 
 @pytest.fixture(autouse=True)
 def reset_language():
+    """Aísla cada prueba restaurando el idioma español antes y después de ejecutarla."""
     i18n.set_language("es")
     yield
     i18n.set_language("es")
@@ -32,6 +33,7 @@ def reset_language():
 
 @pytest.mark.parametrize("language", ["en", "eu"])
 def test_catalogues_cover_source_messages_and_preserve_placeholders(language):
+    """Exige traducciones completas y los mismos parámetros de formato en cada idioma."""
     root = Path(i18n.__file__).parent
     catalogues = {
         lang: json.loads(
@@ -60,6 +62,7 @@ def test_catalogues_cover_source_messages_and_preserve_placeholders(language):
 
 
 def test_language_validation_fallback_and_user_data():
+    """Rechaza idiomas desconocidos y conserva el respaldo y las llaves del usuario."""
     assert i18n.get_language() == "es"
     with pytest.raises(ValueError):
         i18n.set_language("fr")
@@ -74,6 +77,7 @@ def test_language_validation_fallback_and_user_data():
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 @pytest.mark.parametrize("interactive", [False, True])
 def test_menu_and_keyboard_help_use_current_language(language, interactive):
+    """Renderiza opciones y ayuda de teclado en el idioma activo."""
     i18n.set_language(language)
     output = layout.render("Menú principal", menu.CHOICES, 0, (), interactive)
     for source in ("Menú principal", "Cifrar Vigenère", "AES / ARCHIVOS", "Salir"):
@@ -89,6 +93,7 @@ def test_menu_and_keyboard_help_use_current_language(language, interactive):
 
 
 def test_change_language_repaints_menu_and_can_be_cancelled():
+    """Actualiza el menú al cambiar de idioma y conserva la selección al cancelar."""
     with (
         patch.object(app, "enable_cursor_control", return_value=False),
         patch("builtins.input", side_effect=["6", "2", "6", "3", "6", "q", "5"]),
@@ -102,12 +107,14 @@ def test_change_language_repaints_menu_and_can_be_cancelled():
 
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 def test_cli_language(language):
+    """Aplica el idioma solicitado mediante --lang antes de iniciar la interfaz."""
     with patch.object(main, "run", return_value=0):
         assert main.main(["--lang", language]) == 0
     assert i18n.get_language() == language
 
 
 def test_cli_defaults_to_spanish_and_rejects_unknown_language():
+    """Usa español por defecto y rechaza códigos no admitidos desde la CLI."""
     i18n.set_language("en")
     with patch.object(main, "run", return_value=0) as run:
         assert main.main([]) == 0
@@ -121,6 +128,7 @@ def test_cli_defaults_to_spanish_and_rejects_unknown_language():
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 @pytest.mark.parametrize("decrypt", [False, True])
 def test_vigenere_console_flow_preserves_user_text(language, decrypt):
+    """Cifra y descifra por consola sin traducir el contenido del usuario."""
     i18n.set_language(language)
     original = "ATTACKATDAWN ñ {Texto: }"
     encrypted = vigenere.encrypt(original, "LEMON")
@@ -153,6 +161,7 @@ def test_vigenere_console_flow_preserves_user_text(language, decrypt):
 
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 def test_aes_roundtrip_dialog_titles_password_and_authentication(language, tmp_path):
+    """Verifica AES de ida y vuelta, títulos traducidos y errores de autenticación."""
     i18n.set_language(language)
     original = tmp_path / "original.bin"
     encrypted = tmp_path / "secret.enc"
@@ -200,6 +209,7 @@ def test_aes_roundtrip_dialog_titles_password_and_authentication(language, tmp_p
 
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 def test_validation_dialog_filters_and_terminal_fallback(language):
+    """Traduce validaciones y filtros tanto con Tkinter como en la alternativa textual."""
     i18n.set_language(language)
     with pytest.raises(ValidationError) as error:
         vigenere.validate_key("ñ")
@@ -231,6 +241,7 @@ def test_validation_dialog_filters_and_terminal_fallback(language):
 
 @pytest.mark.parametrize("language", i18n.LANGUAGES)
 def test_loading_and_file_manager_failure(language):
+    """Traduce el progreso y la ruta informativa cuando no se abre el explorador."""
     i18n.set_language(language)
     with (
         redirect_stdout(io.StringIO()) as output,
@@ -253,11 +264,13 @@ def test_loading_and_file_manager_failure(language):
     "word", ["q", "salir", "volver", "exit", "back", "irten", "atzera"]
 )
 def test_navigation_accepts_exit_words(word):
+    """Acepta las palabras de salida admitidas por la navegación numerada."""
     with patch("builtins.input", return_value=word), redirect_stdout(io.StringIO()):
         assert navigation.choose("test", ["test"]) is None
 
 
 def test_interactive_language_switch():
+    """Cambia de idioma usando la navegación por teclas del selector."""
     with (
         patch.object(navigation, "keyboard", side_effect=nullcontext),
         patch.object(navigation, "read_key", side_effect=["end", "enter"]),
@@ -291,6 +304,7 @@ def test_interactive_language_switch():
     ],
 )
 def test_system_errors_use_session_language(language, error, message):
+    """Comunica errores de sistema controlados en el idioma de la sesión."""
     i18n.set_language(language)
     with (
         patch.object(app, "enable_cursor_control", return_value=False),
@@ -304,6 +318,7 @@ def test_system_errors_use_session_language(language, error, message):
 
 
 def test_existing_destination_message_is_translated_without_changing_path(tmp_path):
+    """Traduce una colisión de destino conservando intacta la ruta con llaves."""
     i18n.set_language("eu")
     target = tmp_path / "Menú principal {name}.txt"
     target.touch()

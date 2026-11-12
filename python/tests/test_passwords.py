@@ -1,3 +1,5 @@
+"""Pruebas de lectura enmascarada de claves en Windows, POSIX y entrada redirigida."""
+
 import io
 import unittest
 from contextlib import nullcontext, redirect_stdout
@@ -9,7 +11,10 @@ from src.interface import passwords
 
 
 class PasswordTests(unittest.TestCase):
+    """Comprueba lectura, edición y enmascarado de secretos sin usar la terminal real."""
+
     def test_windows_reader_consumes_extended_keys_without_adding_a_character(self):
+        """Consume los códigos de teclas extendidas de Windows sin incorporarlos al secreto."""
         console = SimpleNamespace(
             getwch=unittest.mock.Mock(side_effect=["\xe0", "K", "j"])
         )
@@ -22,6 +27,7 @@ class PasswordTests(unittest.TestCase):
         self.assertEqual(console.getwch.call_count, 3)
 
     def test_posix_reader_preserves_unicode_and_detects_eof(self):
+        """Lee caracteres Unicode en POSIX y detecta el final de la entrada."""
         with (
             patch.object(passwords.os, "name", "posix"),
             patch.object(passwords.sys, "stdin", io.StringIO("ñ")),
@@ -31,6 +37,7 @@ class PasswordTests(unittest.TestCase):
                 passwords._read_character()
 
     def read(self, characters):
+        """Simula teclas de una contraseña y devuelve el secreto y la salida capturada."""
         output = io.StringIO()
         with (
             patch.object(passwords.sys.stdin, "isatty", return_value=True),
@@ -42,6 +49,7 @@ class PasswordTests(unittest.TestCase):
         return result, output.getvalue()
 
     def test_masks_each_character_and_backspace_edits_without_echo(self):
+        """Enmascara cada carácter y permite corregirlo con Retroceso sin mostrar el secreto."""
         value, output = self.read(
             ["\b", "a", "b", "\b", "j", "k", "Ñ", "\x7f", "Z", "\r"]
         )
@@ -50,11 +58,13 @@ class PasswordTests(unittest.TestCase):
         self.assertNotIn("ajkZ", output)
 
     def test_pasted_password_and_ignored_control_keys(self):
+        """Acepta contraseñas pegadas e ignora controles que no representan caracteres."""
         value, output = self.read(["", "\t", *"AbCdEf0123456789", "\n"])
         self.assertEqual(value, "AbCdEf0123456789")
         self.assertEqual(output, "Clave: " + "*" * 16 + "\n")
 
     def test_cancel_eof_interrupt_restore_terminal(self):
+        """Restaura el contexto de terminal tras cancelar, recibir EOF o interrumpir."""
         for character, error in [
             ("\x1b", OperationCancelled),
             ("\x03", KeyboardInterrupt),
@@ -78,6 +88,7 @@ class PasswordTests(unittest.TestCase):
             self.assertEqual(output.getvalue(), "Clave: *\n")
 
     def test_redirected_input_uses_plain_input_without_raw_terminal(self):
+        """Utiliza input directamente cuando la contraseña llega desde entrada redirigida."""
         with (
             patch.object(passwords.sys.stdin, "isatty", return_value=False),
             patch("builtins.input", return_value="LEMON") as prompt,
