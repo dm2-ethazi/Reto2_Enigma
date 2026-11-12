@@ -20,9 +20,8 @@ namespace Enigma.Tests.Game
             for (int index = 0; index < levels.Length; index++)
             {
                 levels[index] = ScriptableObject.CreateInstance<LevelDefinition>();
-                int limit = index >= 4 ? 1 : index >= 2 ? 2 : 3;
                 JsonUtility.FromJsonOverwrite(
-                    "{\"phrases\":[\"HOLA\"],\"minimumShift\":1,\"maximumShift\":1,\"lifeLimit\":" + limit + ",\"timeLimitSeconds\":" + (50 - index * 5) + "}",
+                    "{\"phrases\":[\"HOLA\"],\"minimumShift\":1,\"maximumShift\":1,\"timeLimitSeconds\":" + (50 - index * 5) + "}",
                     levels[index]);
             }
 
@@ -30,6 +29,7 @@ namespace Enigma.Tests.Game
             typeof(CampaignSettings).GetField("levels", BindingFlags.NonPublic | BindingFlags.Instance)
                 .SetValue(settings, levels);
             session = new GameSession(settings, 42);
+            session.BeginPlaying();
         }
 
         [TearDown]
@@ -47,6 +47,46 @@ namespace Enigma.Tests.Game
             Assert.That(CaesarCipher.Encode("A B", -1), Is.EqualTo("Z A"));
             Assert.That(CaesarCipher.Normalize("  lá luz\tvence  "), Is.EqualTo("LA LUZ VENCE"));
             Assert.That(session.Submit("  hola "), Is.EqualTo(AnswerResult.Correct));
+        }
+
+        [Test]
+        public void TutorialBlocksAnswersAndTimeUntilStarted()
+        {
+            session.Restart();
+            Assert.That(session.Phase, Is.EqualTo(GamePhase.Tutorial));
+            Assert.That(session.Submit("HOLA"), Is.EqualTo(AnswerResult.Unavailable));
+            Assert.That(session.Tick(200f), Is.False);
+            Assert.That(session.RemainingSeconds, Is.EqualTo(50f));
+            session.BeginPlaying();
+            Assert.That(session.Phase, Is.EqualTo(GamePhase.Ready));
+        }
+
+        [Test]
+        public void NormalizationUsesTrimAndPreservesEnyeWhileEncodingOnlyAZ()
+        {
+            Assert.That(CaesarCipher.Normalize("  ni\u00f1o \t  c\u00e1lido  "), Is.EqualTo("NI\u00d1O CALIDO"));
+            Assert.That(CaesarCipher.Normalize("NIN\u0303O"), Is.EqualTo("NI\u00d1O"));
+            Assert.That(CaesarCipher.Normalize("NI\u00d1O"), Is.Not.EqualTo(CaesarCipher.Normalize("NINO")));
+            Assert.That(CaesarCipher.Encode(" A  Z, \u00d1 \u00e1! ", 1), Is.EqualTo(" B  A, \u00d1 \u00e1! "));
+        }
+
+        [Test]
+        public void LostLifeIsNotRestoredOrReducedWhenChangingRounds()
+        {
+            for(int error = 0; error < 4; error++)
+            {
+                session.Submit("ERROR");
+                session.FinishMovement();
+            }
+            session.RegisterDoorArrival();
+            session.FinishResolution();
+            for(int level = 0; level < 5; level++)
+            {
+                Assert.That(session.Lives, Is.EqualTo(2));
+                session.Submit("HOLA");
+                session.FinishResolution();
+            }
+            Assert.That(session.Phase, Is.EqualTo(GamePhase.Won));
         }
 
         [Test]
@@ -86,9 +126,9 @@ namespace Enigma.Tests.Game
         }
 
         [Test]
-        public void FiveCorrectRoundsApplyLifeLimitsAndWin()
+        public void FiveCorrectRoundsKeepLivesAndWin()
         {
-            int[] limits = { 3, 3, 2, 2, 1 };
+            int[] limits = { 3, 3, 3, 3, 3 };
             for (int index = 0; index < 5; index++)
             {
                 Assert.That(session.Lives, Is.EqualTo(limits[index]));

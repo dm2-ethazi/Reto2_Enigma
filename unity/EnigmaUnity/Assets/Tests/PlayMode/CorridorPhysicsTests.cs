@@ -22,6 +22,8 @@ namespace Enigma.Tests.Physics
             yield return new WaitForFixedUpdate();
             motor = Object.FindFirstObjectByType<DementorMotor2D>();
             Assert.That(motor, Is.Not.Null);
+            // Aisla la fisica del tutorial, que bloquea el motor durante el juego normal.
+            motor.enabled = true;
         }
 
         /// <summary>Verifica que el actor conserva su cuerpo cinemático y que existen seis pistas preparadas.</summary>

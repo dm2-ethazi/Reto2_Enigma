@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Level2
   m_EditorClassIdentifier: Enigma.Game::Enigma.Game.LevelDefinition
   phrases:
+  - LUZ AZUL
   - ABRE LA PUERTA
-  - BUSCA LA LLAVE
-  - SIGUE LA LUZ
-  minimumShift: 2
+  - VARITA
+  minimumShift: 1
   maximumShift: 5
-  lifeLimit: 3
   timeLimitSeconds: 45

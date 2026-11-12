@@ -20,6 +20,9 @@ namespace Enigma.Game
 
         public float Duration => duration;
 
+        /// <summary>Recibe el centro de la puerta preparado en la escena al crear una nueva instancia.</summary>
+        public void ConfigurePortal(Transform center) => portalCenter = center;
+
         /// <summary>Conserva la presentación preparada en el Editor para restaurar el siguiente intento.</summary>
         private void Awake()
         {

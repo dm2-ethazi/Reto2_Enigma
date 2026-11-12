@@ -14,6 +14,7 @@
                 <ui:Button name="clueHitArea" tooltip="Revelar pista" class="clue-hit-area"/>
             </ui:VisualElement>
             <ui:VisualElement class="answer-panel">
+                <ui:ProgressBar name="doorProgress" title="Puerta: 0/4" low-value="0" high-value="4" value="0" class="door-progress"/>
                 <ui:Label name="clueFeedback" text="Busca el símbolo en el pasillo y tócalo." class="clue-note"/>
                 <ui:Label name="cipherText" text="MENSAJE CIFRADO" class="cipher-message"/>
                 <ui:VisualElement class="answer-row">

@@ -9,11 +9,12 @@ using UnityEngine.UIElements;
 
 namespace Enigma.Tests.Game
 {
-    /// <summary>Comprueba la integración de la partida con las pistas, la animación, la UI y la física.</summary>
+    /// <summary>Verifica tutorial, prefabs, fisica, estados finales, interfaz y recarga de la escena real.</summary>
     /// <remarks>@author koldo</remarks>
     public sealed class CampaignSceneTests
     {
         private CampaignController game;
+        private VisualElement Root => Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
 
         [UnitySetUp]
         public IEnumerator LoadGame()
@@ -28,267 +29,317 @@ namespace Enigma.Tests.Game
         [TearDown]
         public void RestoreTime() => Time.timeScale = 1f;
 
-        [Test]
-        public void ClueSelectionUsesSixSpotsAndAvoidsConsecutiveRepeats()
+        /// <summary>Usa la accion publica que tambien invoca el boton Comenzar.</summary>
+        private void StartGame()
         {
-            for (int index = 0; index < 30; index++)
-            {
-                int spot = game.Clue.SpotIndex;
-                int symbol = game.Clue.SymbolIndex;
-                game.Clue.SelectForLevel();
-                Assert.That(game.Clue.SpotIndex, Is.InRange(0, 5).And.Not.EqualTo(spot));
-                Assert.That(game.Clue.SymbolIndex, Is.InRange(0, 5).And.Not.EqualTo(symbol));
-                Assert.That(game.Clue.Revealed, Is.False);
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator CorrectAnswerWinsAllRoundsAndReusesTheActor()
-        {
-            int actorId = Object.FindFirstObjectByType<DementorMotor2D>().GetInstanceID();
-            for (int index = 0; index < 5; index++)
-            {
-                string answer = CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift);
-                game.SubmitAnswer(answer);
-                Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Resolving));
-                yield return WaitForResolution();
-            }
-
-            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Won));
-            game.RestartCampaign();
-            Assert.That(game.Session.LevelIndex, Is.Zero);
-            Assert.That(Object.FindFirstObjectByType<DementorMotor2D>().GetInstanceID(), Is.EqualTo(actorId));
+            game.BeginPlaying();
             Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Ready));
         }
 
-        [UnityTest]
-        public IEnumerator FourWrongAnswersUsePhysicsAndPreserveTheClueOnRetry()
+        private static void Click(Button button)
         {
-            string cipher = game.Session.CipherText;
-            int spot = game.Clue.SpotIndex;
-            int symbol = game.Clue.SymbolIndex;
-            for (int index = 0; index < 4; index++)
-            {
-                game.SubmitAnswer("RESPUESTA INCORRECTA");
-                float deadline = Time.realtimeSinceStartup + 5f;
-                while (game.Session.Phase == GamePhase.Advancing && Time.realtimeSinceStartup < deadline)
-                    yield return new WaitForFixedUpdate();
-
-                Assert.That(game.Session.Phase, Is.Not.EqualTo(GamePhase.Advancing));
-            }
-
-            yield return WaitForResolution();
-            Assert.That(game.Session.Lives, Is.EqualTo(2));
-            Assert.That(game.Session.CipherText, Is.EqualTo(cipher));
-            Assert.That(game.Clue.SpotIndex, Is.EqualTo(spot));
-            Assert.That(game.Clue.SymbolIndex, Is.EqualTo(symbol));
-            Assert.That(game.Session.Errors, Is.Zero);
-        }
-
-        [UnityTest]
-        public IEnumerator AudioPlaysSuccessOnlyForCorrectAnswersAndRespectsPauseAndRestart()
-        {
-            var audio = Object.FindFirstObjectByType<GameAudio>();
-            var success = audio.transform.Find("Dementor Defeated").GetComponent<AudioSource>();
-            Assert.That(success.isPlaying, Is.False);
-            Assert.That(audio.GetComponentsInChildren<AudioSource>().Length, Is.EqualTo(1));
-            Assert.That(success.loop, Is.False);
-
-            game.SubmitAnswer("RESPUESTA INCORRECTA");
-            Assert.That(success.isPlaying, Is.False);
-            game.RestartCampaign();
-            string answer = CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift);
-            game.SubmitAnswer(answer);
-            yield return null;
-            Assert.That(success.isPlaying, Is.True);
-
-            game.TogglePause();
-            Assert.That(success.isPlaying, Is.False);
-            game.TogglePause();
-            Assert.That(success.isPlaying, Is.True);
-            game.RestartCampaign();
-            Assert.That(success.isPlaying, Is.False);
-        }
-
-        [UnityTest]
-        public IEnumerator TimerPausesAndExpirationStartsOnePhysicalAdvance()
-        {
-            var motor = Object.FindFirstObjectByType<DementorMotor2D>();
-            game.Session.Tick(game.Session.TimeLimitSeconds - 0.2f);
-            game.TogglePause();
-            float remaining = game.Session.RemainingSeconds;
-            yield return new WaitForSecondsRealtime(0.3f);
-            Assert.That(game.Session.RemainingSeconds, Is.EqualTo(remaining));
-            Assert.That(motor.StepsTaken, Is.Zero);
-
-            game.TogglePause();
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (game.Session.Errors == 0 && Time.realtimeSinceStartup < deadline)
-                yield return null;
-
-            Assert.That(game.Session.Errors, Is.EqualTo(1));
-            Assert.That(motor.StepsTaken, Is.EqualTo(1));
-            Assert.That(game.Feedback, Does.Contain("Tiempo agotado"));
-            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Advancing));
-            yield return new WaitForFixedUpdate();
-            Assert.That(motor.IsMoving, Is.True);
-            Assert.That(motor.StepsTaken, Is.EqualTo(1));
-        }
-
-        [UnityTest]
-        public IEnumerator ShadowTrailAppearsDuringMovementAndClearsOnRestart()
-        {
-            var trail = Object.FindFirstObjectByType<DementorShadowTrail>();
-            var particles = trail.transform.Find("VFX \u00b7 Shadow Trail").GetComponent<ParticleSystem>();
-            Assert.That(particles.main.simulationSpace, Is.EqualTo(ParticleSystemSimulationSpace.World));
-            Assert.That(particles.particleCount, Is.Zero);
-
-            game.SubmitAnswer("RESPUESTA INCORRECTA");
-            float deadline = Time.realtimeSinceStartup + 3f;
-            while (particles.particleCount == 0 && Time.realtimeSinceStartup < deadline)
-                yield return null;
-
-            Assert.That(particles.particleCount, Is.GreaterThan(0));
-            var before = new ParticleSystem.Particle[particles.main.maxParticles];
-            particles.GetParticles(before);
-            uint seed = before[0].randomSeed;
-            Vector3 position = before[0].position;
-            yield return new WaitForSeconds(0.08f);
-            var after = new ParticleSystem.Particle[particles.main.maxParticles];
-            int count = particles.GetParticles(after);
-            bool found = false;
-            for (int index = 0; index < count; index++)
-            {
-                if (after[index].randomSeed != seed)
-                    continue;
-
-                found = true;
-                Assert.That(Vector3.Distance(after[index].position, position), Is.LessThan(0.001f));
-                break;
-            }
-
-            Assert.That(found, Is.True, "La sombra debe permanecer en su posicion mientras el actor avanza.");
-            game.RestartCampaign();
-            Assert.That(particles.particleCount, Is.Zero);
-            yield return new WaitForSeconds(0.1f);
-            Assert.That(particles.particleCount, Is.Zero, "No debe emitir estando parado tras el reinicio.");
-        }
-
-        [UnityTest]
-        public IEnumerator AuraHasValidMaterialsAndFollowsTheVisualScale()
-        {
-            var aura = Object.FindFirstObjectByType<DementorAura>();
-            var emitters = aura.transform.Find("Visual/Flotacion").GetComponentsInChildren<ParticleSystem>();
-            Assert.That(emitters.Length, Is.GreaterThan(0));
-
-            foreach (var emitter in emitters)
-            {
-                var renderer = emitter.GetComponent<ParticleSystemRenderer>();
-                Assert.That(renderer.sharedMaterial, Is.Not.Null);
-                Assert.That(renderer.sharedMaterial.shader.name, Is.EqualTo("Enigma/Dementor Mist 2D"));
-                Assert.That(renderer.sharedMaterial.shader.isSupported, Is.True);
-                Assert.That(emitter.main.simulationSpace, Is.EqualTo(ParticleSystemSimulationSpace.Local));
-                Assert.That(emitter.main.scalingMode, Is.EqualTo(ParticleSystemScalingMode.Hierarchy));
-            }
-
-            aura.StopEmission();
-            foreach (var emitter in emitters)
-                Assert.That(emitter.isEmitting, Is.False);
-
-            aura.Restart();
-            yield return null;
-            foreach (var emitter in emitters)
-                Assert.That(emitter.isPlaying, Is.True);
-        }
-
-        [UnityTest]
-        public IEnumerator DoorPassageBeginsAtItsCentreAndRestoresTheVisualAfterRetry()
-        {
-            var motor = Object.FindFirstObjectByType<DementorMotor2D>();
-            var visual = motor.transform.Find("Visual");
-            var artwork = visual.GetComponentInChildren<SpriteRenderer>();
-            Vector3 originalScale = visual.localScale;
-            var doorArt = GameObject.Find("Puerta al final del pasillo").GetComponent<SpriteRenderer>();
-
-            for (int index = 0; index < 4; index++)
-            {
-                game.SubmitAnswer("RESPUESTA INCORRECTA");
-                float deadline = Time.realtimeSinceStartup + 5f;
-                while (game.Session.Phase == GamePhase.Advancing && Time.realtimeSinceStartup < deadline)
-                    yield return new WaitForFixedUpdate();
-            }
-
-            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Resolving));
-            Assert.That(motor.GetComponent<Rigidbody2D>().position.x,
-                Is.EqualTo(GameObject.Find("Step 4 · Door").transform.position.x).Within(0.03f));
-            Assert.That(artwork.sortingOrder, Is.GreaterThan(doorArt.sortingOrder));
-            yield return new WaitForSeconds(0.25f);
-            Assert.That(visual.localScale.x, Is.LessThan(originalScale.x).And.GreaterThan(0f));
-            Assert.That(artwork.color.a, Is.LessThan(1f).And.GreaterThan(0f));
-            Assert.That(visual.GetComponent<Animator>().enabled, Is.False);
-
-            yield return new WaitForSeconds(0.55f);
-            Assert.That(artwork.enabled, Is.False);
-            Assert.That(Vector3.Distance(visual.position,
-                GameObject.Find("Door · Passage Center").transform.position), Is.LessThan(0.02f));
-
-            yield return WaitForResolution();
-            Assert.That(artwork.enabled, Is.True);
-            Assert.That(visual.localScale, Is.EqualTo(originalScale));
-            Assert.That(artwork.color.a, Is.EqualTo(1f));
-            Assert.That(visual.GetComponent<Animator>().enabled, Is.True);
-        }
-
-        [UnityTest]
-        public IEnumerator HudButtonsSubmitAnswersAndRevealClues()
-        {
-            var root = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
-            var simulateClick = typeof(Clickable).GetMethod("SimulateSingleClick",
+            var click = typeof(Clickable).GetMethod("SimulateSingleClick",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic |
                 System.Reflection.BindingFlags.Public);
+            click.Invoke(button.clickable, new object[] { null, 0 });
+        }
 
-            simulateClick.Invoke(root.Q<Button>("clueHitArea").clickable, new object[] { null, 0 });
+        [UnityTest]
+        public IEnumerator TutorialBlocksInputTimeAndMovementUntilTheStartButton()
+        {
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Tutorial));
             Assert.That(game.Clue.Revealed, Is.True);
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
+            Assert.That(Root.Q<Label>("modalMessage").text, Does.Contain("IPMB"));
+            float time = game.Session.RemainingSeconds;
+            game.SubmitAnswer("ERROR");
+            game.Enemy.Motor.AdvanceOneStep();
+            yield return new WaitForSeconds(0.15f);
+            Assert.That(game.Session.RemainingSeconds, Is.EqualTo(time));
+            Assert.That(game.Enemy.Motor.StepsTaken, Is.Zero);
+            Click(Root.Q<Button>("resumeGame"));
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Ready));
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.True);
+        }
 
-            var answer = root.Q<TextField>("answerInput");
-            answer.value = CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift);
-            simulateClick.Invoke(root.Q<Button>("submitAnswer").clickable, new object[] { null, 0 });
-            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Resolving));
+        [UnityTest]
+        public IEnumerator FiveCorrectAnswersReplaceTheEnemyAndBlockAfterVictory()
+        {
+            StartGame();
+            for (int round = 0; round < 5; round++)
+            {
+                var previous = game.Enemy;
+                int previousId = previous.GetInstanceID();
+                game.SubmitAnswer(CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift));
+                Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Resolving));
+                yield return WaitForResolution();
+                yield return null;
+                Assert.That(previous == null, Is.True, "La instancia anterior debe destruirse.");
+                Assert.That(game.Session.Lives, Is.EqualTo(3));
+                if (round < 4)
+                {
+                    Assert.That(game.Enemy.GetInstanceID(), Is.Not.EqualTo(previousId));
+                    Assert.That(game.Enemy.Motor.StepsTaken, Is.Zero);
+                }
+            }
+
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Won));
+            Assert.That(game.Enemy == null, Is.True);
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
+            Assert.That(Root.Q<Button>("submitAnswer").enabledInHierarchy, Is.False);
+            Assert.That(Root.Q<Button>("nextLetter").enabledInHierarchy, Is.False);
+            game.SubmitAnswer("ERROR");
+            Assert.That(game.Session.Errors, Is.Zero);
+            Assert.That(game.Session.Tick(500f), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator ThreeDoorAttemptsLoseExactlyThreeLivesAndEndInDefeat()
+        {
+            StartGame();
+            string cipher = game.Session.CipherText;
+            int shift = game.Session.Shift;
+            int spot = game.Clue.SpotIndex;
+            int arrivals = 0;
+            Object.FindFirstObjectByType<DoorTrigger2D>().DementorReached.AddListener(() => arrivals++);
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                var previous = game.Enemy;
+                for (int error = 0; error < 4; error++)
+                {
+                    game.SubmitAnswer("ERROR");
+                    yield return WaitForMovement();
+                }
+                Assert.That(arrivals, Is.EqualTo(attempt + 1));
+                Assert.That(game.Session.Lives, Is.EqualTo(2 - attempt));
+                yield return WaitForResolution();
+                yield return null;
+                Assert.That(previous == null, Is.True);
+                if (attempt < 2)
+                {
+                    Assert.That(game.Enemy, Is.Not.Null);
+                    Assert.That(game.Session.CipherText, Is.EqualTo(cipher));
+                    Assert.That(game.Session.Shift, Is.EqualTo(shift));
+                    Assert.That(game.Clue.SpotIndex, Is.EqualTo(spot));
+                    Assert.That(game.Session.Errors, Is.Zero);
+                }
+            }
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Lost));
+            Assert.That(game.Enemy == null, Is.True);
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
+            game.SubmitAnswer("ERROR");
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Lost));
+        }
+
+        [UnityTest]
+        public IEnumerator RestartReloadsTheSceneAndReturnsToTheTutorial()
+        {
+            StartGame();
+            var previousController = game;
+            var previousActor = game.Enemy;
+            game.SubmitAnswer("ERROR");
+            game.TogglePause();
+            game.RestartCampaign();
+            yield return null;
+            yield return null;
+            game = Object.FindFirstObjectByType<CampaignController>();
+            Assert.That(previousController == null, Is.True);
+            Assert.That(previousActor == null, Is.True);
+            Assert.That(game.Session.Phase, Is.EqualTo(GamePhase.Tutorial));
+            Assert.That(game.Session.Lives, Is.EqualTo(3));
+            Assert.That(game.Session.Errors, Is.Zero);
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            Assert.That(Object.FindObjectsByType<DementorMotor2D>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator PenaltiesIncreaseSpeedButKeepDiscretePhysicsTargets()
+        {
+            StartGame();
+            var motor = game.Enemy.Motor;
+            float original = motor.CurrentSpeed;
+            game.SubmitAnswer("ERROR");
+            Assert.That(motor.CurrentSpeed, Is.GreaterThan(original));
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
+            yield return WaitForMovement();
+            Assert.That(motor.GetComponent<Rigidbody2D>().position.x,
+                Is.EqualTo(GameObject.Find("Step 1").transform.position.x).Within(0.03f));
+            float first = motor.CurrentSpeed;
+            game.SubmitAnswer("ERROR");
+            Assert.That(motor.CurrentSpeed, Is.GreaterThan(first));
+            yield return WaitForMovement();
+            Assert.That(motor.GetComponent<Rigidbody2D>().position.x,
+                Is.EqualTo(GameObject.Find("Step 2").transform.position.x).Within(0.03f));
+            Assert.That(motor.StepsTaken, Is.EqualTo(2));
+            Assert.That(Root.Q<ProgressBar>("doorProgress").value, Is.EqualTo(2f));
+        }
+
+        [UnityTest]
+        public IEnumerator DoorPassageReachesItsCentreBeforeTheEnemyIsReplaced()
+        {
+            StartGame();
+            for (int error = 0; error < 3; error++)
+            {
+                game.SubmitAnswer("ERROR");
+                yield return WaitForMovement();
+            }
+            var actor = game.Enemy;
+            var visual = actor.transform.Find("Visual");
+            var artwork = visual.GetComponentInChildren<SpriteRenderer>();
+            Vector3 originalScale = visual.localScale;
+            game.SubmitAnswer("ERROR");
+            yield return WaitForMovement();
+            Assert.That(actor.Motor.GetComponent<Rigidbody2D>().position.x,
+                Is.EqualTo(GameObject.Find("Step 4 · Door").transform.position.x).Within(0.03f));
+            yield return new WaitForSeconds(0.25f);
+            Assert.That(visual.localScale.x, Is.LessThan(originalScale.x).And.GreaterThan(0));
+            yield return new WaitForSeconds(0.55f);
+            Assert.That(artwork.enabled, Is.False);
+            Assert.That(Vector3.Distance(visual.position, GameObject.Find("Door · Passage Center").transform.position), Is.LessThan(0.02f));
+            yield return WaitForResolution();
+            yield return null;
+            Assert.That(actor == null, Is.True);
+            Assert.That(game.Enemy.transform.Find("Visual").localScale, Is.EqualTo(originalScale));
+        }
+
+        [UnityTest]
+        public IEnumerator HudAcceptsAnswersAndShowsClueFeedbackAndRemainingAdvances()
+        {
+            StartGame();
+            var answer = Root.Q<TextField>("answerInput");
+            answer.value = "   ";
+            Click(Root.Q<Button>("submitAnswer"));
+            Assert.That(game.Session.Errors, Is.Zero);
+            Assert.That(game.Feedback, Does.Contain("Escribe"));
+            Click(Root.Q<Button>("clueHitArea"));
+            Assert.That(game.Clue.Revealed, Is.False);
+            Click(Root.Q<Button>("clueHitArea"));
+            Assert.That(Root.Q<Label>("clueFeedback").text, Does.Contain(game.Session.Shift.ToString()));
+            answer.value = "  " + CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift).ToLowerInvariant() + "  ";
+            Click(Root.Q<Button>("submitAnswer"));
             yield return WaitForResolution();
             Assert.That(game.Session.LevelIndex, Is.EqualTo(1));
             Assert.That(answer.value, Is.Empty);
         }
 
         [UnityTest]
-        public IEnumerator PauseFreezesPhysicsAndClueTargetMatchesItsArtwork()
+        public IEnumerator PauseFreezesPhysicsTimeAndBlocksInput()
         {
-            var root = Object.FindFirstObjectByType<UIDocument>().rootVisualElement;
-            var target = root.Q<Button>("clueHitArea");
-            Vector3 screen = game.SceneCamera.WorldToScreenPoint(game.Clue.Position);
-            Vector2 panelPoint = RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(screen.x, Screen.height - screen.y));
-            Assert.That(Vector2.Distance(target.worldBound.center, panelPoint), Is.LessThan(2f));
-
+            StartGame();
+            game.SubmitAnswer("ERROR");
+            yield return new WaitForFixedUpdate();
             game.TogglePause();
-            Assert.That(Time.timeScale, Is.Zero);
-            Assert.That(root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
-            Assert.That(root.Q("gameModal").ClassListContains("hidden"), Is.False);
+            var body = game.Enemy.Motor.GetComponent<Rigidbody2D>();
+            Vector2 position = body.position;
+            float remaining = game.Session.RemainingSeconds;
             int errors = game.Session.Errors;
+            yield return new WaitForSecondsRealtime(0.15f);
+            Assert.That(body.position, Is.EqualTo(position));
+            Assert.That(game.Session.RemainingSeconds, Is.EqualTo(remaining));
+            Assert.That(Root.Q<TextField>("answerInput").enabledInHierarchy, Is.False);
             game.SubmitAnswer("ERROR");
             Assert.That(game.Session.Errors, Is.EqualTo(errors));
             game.TogglePause();
-            game.RevealClue();
-            Assert.That(game.Clue.Revealed, Is.True);
-            yield return null;
-            Assert.That(root.Q<Label>("clueFeedback").text, Does.Contain(game.Session.Shift.ToString()));
+            yield return WaitForMovement();
         }
 
-        /// <summary>Espera a la animación con un límite independiente de la escala temporal.</summary>
+        [UnityTest]
+        public IEnumerator TimerPausesAndExpirationStartsOnePhysicalAdvance()
+        {
+            StartGame();
+            game.Session.Tick(game.Session.TimeLimitSeconds - 0.2f);
+            game.TogglePause();
+            float remaining = game.Session.RemainingSeconds;
+            yield return new WaitForSecondsRealtime(0.3f);
+            Assert.That(game.Session.RemainingSeconds, Is.EqualTo(remaining));
+            game.TogglePause();
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (game.Session.Errors == 0 && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(game.Session.Errors, Is.EqualTo(1));
+            Assert.That(game.Enemy.Motor.StepsTaken, Is.EqualTo(1));
+            Assert.That(game.Feedback, Does.Contain("Tiempo agotado"));
+        }
+
+        [UnityTest]
+        public IEnumerator ShadowTrailStaysInWorldSpaceAndDisappearsWhenActorIsDestroyed()
+        {
+            StartGame();
+            var actor = game.Enemy;
+            var trail = actor.transform.Find("VFX \u00b7 Shadow Trail").GetComponent<ParticleSystem>();
+            Assert.That(trail.main.simulationSpace, Is.EqualTo(ParticleSystemSimulationSpace.World));
+            game.SubmitAnswer("ERROR");
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (trail.particleCount == 0 && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(trail.particleCount, Is.GreaterThan(0));
+            var particles = new ParticleSystem.Particle[trail.main.maxParticles];
+            trail.GetParticles(particles);
+            Vector3 position = particles[0].position;
+            uint seed = particles[0].randomSeed;
+            yield return new WaitForSeconds(0.08f);
+            int count = trail.GetParticles(particles);
+            bool found = false;
+            for(int index = 0; index < count; index++)
+            {
+                if(particles[index].randomSeed != seed) continue;
+                found = true;
+                Assert.That(Vector3.Distance(position, particles[index].position), Is.LessThan(0.001f));
+            }
+            Assert.That(found, Is.True);
+            yield return WaitForMovement();
+            game.SubmitAnswer(CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift));
+            yield return WaitForResolution();
+            yield return null;
+            Assert.That(actor == null, Is.True);
+            Assert.That(game.Enemy.transform.Find("VFX \u00b7 Shadow Trail").GetComponent<ParticleSystem>().particleCount, Is.Zero);
+        }
+
+        [UnityTest]
+        public IEnumerator AudioPlaysOnlyOnCorrectAnswersAndRespectsPause()
+        {
+            StartGame();
+            var audio = Object.FindFirstObjectByType<GameAudio>();
+            var source = audio.GetComponentInChildren<AudioSource>();
+            Assert.That(audio.GetComponentsInChildren<AudioSource>().Length, Is.EqualTo(1));
+            game.SubmitAnswer("ERROR");
+            Assert.That(source.isPlaying, Is.False);
+            yield return WaitForMovement();
+            game.SubmitAnswer(CaesarCipher.Encode(game.Session.CipherText, -game.Session.Shift));
+            Assert.That(source.isPlaying, Is.True);
+            game.TogglePause();
+            Assert.That(source.isPlaying, Is.False);
+            game.TogglePause();
+            Assert.That(source.isPlaying, Is.True);
+            yield return null;
+        }
+
+        [Test]
+        public void ClueSelectionUsesSixSpotsAndAvoidsConsecutiveRepeats()
+        {
+            for(int index = 0; index < 20; index++)
+            {
+                int spot = game.Clue.SpotIndex;
+                int symbol = game.Clue.SymbolIndex;
+                game.Clue.SelectForLevel();
+                Assert.That(game.Clue.SpotIndex, Is.InRange(0,5).And.Not.EqualTo(spot));
+                Assert.That(game.Clue.SymbolIndex, Is.InRange(0,5).And.Not.EqualTo(symbol));
+            }
+        }
+
+        /// <summary>Espera a que el controlador reabra la respuesta o empiece la resolucion de puerta.</summary>
+        private IEnumerator WaitForMovement()
+        {
+            float deadline = Time.realtimeSinceStartup + 4f;
+            while(game.Session.Phase == GamePhase.Advancing && Time.realtimeSinceStartup < deadline)
+                yield return null;
+            Assert.That(game.Session.Phase, Is.Not.EqualTo(GamePhase.Advancing));
+        }
+
         private IEnumerator WaitForResolution()
         {
             float deadline = Time.realtimeSinceStartup + 4f;
-            while (game.Session.Phase == GamePhase.Resolving && Time.realtimeSinceStartup < deadline)
+            while(game.Session.Phase == GamePhase.Resolving && Time.realtimeSinceStartup < deadline)
                 yield return null;
-
             Assert.That(game.Session.Phase, Is.Not.EqualTo(GamePhase.Resolving));
         }
     }

@@ -5,6 +5,7 @@ namespace Enigma.Game
     /// <summary>Estado de la partida, independiente de cámaras, UI y objetos de la escena.</summary>
     public enum GamePhase
     {
+        Tutorial,
         Ready,
         Advancing,
         Resolving,
@@ -57,8 +58,20 @@ namespace Enigma.Game
         public void Restart()
         {
             LevelIndex = 0;
-            Lives = settings.Levels[0].LifeLimit;
+            Lives = settings.InitialLives;
             BeginLevel();
+            Phase = GamePhase.Tutorial;
+            Changed?.Invoke();
+        }
+
+        /// <summary>Comienza la partida tras leer el ejemplo guiado, sin consumir tiempo durante el tutorial.</summary>
+        public void BeginPlaying()
+        {
+            if (Phase != GamePhase.Tutorial)
+                return;
+
+            Phase = GamePhase.Ready;
+            Changed?.Invoke();
         }
 
         /// <summary>Valida una respuesta y bloquea nuevas respuestas mientras se resuelve su efecto.</summary>
@@ -160,7 +173,6 @@ namespace Enigma.Game
         private void BeginLevel()
         {
             var level = settings.Levels[LevelIndex];
-            Lives = Math.Min(Lives, level.LifeLimit);
             Shift = random.Next(level.MinimumShift, level.MaximumShift + 1);
             expectedAnswer = CaesarCipher.Normalize(level.Phrases[random.Next(level.Phrases.Length)]);
             CipherText = CaesarCipher.Encode(expectedAnswer, Shift);

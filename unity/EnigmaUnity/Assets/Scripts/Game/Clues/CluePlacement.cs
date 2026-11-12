@@ -20,7 +20,7 @@ namespace Enigma.Game
         public int SymbolIndex => previousSymbol;
 
         /// <summary>Randomiza la pista al comenzar un nivel, evitando repetir posición y símbolo consecutivos.</summary>
-        public void SelectForLevel()
+        public void SelectForLevel(bool reveal = false)
         {
             previousSymbol = PickDifferent(symbols.Length, previousSymbol);
             previousSpot = PickDifferent(spots.Length, previousSpot);
@@ -29,7 +29,7 @@ namespace Enigma.Game
             artwork.transform.localScale = Vector3.one * worldSize /
                 Mathf.Max(artwork.sprite.bounds.size.x, artwork.sprite.bounds.size.y);
             artwork.enabled = true;
-            Revealed = false;
+            Revealed = reveal;
         }
 
         /// <summary>Alterna la nota de ayuda sin cambiar la pista del nivel.</summary>

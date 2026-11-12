@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Level3
   m_EditorClassIdentifier: Enigma.Game::Enigma.Game.LevelDefinition
   phrases:
-  - EL SECRETO ESTA AQUI
-  - PROTEGE A TUS AMIGOS
-  - NO PIERDAS LA LLAVE
-  minimumShift: 3
-  maximumShift: 7
-  lifeLimit: 2
+  - PATRONUS
+  - LUZ ETERNA
+  - PUERTA AZUL
+  - MAGIA BLANCA
+  minimumShift: 1
+  maximumShift: 10
   timeLimitSeconds: 40

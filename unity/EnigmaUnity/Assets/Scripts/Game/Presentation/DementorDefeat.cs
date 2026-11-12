@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Enigma.Game
 {
-    /// <summary>Controla la desintegración y restaura el mismo personaje para el siguiente intento.</summary>
+    /// <summary>Controla la desintegración del prefab enemigo antes de retirar su instancia.</summary>
     /// <remarks>@author koldo</remarks>
     public sealed class DementorDefeat : MonoBehaviour
     {
