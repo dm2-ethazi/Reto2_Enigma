@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Texto del idioma dentro de la caja: sin fondo, usa el relleno del contenedor. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:fontFamily="serif"
+    android:gravity="center_vertical"
+    android:minHeight="38dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:textColor="@color/pergamino_tinta"
+    android:textSize="15sp" />
