@@ -5,6 +5,7 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 from ..errors import ValidationError
+from ..i18n import tr
 from ..utils.files import input_text_file
 
 FILE_BLOCK_SIZE = 1024 * 1024
@@ -15,7 +16,7 @@ def validate_key(key: str) -> str:
         "A" <= c <= "Z" or "a" <= c <= "z" for c in key
     ):
         raise ValidationError(
-            "La clave Vigenère debe contener entre 1 y 64 letras A-Z."
+            tr("La clave Vigenère debe contener entre 1 y 64 letras A-Z.")
         )
     return key.upper()
 

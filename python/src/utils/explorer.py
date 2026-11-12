@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from ..i18n import tr
+
 
 def reveal_file(path: str | Path) -> bool:
     path = Path(path).absolute()
@@ -16,6 +18,8 @@ def reveal_file(path: str | Path) -> bool:
     try:
         subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except OSError:
-        print(f"No se pudo abrir el explorador. Archivo guardado en: {path}")
+        print(
+            tr("No se pudo abrir el explorador. Archivo guardado en: {path}", path=path)
+        )
         return False
     return True

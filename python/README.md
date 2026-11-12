@@ -4,7 +4,7 @@ Aplicación de terminal del **Reto 2 de DAM** para cifrar y descifrar texto y
 archivos. Incluye Vigenère para texto UTF-8 y AES-256-GCM para archivos de
 cualquier tipo, con verificación de autenticidad al descifrar.
 
-[Instalación](#instalación) · [Uso](#uso) · [Vigenère](#vigenère) ·
+[Instalación](#instalación) · [Uso](#uso) · [Idiomas](#idiomas) · [Vigenère](#vigenère) ·
 [AES](#aes-256-gcm) · [Pruebas](#desarrollo-y-pruebas)
 
 ## Funcionalidades
@@ -83,6 +83,7 @@ AES / ARCHIVOS
   4. Descifrar archivo AES
 
   5. Salir
+  6. Idioma / Hizkuntza / Language
 ```
 
 - **Navegar:** flechas y Enter, o el número de una opción.
@@ -98,6 +99,39 @@ AES / ARCHIVOS
 Al guardar, Windows y macOS abren el explorador con el resultado seleccionado;
 Linux abre su carpeta mediante `xdg-open`. El resultado no se ejecuta. Si no se
 puede iniciar el explorador, se muestra la ruta y se conserva el archivo.
+
+## Idiomas
+
+La interfaz está disponible en **español** (`es`), **euskera** (`eu`) e
+**inglés** (`en`). Se inicia en español por defecto. Para cambiar de idioma,
+selecciona la opción **6. Idioma / Hizkuntza / Language** y después
+**Español**, **Euskara** o **English**. El cambio se aplica inmediatamente y se
+mantiene durante la sesión. Esc o `q` vuelve sin cambiar el idioma.
+
+También puedes elegir el idioma al arrancar desde `python/`:
+
+```powershell
+python -m uv run --locked python main.py --lang es
+python -m uv run --locked python main.py --lang eu
+python -m uv run --locked python main.py --lang en
+```
+
+Con venv, añade igualmente `--lang eu` o `--lang en` al ejecutar `main.py`.
+Los menús, ayudas de navegación, preguntas, progreso, resultados, validaciones
+y etiquetas de filtros de archivos usan el idioma seleccionado. Los botones
+propios del selector nativo dependen del idioma del sistema operativo.
+El texto introducido, las contraseñas, las rutas y el contenido de los archivos
+se conservan tal como los proporciona el usuario.
+
+En el modo numerado también puedes volver escribiendo `back` o `atzera`, y
+salir con `exit` o `irten`, además de `q`, `salir` y `volver`.
+
+Las traducciones se centralizan en `src/i18n.py` y los catálogos UTF-8
+`src/locales/en.json` y `src/locales/eu.json`; los mensajes originales en español
+sirven de claves y de respaldo si falta una traducción. Para añadir un mensaje,
+utiliza `tr(...)` y actualiza ambos catálogos conservando los parámetros entre
+llaves. Las pruebas verifican que las traducciones cubran los mensajes y que
+coincidan sus parámetros. No se requieren dependencias adicionales.
 
 ## Vigenère
 
@@ -223,6 +257,8 @@ python/
 ├── docs/R2AE.md              # Especificación del contenedor AES
 ├── src/
 │   ├── errors.py             # Validación y cancelación controladas
+│   ├── i18n.py               # Idioma de sesión y traducción de mensajes
+│   ├── locales/              # Catálogos de inglés y euskera
 │   ├── encrypt/              # Algoritmos AES y Vigenère por bloques
 │   ├── interface/            # Menú, pantallas, progreso y claves enmascaradas
 │   └── utils/                # Selectores, partes, publicación y explorador

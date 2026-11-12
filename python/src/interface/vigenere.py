@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..encrypt import vigenere
 from ..errors import OperationCancelled
+from ..i18n import tr
 from ..utils.dialogs import TEXT_FILES, choose_path
 from ..utils.explorer import reveal_file
 from ..utils.files import (
@@ -29,31 +30,31 @@ def run_decryption(*, interactive: bool = False) -> None:
 
 
 def _run(*, interactive: bool, decrypt: bool) -> None:
-    title = "Descifrar Vigenère" if decrypt else "Cifrar Vigenère"
-    progress = "Descifrando" if decrypt else "Cifrando"
+    title = tr("Descifrar Vigenère") if decrypt else tr("Cifrar Vigenère")
+    progress = tr("Descifrando") if decrypt else tr("Cifrando")
     transform = vigenere.decrypt if decrypt else vigenere.encrypt
     transform_file = vigenere.decrypt_file if decrypt else vigenere.encrypt_file
     mode = choose(
-        f"{title} / Origen del texto",
-        ["Texto por consola", "Archivo .txt"],
+        tr("{title} / Origen del texto", title=title),
+        [tr("Texto por consola"), tr("Archivo .txt")],
         interactive=interactive,
     )
     if mode is None:
         raise OperationCancelled
     source = None
     if mode == 0:
-        text = input("Texto: ")
+        text = input(tr("Texto: "))
     else:
         source = input_text_file(
-            choose_path("Seleccionar archivo de texto", filetypes=TEXT_FILES)
+            choose_path(tr("Seleccionar archivo de texto"), filetypes=TEXT_FILES)
         )
 
-    prompt = "Clave Vigenère (1-64 letras A-Z): "
+    prompt = tr("Clave Vigenère (1-64 letras A-Z): ")
     key = read_password(prompt)
     key = vigenere.validate_key(key)
     mode = choose(
-        f"{title} / Qué hacer con el resultado",
-        ["Mostrar", "Guardar .txt", "Mostrar y guardar"],
+        tr("{title} / Qué hacer con el resultado", title=title),
+        [tr("Mostrar"), tr("Guardar .txt"), tr("Mostrar y guardar")],
         interactive=interactive,
     )
     if mode is None:
@@ -62,7 +63,7 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
     if mode in (1, 2):
         destination = new_text_destination(
             choose_path(
-                "Guardar resultado Vigenère",
+                tr("Guardar resultado Vigenère"),
                 save=True,
                 default=Path("resultado.txt"),
                 filetypes=TEXT_FILES,
@@ -76,7 +77,7 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
             if destination is not None:
                 write_text(destination, result)
         if mode in (0, 2):
-            print(f"\nResultado:\n{result}")
+            print(tr("\nResultado:\n{result}", result=result))
     else:
         directory = destination.parent if destination is not None else None
         with temporary_parts(directory) as parts:
@@ -87,11 +88,11 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
                 if destination is not None:
                     parts.publish(destination)
             if mode in (0, 2):
-                print("\nResultado:")
+                print(tr("\nResultado:"))
                 for block in parts.iter_text():
                     sys.stdout.write(block)
                 print()
     if destination is not None:
-        print(f"Resultado guardado en: {destination}")
+        print(tr("Resultado guardado en: {destination}", destination=destination))
         reveal_file(destination)
-    input("\nPulsa Enter para volver al menú principal.")
+    input(tr("\nPulsa Enter para volver al menú principal."))

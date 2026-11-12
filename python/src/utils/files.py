@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import BinaryIO
 
 from ..errors import ValidationError
+from ..i18n import tr
 
 MAX_PART_SIZE = 20 * 1024 * 1024
 COPY_CHUNK_SIZE = 1024 * 1024
@@ -18,7 +19,7 @@ COPY_CHUNK_SIZE = 1024 * 1024
 def input_file(path: str | Path) -> Path:
     source = Path(path).expanduser()
     if not stat.S_ISREG(source.stat().st_mode):
-        raise ValidationError("El origen debe ser un archivo regular.")
+        raise ValidationError(tr("El origen debe ser un archivo regular."))
     return source
 
 
@@ -27,10 +28,13 @@ def new_destination(path: str | Path) -> Path:
     # lexists también detecta enlaces simbólicos cuyo destino ya no existe.
     if os.path.lexists(destination):
         raise FileExistsError(
-            f"El destino ya existe: {destination}. Elige otro nombre."
+            tr(
+                "El destino ya existe: {destination}. Elige otro nombre.",
+                destination=destination,
+            )
         )
     if not destination.parent.is_dir():
-        raise ValidationError("La carpeta de destino no existe.")
+        raise ValidationError(tr("La carpeta de destino no existe."))
     return destination
 
 
@@ -65,7 +69,7 @@ class _PartWriter:
 
     def write(self, data: bytes) -> int:
         if self._closed:
-            raise ValueError("El escritor de partes está cerrado.")
+            raise ValueError(tr("El escritor de partes está cerrado."))
         remaining = memoryview(data).cast("B")
         total = len(remaining)
         while remaining:
@@ -74,7 +78,7 @@ class _PartWriter:
             count = min(len(remaining), MAX_PART_SIZE - self._size)
             written = self._stream.write(remaining[:count])
             if written is None or written <= 0:
-                raise OSError("No se pudo completar la escritura del temporal.")
+                raise OSError(tr("No se pudo completar la escritura del temporal."))
             self._size += written
             remaining = remaining[written:]
             if self._size == MAX_PART_SIZE:
@@ -166,14 +170,14 @@ def staged_output(path: str | Path) -> Iterator[_PartWriter]:
 def input_text_file(path: str | Path) -> Path:
     source = input_file(path)
     if source.suffix.lower() != ".txt":
-        raise ValidationError("Vigenère requiere un archivo .txt en UTF-8.")
+        raise ValidationError(tr("Vigenère requiere un archivo .txt en UTF-8."))
     return source
 
 
 def new_text_destination(path: str | Path) -> Path:
     destination = Path(path).expanduser()
     if destination.suffix.lower() != ".txt":
-        raise ValidationError("El resultado Vigenère debe guardarse como .txt.")
+        raise ValidationError(tr("El resultado Vigenère debe guardarse como .txt."))
     return new_destination(destination)
 
 

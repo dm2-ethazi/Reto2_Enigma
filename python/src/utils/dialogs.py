@@ -4,6 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from ..errors import OperationCancelled
+from ..i18n import tr
 
 ALL_FILES = (("Todos los archivos", "*"),)
 TEXT_FILES = (("Archivos de texto", "*.txt"),) + ALL_FILES
@@ -13,9 +14,14 @@ ENCRYPTED_FILES = (("Archivos cifrados", "*.enc"),) + ALL_FILES
 def _prompt_path(
     title: str, *, save: bool, default: Path | None, extension: str
 ) -> Path:
-    print(f"{title}: selector de archivos en la terminal (sin escritorio disponible).")
+    print(
+        tr(
+            "{title}: selector de archivos en la terminal (sin escritorio disponible).",
+            title=title,
+        )
+    )
     hint = f" [{default}]" if save and default is not None else ""
-    value = input(f"Ruta{hint} (vacío para cancelar): ").strip()
+    value = input(tr("Ruta{hint} (vacío para cancelar): ", hint=hint)).strip()
     if not value:
         raise OperationCancelled
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
@@ -36,6 +42,7 @@ def choose_path(
     filetypes: tuple = ALL_FILES,
     extension: str = "",
 ) -> Path:
+    title = tr(title)
     try:
         import tkinter as tk
         from tkinter import filedialog
@@ -50,7 +57,7 @@ def choose_path(
         options = {
             "parent": root,
             "title": title,
-            "filetypes": filetypes,
+            "filetypes": tuple((tr(label), pattern) for label, pattern in filetypes),
             "initialdir": str(
                 default.absolute().parent if default is not None else Path.cwd()
             ),

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from ..errors import ValidationError
+from ..i18n import tr
 from ..utils.dialogs import ENCRYPTED_FILES, choose_path
 from ..utils.explorer import reveal_file
 from .loading import loading
@@ -25,16 +26,18 @@ def _run(*, decrypt: bool) -> None:
     except ModuleNotFoundError as error:
         if error.name == "cryptography":
             raise ValidationError(
-                "AES necesita cryptography. Instala requirements.txt en el entorno "
-                "de Python que ejecuta Enigma: python -m pip install -r requirements.txt"
+                tr(
+                    "AES necesita cryptography. Instala requirements.txt en el entorno "
+                    "de Python que ejecuta Enigma: python -m pip install -r requirements.txt"
+                )
             ) from error
         raise
 
     if decrypt:
         source = choose_path(
-            "Seleccionar archivo para descifrar con AES", filetypes=ENCRYPTED_FILES
+            tr("Seleccionar archivo para descifrar con AES"), filetypes=ENCRYPTED_FILES
         )
-        prompt = "Contraseña AES (16 letras o números): "
+        prompt = tr("Contraseña AES (16 letras o números): ")
         password = read_password(prompt)
         default = (
             source.with_suffix("")
@@ -42,27 +45,31 @@ def _run(*, decrypt: bool) -> None:
             else Path(f"{source}.decrypted")
         )
         destination = choose_path(
-            "Guardar archivo descifrado", save=True, default=default
+            tr("Guardar archivo descifrado"), save=True, default=default
         )
-        with loading("Descifrando AES y verificando autenticidad"):
+        with loading(tr("Descifrando AES y verificando autenticidad")):
             path = aes.decrypt_file(source, password, destination)
-        print(f"Archivo descifrado y autenticado: {path}")
+        print(tr("Archivo descifrado y autenticado: {path}", path=path))
         reveal_file(path)
-        input("\nPulsa Enter para volver al menú principal.")
+        input(tr("\nPulsa Enter para volver al menú principal."))
         return
 
-    source = choose_path("Seleccionar archivo para cifrar con AES")
+    source = choose_path(tr("Seleccionar archivo para cifrar con AES"))
     destination = choose_path(
-        "Guardar archivo cifrado",
+        tr("Guardar archivo cifrado"),
         save=True,
         default=Path(f"{source}.enc"),
         filetypes=ENCRYPTED_FILES,
         extension=".enc",
     )
-    with loading("Cifrando AES"):
+    with loading(tr("Cifrando AES")):
         result = aes.encrypt_file(source, destination)
-    print(f"Archivo cifrado: {result.path}")
-    print(f"Contraseña generada: {result.password}")
-    print("Guarda esta contraseña: no se almacena en el archivo ni se puede recuperar.")
+    print(tr("Archivo cifrado: {path}", path=result.path))
+    print(tr("Contraseña generada: {password}", password=result.password))
+    print(
+        tr(
+            "Guarda esta contraseña: no se almacena en el archivo ni se puede recuperar."
+        )
+    )
     reveal_file(result.path)
-    input("\nPulsa Enter para volver al menú principal.")
+    input(tr("\nPulsa Enter para volver al menú principal."))
