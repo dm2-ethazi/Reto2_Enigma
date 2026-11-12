@@ -1,0 +1,25 @@
+[project]
+name = "enigma-python"
+version = "0.1.0"
+description = "Reto 02 Enigma - aplicación Python"
+requires-python = ">=3.14,<3.15"
+dependencies = ["cryptography==50.0.2"]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "pytest-cov==7.0.0", "ruff==0.14.3", "pre-commit==4.3.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88

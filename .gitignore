@@ -96,36 +96,35 @@ python-cli/htmlcov/
 # ============================================
 #  Unity
 # ============================================
-[Ll]ibrary
-[Bb]ackups
-[Tt]emp/
-[Oo]bj/
-[Bb]uild/
-[Bb]uilds/
-[Ll]ogs
-[Uu]ser[Ss]ettings/
-[Mm]emoryCaptures/
-[Rr]ecordings/
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Oo]bj/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ogs/
+unity/[Uu]ser[Ss]ettings/
+unity/[Mm]emoryCaptures/
+unity/[Rr]ecordings/
 
 # Unity generated
-*.csproj
-*.unityproj
-*.sln
-*.suo
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-sysinfo.txt
-crashlytics-build.properties
+unity/*.csproj
+unity/*.unityproj
+unity/*.sln
+unity/*.suo
+unity/*.user
+unity/*.userprefs
+unity/*.pidb
+unity/*.booproj
+unity/*.svd
+unity/*.pdb
+unity/*.mdb
+unity/*.opendb
+unity/*.VC.db
+unity/sysinfo.txt
+unity/crashlytics-build.properties
 
 # Unity - Crash reports
-sysinfo.txt
+unity/sysinfo.txt
 
 # Unity - Asset meta files (opcional, depende del equipo)
 # unity/**/*.meta
@@ -142,9 +141,3 @@ docs/.doctrees/
 .vscode/
 *.code-workspace
 .fleet/
-# Unity editor temporary state and recovered scenes
-unity/EnigmaUnity/.utmp/
-unity/EnigmaUnity/Assets/_Recovery/
-unity/EnigmaUnity/Assets/_Recovery.meta
-unity/EnigmaUnity/Assets/InitTestScene*.unity
-unity/EnigmaUnity/Assets/InitTestScene*.unity.meta

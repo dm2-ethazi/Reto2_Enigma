@@ -1,0 +1,71 @@
+name: Puerta de revisión
+
+# Se ejecuta en TODAS las pull requests (sin filtro de rutas), así que también
+# cubre los cambios de android/, javafx/ y unity/ que antes no comprobaba nadie.
+#
+# Se usa `pull_request` y no `pull_request_target`: este último toma el archivo
+# del workflow de la rama por defecto (main), no de la rama base, así que no se
+# ejecutaría mientras main no tenga el workflow.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, review_requested]
+  pull_request_review:
+    types: [submitted, dismissed, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: puerta-revision-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  revision-aprobada:
+    name: Revisión obligatoria (main y develop)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar que alguien ha aprobado la PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          NUMERO: ${{ github.event.pull_request.number }}
+          BASE: ${{ github.event.pull_request.base.ref }}
+          AUTOR: ${{ github.event.pull_request.user.login }}
+          BORRADOR: ${{ github.event.pull_request.draft }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$BASE" != "main" && "$BASE" != "develop" ]]; then
+            echo "La PR apunta a '$BASE': la puerta solo bloquea main y develop."
+            exit 0
+          fi
+
+          if [[ "${BORRADOR:-false}" == "true" ]]; then
+            echo "::error::La PR sigue en borrador; márcala como lista para revisión."
+            exit 1
+          fi
+
+          votos=$(gh api --paginate "repos/$REPO/pulls/$NUMERO/reviews" \
+            --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | .[]' || true)
+          aprobaciones=$(printf '%s\n' "$votos" | grep -vxF "$AUTOR" | grep -c . || true)
+
+          if [[ "${aprobaciones:-0}" -lt 1 ]]; then
+            echo "::error::Falta una revisión aprobada de otra persona: la PR no puede fusionarse a '$BASE'."
+            {
+              echo "### ❌ Revisión pendiente"
+              echo ""
+              echo "La PR #$NUMERO hacia \`$BASE\` necesita al menos una revisión **Approved**"
+              echo "de alguien distinto de @$AUTOR. Este check se pone en verde en cuanto llegue."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "Revisión aprobada por:"
+          printf '%s\n' "$votos"
+          {
+            echo "### ✅ Revisión aprobada"
+            echo ""
+            echo "La PR #$NUMERO hacia \`$BASE\` tiene $aprobaciones aprobación(es) válida(s)."
+          } >> "$GITHUB_STEP_SUMMARY"
