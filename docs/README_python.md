@@ -216,7 +216,7 @@ el archivo final.
 
 El contenedor **R2AE v1** utiliza PBKDF2-HMAC-SHA256 con 200 000 iteraciones,
 sal de 16 bytes y nonce de 12 bytes nuevos por cifrado. Añade 53 bytes al tamaño
-original y admite archivos vacíos. Consulta [la especificación R2AE](docs/R2AE.md)
+original y admite archivos vacíos. Consulta [la especificación R2AE](../python/docs/R2AE.md)
 para ver el formato y los vectores de prueba.
 
 ## Archivos y partes temporales
@@ -276,7 +276,7 @@ simulan los selectores y el explorador para no abrir ventanas. Cubren vectores
 AES de referencia, verificación AAD, contraseñas incorrectas, Vigenère, límites
 de partes, cancelación, errores y entrada de claves enmascaradas.
 
-Consulta [la guía de CI](../docs/GUIA_CI_CD.md) para activar los hooks locales,
+Consulta [la guía de CI](GUIA_CI_CD.md) para activar los hooks locales,
 ver qué ramas se validan y localizar los artefactos en GitHub Actions.
 
 ## Estructura
