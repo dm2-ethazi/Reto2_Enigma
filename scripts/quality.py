@@ -11,15 +11,27 @@ UV = [shutil.which("uv")] if shutil.which("uv") else [sys.executable, "-m", "uv"
 
 
 def is_python_branch(branch):
+    """Reconoce python-cli y las ramas cuyo último segmento es python."""
     return branch == "python-cli" or branch.rsplit("/", 1)[-1] == "python"
 
 
 def run(args, cwd=ROOT):
+    """Muestra y ejecuta un comando desde cwd, sin intérprete de shell.
+
+    Convierte rutas y argumentos a cadenas. Propaga CalledProcessError si el
+    comando falla para detener la validación en el primer error.
+    """
     print("+", " ".join(map(str, args)), flush=True)
     subprocess.run(list(map(str, args)), cwd=cwd, check=True)
 
 
 def suite():
+    """Sincroniza uv y ejecuta formato, lint y pruebas con cobertura mínima.
+
+    Exige python/src y python/tests; si faltan, lanza ValueError. Conserva los
+    informes de pytest y cobertura en .artifacts/python y propaga los errores
+    de los comandos para que CI y los hooks comuniquen el fallo.
+    """
     project = ROOT / "python"
     if not (project / "src").is_dir() or not (project / "tests").is_dir():
         raise ValueError(
@@ -47,6 +59,12 @@ def suite():
 
 
 def main():
+    """Decide si debe ejecutar la validación según la etapa y las referencias Git.
+
+    ci y test siempre validan. pre-commit filtra por la rama indicada o actual;
+    pre-push lee las referencias de stdin para validar lo que se envía, omitiendo
+    etiquetas y borrados. Los argumentos desconocidos de los hooks se ignoran.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("stage", choices=("pre-commit", "pre-push", "ci", "test"))
     parser.add_argument("--branch")
@@ -56,7 +74,8 @@ def main():
         return
     branch = (
         args.branch
-        or subprocess.check_output(
+        if args.branch is not None
+        else subprocess.check_output(
             ["git", "branch", "--show-current"], cwd=ROOT, text=True
         ).strip()
     )
