@@ -7,7 +7,12 @@ from contextlib import contextmanager
 
 
 def enable_cursor_control():
-    """Enable cursor movement only; never change terminal colours."""
+    """Indica si se puede usar navegación con cursor en esta terminal.
+
+    Rechaza entrada o salida redirigidas y TERM=dumb. En Windows intenta activar
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING; devuelve False si la API no está
+    disponible o no puede configurarse. No modifica los colores de la terminal.
+    """
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return False
     if os.environ.get("TERM") == "dumb":
@@ -32,6 +37,7 @@ def enable_cursor_control():
         mode = wintypes.DWORD()
         return bool(
             kernel.GetConsoleMode(handle, ctypes.byref(mode))
+            # Conservar las opciones previas y activar el procesamiento ANSI.
             and kernel.SetConsoleMode(handle, mode.value | 0x0004)
         )
     except (OSError, AttributeError):
@@ -40,6 +46,12 @@ def enable_cursor_control():
 
 @contextmanager
 def keyboard():
+    """Cede el control con lectura inmediata de teclas en la plataforma activa.
+
+    En POSIX aplica cbreak y restaura la configuración anterior en finally,
+    también cuando el bloque falla. En Windows no cambia el modo de consola,
+    porque msvcrt ya permite leer teclas individualmente.
+    """
     if os.name == "nt":
         yield
         return
@@ -52,10 +64,25 @@ def keyboard():
         tty.setcbreak(descriptor)
         yield
     finally:
+        # Restaurar el modo aunque la lectura termine por cancelación o error.
         termios.tcsetattr(descriptor, termios.TCSADRAIN, previous)
 
 
 def read_key():
+    """Normaliza una tecla para la navegación de los menús.
+
+    Returns:
+        up, down, home, end, enter o escape para teclas reconocidas; el carácter
+        recibido para otras teclas, o una cadena vacía para secuencias ignoradas.
+
+    Raises:
+        EOFError: Si se agota la entrada POSIX.
+        KeyboardInterrupt: Si se recibe Ctrl+C.
+
+    En POSIX espera brevemente los bytes posteriores a Esc para distinguir una
+    cancelación de las secuencias de flechas; en Windows consume el prefijo
+    de las teclas extendidas.
+    """
     if os.name == "nt":
         import msvcrt
 

@@ -1,3 +1,5 @@
+"""Pruebas del flujo AES de terminal con selectores y explorador simulados."""
+
 import hashlib
 import io
 import re
@@ -17,7 +19,10 @@ from src.utils import files
 
 
 class AesInterfaceTests(unittest.TestCase):
+    """Comprueba el flujo AES de terminal sin abrir selectores ni exploradores reales."""
+
     def setUp(self):
+        """Prepara los recursos aislados de la prueba y registra su limpieza automática."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.folder = Path(temporary.name)
@@ -27,6 +32,7 @@ class AesInterfaceTests(unittest.TestCase):
         self.destination = self.folder / "archivo cifrado.enc"
 
     def run_app(self, answers, paths):
+        """Ejecuta la interfaz con respuestas y rutas simuladas y captura su salida."""
         output = io.StringIO()
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
@@ -40,6 +46,7 @@ class AesInterfaceTests(unittest.TestCase):
         return output.getvalue(), picker
 
     def test_encrypt_via_menu_and_show_password_after_success(self):
+        """Cifra desde el menú y muestra la contraseña solo tras publicar el resultado."""
         output, picker = self.run_app(["3", "", "5"], [self.source, self.destination])
         password = re.search(r"Contraseña generada: ([A-Za-z0-9]{16})", output).group(1)
         payload = self.destination.read_bytes()
@@ -59,6 +66,7 @@ class AesInterfaceTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_cancel_either_picker_does_not_start_encryption(self):
+        """Cancela cualquiera de los selectores sin iniciar el cifrado ni crear un destino."""
         for paths in ([OperationCancelled()], [self.source, OperationCancelled()]):
             with (
                 self.subTest(paths=len(paths)),
@@ -71,6 +79,7 @@ class AesInterfaceTests(unittest.TestCase):
                 self.assertFalse(self.destination.exists())
 
     def test_existing_destination_returns_to_menu(self):
+        """Rechaza un destino existente y permite volver al menú."""
         self.destination.write_bytes(b"otro archivo")
         output, _ = self.run_app(["3", "", "5"], [self.source, self.destination])
         self.assertIn("Error:", output)
@@ -79,6 +88,7 @@ class AesInterfaceTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_disk_error_does_not_report_success_or_password(self):
+        """Un fallo de disco impide anunciar éxito o revelar una contraseña de salida."""
         with patch.object(files.os, "fsync", side_effect=OSError("Disco lleno")):
             output, _ = self.run_app(["3", "", "5"], [self.source, self.destination])
         self.assertIn("Error: Disco lleno", output)
@@ -88,6 +98,7 @@ class AesInterfaceTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_missing_source_returns_to_menu(self):
+        """Comunica un origen ausente y mantiene disponible el menú."""
         output, _ = self.run_app(
             ["3", "", "5"], [self.folder / "ausente.bin", self.destination]
         )

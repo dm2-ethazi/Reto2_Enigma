@@ -226,6 +226,14 @@ para ver el formato y los vectores de prueba.
 
 ## Desarrollo y pruebas
 
+El código Python, incluidas las pruebas y los scripts de calidad, documenta sus
+módulos, clases y funciones mediante docstrings en español. Las operaciones con
+contratos más amplios detallan argumentos, retornos o bloques generados y errores;
+los comentarios explican decisiones como la autenticación antes de publicar,
+los límites de temporales y la restauración de la terminal. Al modificar una
+función, mantén su documentación coherente con el comportamiento y los errores
+que realmente expone.
+
 Desde la **raíz del repositorio**, ejecuta las mismas revisiones que CI:
 
 ```powershell

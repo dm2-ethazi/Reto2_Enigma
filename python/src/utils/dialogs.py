@@ -14,6 +14,12 @@ ENCRYPTED_FILES = (("Archivos cifrados", "*.enc"),) + ALL_FILES
 def _prompt_path(
     title: str, *, save: bool, default: Path | None, extension: str
 ) -> Path:
+    """Solicita una ruta por terminal cuando no hay selector gráfico disponible.
+
+    Muestra default como sugerencia al guardar, elimina comillas exteriores,
+    expande ~ y añade extension si falta. Una respuesta vacía cancela mediante
+    OperationCancelled; no utiliza automáticamente la sugerencia.
+    """
     print(
         tr(
             "{title}: selector de archivos en la terminal (sin escritorio disponible).",
@@ -42,6 +48,24 @@ def choose_path(
     filetypes: tuple = ALL_FILES,
     extension: str = "",
 ) -> Path:
+    """Solicita una ruta con Tkinter o recurre a la entrada por terminal.
+
+    Args:
+        title: Título o clave de traducción del selector.
+        save: Abre un selector de guardado cuando es True.
+        default: Ruta sugerida para la carpeta inicial y el nombre de guardado.
+        filetypes: Pares de etiqueta y patrón para los filtros de archivos.
+        extension: Extensión propuesta al guardar, por ejemplo .txt.
+
+    Returns:
+        Ruta seleccionada; la capa de archivos valida origen y destino después.
+
+    Raises:
+        OperationCancelled: Si se cancela el selector o la entrada por terminal.
+
+    Traduce títulos y etiquetas al mostrar el diálogo. La ventana oculta siempre
+    se destruye; un fallo de Tkinter permite continuar desde la terminal.
+    """
     title = tr(title)
     try:
         import tkinter as tk
@@ -76,6 +100,7 @@ def choose_path(
             with suppress(tk.TclError):
                 root.destroy()
 
+    # None indica un fallo gráfico; la cadena vacía indica cancelación explícita.
     if value is None:
         return _prompt_path(title, save=save, default=default, extension=extension)
     if not value:

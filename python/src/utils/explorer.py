@@ -8,6 +8,18 @@ from ..i18n import tr
 
 
 def reveal_file(path: str | Path) -> bool:
+    """Intenta mostrar el resultado en el explorador de la plataforma.
+
+    Args:
+        path: Ruta del archivo ya guardado, que se convierte a absoluta.
+
+    Returns:
+        True si el proceso se inicia; False si no se puede iniciar. No espera a
+        que termine el explorador ni comprueba su código de salida.
+
+    Windows y macOS seleccionan el archivo; Linux abre su carpeta. No ejecuta el
+    archivo ni utiliza un shell. Si el lanzamiento falla, muestra la ruta.
+    """
     path = Path(path).absolute()
     if sys.platform == "win32":
         command = ["explorer.exe", "/select,", str(path)]

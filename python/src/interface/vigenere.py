@@ -22,14 +22,26 @@ SCREENS = (("Cifrar Vigenère", ()), ("Descifrar Vigenère", ()))
 
 
 def run_encryption(*, interactive: bool = False) -> None:
+    """Inicia el flujo Vigenère de cifrado con navegación opcional por teclado."""
     _run(interactive=interactive, decrypt=False)
 
 
 def run_decryption(*, interactive: bool = False) -> None:
+    """Inicia el flujo Vigenère de descifrado con navegación opcional por teclado."""
     _run(interactive=interactive, decrypt=True)
 
 
 def _run(*, interactive: bool, decrypt: bool) -> None:
+    """Gestiona origen, clave, destino y presentación del resultado Vigenère.
+
+    Args:
+        interactive: Activa la selección mediante teclas en los submenús.
+        decrypt: Selecciona descifrado si es True; cifrado en caso contrario.
+
+    El texto de consola se procesa en memoria. Los archivos se procesan en partes
+    y solo se muestran o publican tras completar la transformación. Propaga las
+    cancelaciones y los errores al bucle principal para comunicarlos al usuario.
+    """
     title = tr("Descifrar Vigenère") if decrypt else tr("Cifrar Vigenère")
     progress = tr("Descifrando") if decrypt else tr("Cifrando")
     transform = vigenere.decrypt if decrypt else vigenere.encrypt

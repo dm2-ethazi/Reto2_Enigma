@@ -13,14 +13,29 @@ SCREENS = (("Cifrar archivo AES", ()), ("Descifrar archivo AES", ()))
 
 
 def run_encryption(*, interactive: bool = False) -> None:
+    """Ejecuta la selección de archivos y el cifrado AES con contraseña aleatoria.
+
+    interactive se admite por compatibilidad con los demás flujos; los selectores
+    y las preguntas de AES no dependen del control del cursor.
+    """
     _run(decrypt=False)
 
 
 def run_decryption(*, interactive: bool = False) -> None:
+    """Ejecuta el descifrado autenticado AES solicitando la contraseña original.
+
+    interactive mantiene la firma común de las operaciones de la interfaz.
+    """
     _run(decrypt=True)
 
 
 def _run(*, decrypt: bool) -> None:
+    """Coordina AES: seleccionar rutas, procesar, mostrar resultado y esperar Enter.
+
+    decrypt elige la dirección. Propaga cancelaciones y errores al bucle principal;
+    si falta cryptography, los convierte en una validación con ayuda de instalación.
+    La contraseña generada solo se muestra después de guardar correctamente.
+    """
     try:
         from ..encrypt import aes
     except ModuleNotFoundError as error:

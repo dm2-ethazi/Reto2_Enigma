@@ -1,3 +1,5 @@
+"""Pruebas de descifrado autenticado, Vigenère y apertura del explorador."""
+
 import hashlib
 import io
 import json
@@ -18,7 +20,10 @@ from src.utils import explorer, files
 
 
 class DecryptionTests(unittest.TestCase):
+    """Verifica autenticación, integridad y publicación del descifrado por bloques."""
+
     def setUp(self):
+        """Prepara los recursos aislados de la prueba y registra su limpieza automática."""
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.folder = Path(temp.name)
@@ -28,10 +33,12 @@ class DecryptionTests(unittest.TestCase):
         self.encrypted = aes.encrypt_file(self.source)
 
     def assert_clean(self):
+        """Comprueba que no se publicó el destino ni quedan partes temporales."""
         self.assertFalse(self.destination.exists())
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_reference_containers_including_empty_and_binary(self):
+        """Descifra vectores R2AE de referencia con contenido vacío y binario."""
         vectors = json.loads(
             (Path(__file__).parent / "fixtures/r2ae-v1.json").read_text()
         )["vectors"]
@@ -46,6 +53,7 @@ class DecryptionTests(unittest.TestCase):
                 self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_tampered_header_ciphertext_tag_and_wrong_password_never_publish(self):
+        """Impide publicar al alterar cabecera, contenido, etiqueta o contraseña."""
         original = self.encrypted.path.read_bytes()
         for offset in (0, 4, 5, 9, 25, 37, len(original) - 1):
             payload = bytearray(original)
@@ -63,6 +71,7 @@ class DecryptionTests(unittest.TestCase):
             self.assert_clean()
 
     def test_requires_exact_header_as_aad(self):
+        """Exige autenticar los bytes exactos de la cabecera como AAD."""
         payload = self.encrypted.path.read_bytes()
         header = payload[: aes.HEADER_SIZE]
         _, _, iterations, salt, nonce = aes.HEADER.unpack(header)
@@ -83,6 +92,7 @@ class DecryptionTests(unittest.TestCase):
             self.assert_clean()
 
     def test_rejects_truncated_extra_bytes_and_unbounded_kdf_parameters(self):
+        """Rechaza truncados, bytes sobrantes y parámetros KDF ajenos al formato admitido."""
         payload = self.encrypted.path.read_bytes()
         for malformed in (
             b"",
@@ -105,28 +115,37 @@ class DecryptionTests(unittest.TestCase):
             derive.assert_not_called()
 
     def test_streaming_parts_and_publish_only_after_authentication(self):
+        """Verifica el descifrado por bloques y la publicación posterior a autenticar."""
         original_open = Path.open
         source = self.encrypted.path
         sizes = []
         destination = self.destination
 
         class Reader:
+            """Envuelve el archivo real para observar y limitar las lecturas de la prueba."""
+
             def __init__(self, stream):
+                """Conserva el flujo real que utilizará el lector instrumentado."""
                 self.stream = stream
 
             def __enter__(self):
+                """Devuelve el lector instrumentado al entrar en el contexto."""
                 return self
 
             def __exit__(self, *args):
+                """Cierra el flujo real al salir del contexto de lectura."""
                 self.stream.close()
 
             def fileno(self):
+                """Expone el descriptor real para que las consultas de tamaño sigan funcionando."""
                 return self.stream.fileno()
 
             def seek(self, *args):
+                """Delega el desplazamiento en el flujo real para consultar cabecera y etiqueta."""
                 return self.stream.seek(*args)
 
             def read(self, size=-1):
+                """Registra y comprueba el tamaño solicitado antes de leer del flujo de prueba."""
                 if not 0 < size <= aes.HEADER_SIZE:
                     raise AssertionError(f"Unbounded read: {size}")
                 if destination.exists():
@@ -135,6 +154,7 @@ class DecryptionTests(unittest.TestCase):
                 return self.stream.read(size)
 
         def open_path(path, *args, **kwargs):
+            """Instrumenta solo el archivo origen y conserva la apertura real de los demás."""
             stream = original_open(path, *args, **kwargs)
             return Reader(stream) if path == source else stream
 
@@ -150,6 +170,7 @@ class DecryptionTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_real_twenty_mib_parts(self):
+        """Comprueba el descifrado con temporales limitados a 20 MiB reales."""
         data = b"abc\x00" * (files.MAX_PART_SIZE // 4 + 7)
         self.source.write_bytes(data)
         self.encrypted.path.unlink()
@@ -158,6 +179,7 @@ class DecryptionTests(unittest.TestCase):
         sizes = []
 
         def inspect(parts, destination):
+            """Observa los tamaños de las partes antes de delegar la publicación real."""
             sizes.extend(p.stat().st_size for p in parts)
             publish(parts, destination)
 
@@ -168,6 +190,7 @@ class DecryptionTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_existing_output_failure_and_cancel_preserve_source(self):
+        """Conserva el origen ante destinos existentes, fallos e interrupciones."""
         payload = self.encrypted.path.read_bytes()
         with self.assertRaises(FileExistsError):
             aes.decrypt_file(self.encrypted.path, self.encrypted.password, self.source)
@@ -184,6 +207,7 @@ class DecryptionTests(unittest.TestCase):
         self.assertEqual(self.encrypted.path.read_bytes(), payload)
 
     def test_non_enc_filename_and_size_limit(self):
+        """Comprueba el destino por defecto sin extensión .enc y el límite de tamaño."""
         source = self.encrypted.path.rename(self.folder / "container.bin")
         result = aes.decrypt_file(source, self.encrypted.password)
         self.assertEqual(result.name, "container.bin.decrypted")
@@ -196,6 +220,7 @@ class DecryptionTests(unittest.TestCase):
         self.assert_clean()
 
     def test_vigenere_known_vector_and_utf8_split_at_every_byte(self):
+        """Descifra un vector Vigenère y texto UTF-8 dividido en bloques de un byte."""
         self.assertEqual(vigenere.decrypt("LXFOPVEFRNHR", "LEMON"), "ATTACKATDAWN")
         text = "\ufeffAttack at dawn! ñé😀\r\nZz 123"
         encrypted = vigenere.encrypt(text, "LeMoN").encode()
@@ -214,12 +239,16 @@ class DecryptionTests(unittest.TestCase):
 
 
 class DecryptionInterfaceTests(unittest.TestCase):
+    """Comprueba los flujos de descifrado Vigenère y AES desde el menú."""
+
     def setUp(self):
+        """Prepara los recursos aislados de la prueba y registra su limpieza automática."""
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.folder = Path(temp.name)
 
     def run_app(self, answers, screen, paths):
+        """Ejecuta la interfaz con respuestas y rutas simuladas y captura su salida."""
         with (
             patch.object(app, "enable_cursor_control", return_value=False),
             patch("src.interface.passwords.sys.stdin.isatty", return_value=False),
@@ -232,6 +261,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
         return output.getvalue(), reveal
 
     def test_vigenere_console_decrypt(self):
+        """Descifra texto por consola desde el menú y muestra el resultado esperado."""
         output, reveal = self.run_app(
             ["2", "1", "LXFOPVEFRNHR", "LEMON", "1", "", "5"], vig_screen, []
         )
@@ -240,6 +270,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
         reveal.assert_not_called()
 
     def test_vigenere_decrypt_file_with_parts_and_explorer(self):
+        """Descifra un archivo por partes y muestra el resultado en el explorador."""
         source = self.folder / "encrypted.txt"
         destination = self.folder / "plain.txt"
         text = "\ufeffHello ñ😀\r\n" * 10
@@ -257,6 +288,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
         self.assertEqual(list(self.folder.glob("*.part")), [])
 
     def test_aes_decrypt_success_wrong_password_and_cancellation(self):
+        """Cubre descifrado AES correcto, contraseña errónea y cancelaciones de interfaz."""
         source = self.folder / "plain.bin"
         source.write_bytes(b"\x00secret\xff")
         encrypted = aes.encrypt_file(source)
@@ -283,6 +315,7 @@ class DecryptionInterfaceTests(unittest.TestCase):
         reveal.assert_not_called()
 
     def test_encrypt_opens_explorer_only_after_success(self):
+        """Abre el explorador solo después de un cifrado publicado correctamente."""
         source = self.folder / "plain.bin"
         source.write_bytes(b"secret")
         destination = self.folder / "out.enc"
@@ -293,7 +326,10 @@ class DecryptionInterfaceTests(unittest.TestCase):
 
 
 class ExplorerTests(unittest.TestCase):
+    """Comprueba el lanzamiento del explorador y su alternativa ante errores."""
+
     def test_platform_launch_arguments_and_no_shell(self):
+        """Comprueba los argumentos del explorador para cada plataforma sin usar shell."""
         path = Path("folder with spaces/file;name.txt").absolute()
         for platform, command in [
             ("win32", ["explorer.exe", "/select,", str(path)]),
@@ -310,6 +346,7 @@ class ExplorerTests(unittest.TestCase):
                 self.assertFalse(launch.call_args.kwargs.get("shell", False))
 
     def test_launch_failure_reports_saved_path(self):
+        """Muestra la ruta conservada cuando no se puede iniciar el explorador."""
         with (
             patch.object(
                 explorer.subprocess, "Popen", side_effect=OSError("No desktop")
