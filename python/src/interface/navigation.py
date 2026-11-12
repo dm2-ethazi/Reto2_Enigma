@@ -2,6 +2,7 @@
 
 import sys
 
+from ..i18n import tr
 from .layout import render
 from .terminal import keyboard, read_key
 
@@ -12,7 +13,15 @@ def choose(title, choices, *, fields=(), interactive=False):
         print("\n" + render(title, choices, selected, fields, False))
         while True:
             value = input("> ").strip()
-            if value.lower() in ("q", "salir", "volver"):
+            if value.lower() in (
+                "q",
+                "salir",
+                "volver",
+                "exit",
+                "back",
+                "irten",
+                "atzera",
+            ):
                 return None
             if (
                 value.isascii()
@@ -20,7 +29,7 @@ def choose(title, choices, *, fields=(), interactive=False):
                 and 1 <= int(value) <= len(choices)
             ):
                 return int(value) - 1
-            print(f"Elige una opción del 1 al {len(choices)}.")
+            print(tr("Elige una opción del 1 al {count}.", count=len(choices)))
     with keyboard():
         while True:
             # These ANSI sequences move the cursor; there are no colour codes.

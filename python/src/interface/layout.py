@@ -3,35 +3,38 @@
 import shutil
 from textwrap import wrap
 
+from ..i18n import tr
+
 
 def render(title, choices, selected, fields, interactive):
+    main_menu = title in ("Menú principal", tr("Menú principal"))
     columns = shutil.get_terminal_size().columns
     width = min(66, max(24, columns - 4))
     lines = [
         "ENIGMA / RETO 02",
-        "Cifrado de texto y archivos",
+        tr("Cifrado de texto y archivos"),
         "",
-        title,
+        tr(title),
         "-" * min(40, width),
     ]
     for label, placeholder in fields:
         lines.extend([label, "  " + placeholder, ""])
-    main_menu = title == "Menú principal"
     if main_menu:
-        lines.extend(["VIGENÈRE / TEXTO", ""])
+        lines.extend([tr("VIGENÈRE / TEXTO"), ""])
     for index, label in enumerate(choices):
-        if main_menu and label == "Cifrar archivo AES":
-            lines.extend(["", "AES / ARCHIVOS", ""])
-        if main_menu and label == "Salir":
+        label = tr(label)
+        if main_menu and label == tr("Cifrar archivo AES"):
+            lines.extend(["", tr("AES / ARCHIVOS"), ""])
+        if main_menu and label == tr("Salir"):
             lines.append("")
         marker = ">" if interactive and index == selected else " "
         lines.append(f"{marker} {index + 1}. {label}")
     lines.extend(
         [
             "",
-            "Flechas o j/k: mover | Enter: elegir | Esc: volver"
+            tr("Flechas o j/k: mover | Enter: elegir | Esc: volver")
             if interactive
-            else "Escribe el número de una opción y pulsa Enter.",
+            else tr("Escribe el número de una opción y pulsa Enter."),
         ]
     )
     lines = [part for line in lines for part in (wrap(line, width=width) or [""])]

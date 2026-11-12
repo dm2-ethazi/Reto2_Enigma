@@ -4,9 +4,12 @@ import sys
 from contextlib import contextmanager
 from threading import Event, Thread
 
+from ..i18n import tr
+
 
 @contextmanager
 def loading(message: str = "Cifrando", *, interval: float = 0.2):
+    message = tr(message)
     output = sys.stdout
     if not output.isatty():
         print(f"{message}...", file=output, flush=True)
@@ -37,5 +40,5 @@ def loading(message: str = "Cifrando", *, interval: float = 0.2):
         animation.join()
         output.write("\r" + " " * (len(message) + 3) + "\r")
         if completed:
-            output.write(f"{message}... Completado.\n")
+            output.write(tr("{message}... Completado.\n", message=message))
         output.flush()

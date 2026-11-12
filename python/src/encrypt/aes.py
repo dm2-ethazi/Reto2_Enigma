@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from ..errors import ValidationError
+from ..i18n import tr
 from ..utils.files import input_file, new_destination, staged_output
 
 MAGIC = b"R2AE"
@@ -56,7 +57,9 @@ def encrypt_file(
     )
     with source.open("rb") as original:
         if os.fstat(original.fileno()).st_size > MAX_PLAINTEXT_SIZE:
-            raise ValidationError("El archivo supera el límite de un mensaje AES-GCM.")
+            raise ValidationError(
+                tr("El archivo supera el límite de un mensaje AES-GCM.")
+            )
         password = generate_password()
         salt = secrets.token_bytes(SALT_SIZE)
         nonce = secrets.token_bytes(NONCE_SIZE)
@@ -72,7 +75,7 @@ def encrypt_file(
                 total += len(block)
                 if total > MAX_PLAINTEXT_SIZE:
                     raise ValidationError(
-                        "El archivo supera el límite de un mensaje AES-GCM."
+                        tr("El archivo supera el límite de un mensaje AES-GCM.")
                     )
                 output.write(encryptor.update(block))
             output.write(encryptor.finalize())
@@ -86,7 +89,7 @@ def decrypt_file(
     """Descifra R2AE a partes; publica solo tras verificar la etiqueta y el AAD."""
     if len(password) != 16 or any(c not in PASSWORD_ALPHABET for c in password):
         raise ValidationError(
-            "La contraseña AES debe contener 16 letras o números ASCII."
+            tr("La contraseña AES debe contener 16 letras o números ASCII.")
         )
     source = input_file(source)
     default = (
@@ -98,17 +101,19 @@ def decrypt_file(
     with source.open("rb") as original:
         size = os.fstat(original.fileno()).st_size
         if not OVERHEAD <= size <= MAX_PLAINTEXT_SIZE + OVERHEAD:
-            raise ValidationError("Tamaño de archivo R2AE no válido.")
+            raise ValidationError(tr("Tamaño de archivo R2AE no válido."))
         header = original.read(HEADER_SIZE)
         if len(header) != HEADER_SIZE:
-            raise ValidationError("Cabecera R2AE incompleta.")
+            raise ValidationError(tr("Cabecera R2AE incompleta."))
         magic, version, iterations, salt, nonce = HEADER.unpack(header)
         if (magic, version, iterations) != (MAGIC, VERSION, ITERATIONS):
-            raise ValidationError("Cabecera R2AE no válida o versión no compatible.")
+            raise ValidationError(
+                tr("Cabecera R2AE no válida o versión no compatible.")
+            )
         original.seek(-TAG_SIZE, os.SEEK_END)
         tag = original.read(TAG_SIZE)
         if len(tag) != TAG_SIZE:
-            raise ValidationError("Etiqueta AES-GCM incompleta.")
+            raise ValidationError(tr("Etiqueta AES-GCM incompleta."))
         decryptor = Cipher(
             algorithms.AES(_derive_key(password, salt)), modes.GCM(nonce, tag)
         ).decryptor()
@@ -119,16 +124,20 @@ def decrypt_file(
             while remaining:
                 block = original.read(min(CHUNK_SIZE, remaining))
                 if not block:
-                    raise ValidationError("Archivo R2AE truncado durante la lectura.")
+                    raise ValidationError(
+                        tr("Archivo R2AE truncado durante la lectura.")
+                    )
                 remaining -= len(block)
                 output.write(decryptor.update(block))
             if original.read(TAG_SIZE) != tag or original.read(1):
-                raise ValidationError("El archivo R2AE cambió durante la lectura.")
+                raise ValidationError(tr("El archivo R2AE cambió durante la lectura."))
             try:
                 output.write(decryptor.finalize())
             except InvalidTag as error:
                 raise ValidationError(
-                    "No se pudo autenticar el archivo: contraseña incorrecta "
-                    "o contenido/cabecera AAD alterados."
+                    tr(
+                        "No se pudo autenticar el archivo: contraseña incorrecta "
+                        "o contenido/cabecera AAD alterados."
+                    )
                 ) from error
     return destination
