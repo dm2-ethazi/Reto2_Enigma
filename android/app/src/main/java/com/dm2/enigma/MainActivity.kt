@@ -6,13 +6,16 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputFilter
-import android.text.InputType
+import android.text.method.PasswordTransformationMethod
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -20,7 +23,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -29,20 +34,38 @@ import com.dm2.enigma.Descifradores.DescifrarAes
 import com.dm2.enigma.Descifradores.DescifrarCesar
 import java.io.File
 
+/**
+ * Pantalla principal de CriptoApp: menú, descifrado AES de imágenes y descifrado
+ * César de textos, con selector de idioma y avisos en el idioma elegido.
+ *
+ * Una sola actividad compone las tres pantallas con [ponerLayout]; el estado se
+ * guarda en [onSaveInstanceState] y todo resultado descifrado vive en memoria o
+ * en la caché privada, que se borra al salir de la pantalla.
+ */
 class MainActivity : AppCompatActivity() {
 
+    /** Pantalla visible: `"menu"`, `"aes"` o `"cesar"`. */
     private var pantallaActual = "menu"
+    /** `.txt` elegido para el descifrado César. */
     private var archivoTxtSeleccionado: Uri? = null
+    /** `.png.enc` elegido para el descifrado AES. */
     private var archivoEncSeleccionado: Uri? = null
+    /** Último texto descifrado con César, para no perderlo al girar la pantalla. */
     private var textoDescifradoCesar = ""
     /** Temporal en caché con la imagen descifrada: solo vive mientras se ve la pantalla. */
     private var rutaImagenRecuperada: String? = null
+    /** Evita lanzar dos descifrados AES a la vez. */
     private var descifrandoAes = false
+    /** Sube al reiniciar la pantalla: descarta resultados de descifrados antiguos. */
     private var generacion = 0
+    /** Hay un selector de archivos abierto: al volver no se reinicia la pantalla. */
     private var selectorPendiente = false
+    /** La pantalla debe limpiarse la próxima vez que la app vuelva al frente. */
     private var reiniciarAlEntrar = false
+    /** Diálogo de aviso visible, para poder cerrarlo al cambiar de pantalla. */
     private var aviso: AlertDialog? = null
 
+    /** Abre el menú la primera vez y reconstruye la pantalla anterior tras un giro. */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -113,6 +136,7 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(raiz)
     }
 
+    /** Recupera el [Uri] guardado en [clave], también en versiones anteriores a API 33. */
     private fun Bundle.uri(clave: String): Uri? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelable(clave, Uri::class.java)
@@ -125,12 +149,17 @@ class MainActivity : AppCompatActivity() {
     //  Pantallas
     // ---------------------------------------------------------------
 
+    /** Abre el menú de inicio: elegir AES o César, cambiar idioma y ver «Acerca de». */
     fun mostrarMenu() {
         pantallaActual = "menu"
         limpiarEstado()
         ponerLayout(R.layout.activity_main)
         findViewById<Button>(R.id.btnAesImagenes).setOnClickListener { mostrarAes() }
         findViewById<Button>(R.id.btnCesarTexto).setOnClickListener { mostrarCesar() }
+        configurarSelectorIdioma()
+        findViewById<Button>(R.id.btnAcercaDe).setOnClickListener {
+            mostrarAviso(getString(R.string.acerca_de), getString(R.string.acerca_de_texto))
+        }
     }
 
     /** Olvida archivo, contraseña y resultado: la pantalla se abre como la primera vez. */
@@ -176,28 +205,33 @@ class MainActivity : AppCompatActivity() {
         DescifrarAes.limpiarTemporales(this)
     }
 
+    /** Muestra la pantalla de AES con [textoRecuperado] ya escrito en la contraseña. */
     private fun mostrarAes(textoRecuperado: String = "") {
         pantallaActual = "aes"
         ponerLayout(R.layout.activity_aes)
 
         findViewById<Button>(R.id.btnVolver).setOnClickListener { mostrarMenu() }
         findViewById<Button>(R.id.btnImportarEnc).setOnClickListener { abrirSelectorEnc() }
+        findViewById<Button>(R.id.btnAyuda).setOnClickListener {
+            mostrarAviso(getString(R.string.ayuda_aes_titulo), getString(R.string.ayuda_aes_texto))
+        }
 
         val etContrasena = findViewById<EditText>(R.id.etContrasena)
         etContrasena.setText(textoRecuperado)
 
         val btnMostrar = findViewById<ImageButton>(R.id.btnMostrarContrasena)
         btnMostrar.setOnClickListener {
-            val oculta = etContrasena.inputType ==
-                (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
-            etContrasena.inputType = if (oculta) {
+            // Se cambia el método de transformación, no el inputType: cambiar
+            // inputType a "password" impone la tipografía monoespaciada del sistema.
+            val oculta = etContrasena.transformationMethod is PasswordTransformationMethod
+            if (oculta) {
+                etContrasena.transformationMethod = null
                 btnMostrar.setImageResource(R.drawable.ic_ojo_cerrado)
-                btnMostrar.contentDescription = "Ocultar contraseña"
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                btnMostrar.contentDescription = getString(R.string.ocultar_contrasena)
             } else {
+                etContrasena.transformationMethod = PasswordTransformationMethod.getInstance()
                 btnMostrar.setImageResource(R.drawable.ic_ojo_abierto)
-                btnMostrar.contentDescription = "Mostrar contraseña"
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                btnMostrar.contentDescription = getString(R.string.mostrar_contrasena)
             }
             etContrasena.setSelection(etContrasena.text.length)
         }
@@ -209,12 +243,12 @@ class MainActivity : AppCompatActivity() {
             when {
                 descifrandoAes -> Unit
                 uri == null -> mostrarAviso(
-                    "Archivo no seleccionado",
-                    "Importa primero un archivo .enc generado por el cifrador AES."
+                    getString(R.string.archivo_no_seleccionado),
+                    getString(R.string.importa_enc_primero)
                 )
                 !DescifrarAes.esContrasenaValida(contrasena) -> mostrarAviso(
-                    "Contraseña no válida",
-                    "La contraseña debe tener 16 caracteres A-Z, a-z o 0-9."
+                    getString(R.string.contrasena_no_valida),
+                    getString(R.string.contrasena_formato)
                 )
                 else -> iniciarDescifradoAes(uri, contrasena)
             }
@@ -222,7 +256,7 @@ class MainActivity : AppCompatActivity() {
 
         archivoEncSeleccionado?.let { uri ->
             findViewById<TextView>(R.id.tvEstadoAes).apply {
-                text = "Archivo: ${obtenerNombreArchivo(uri)}"
+                text = getString(R.string.archivo_seleccionado, obtenerNombreArchivo(uri))
                 visibility = View.VISIBLE
             }
         }
@@ -233,12 +267,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Muestra la pantalla de César con el desplazamiento [textoRecuperado]. */
     private fun mostrarCesar(textoRecuperado: String = "") {
         pantallaActual = "cesar"
         ponerLayout(R.layout.activity_cesar)
 
         findViewById<Button>(R.id.btnVolver).setOnClickListener { mostrarMenu() }
         findViewById<Button>(R.id.btnImportarTxt).setOnClickListener { abrirSelectorTxt() }
+        findViewById<Button>(R.id.btnAyuda).setOnClickListener {
+            mostrarAviso(getString(R.string.ayuda_cesar_titulo), getString(R.string.ayuda_cesar_texto))
+        }
 
         val etDesplazamiento = findViewById<EditText>(R.id.etDesplazamiento)
         etDesplazamiento.setText(textoRecuperado)
@@ -258,23 +296,82 @@ class MainActivity : AppCompatActivity() {
             val desplazamiento = etDesplazamiento.text.toString().trim().toIntOrNull()
 
             when {
-                uri == null -> mostrarAviso("Error", "Selecciona primero un archivo .txt")
+                uri == null -> mostrarAviso(
+                    getString(R.string.error),
+                    getString(R.string.selecciona_txt)
+                )
                 desplazamiento == null || desplazamiento !in 1..25 ->
-                    mostrarAviso("Error", "Introduce un desplazamiento entre 1 y 25")
+                    mostrarAviso(
+                        getString(R.string.error),
+                        getString(R.string.desplazamiento_rango)
+                    )
                 else -> try {
                     textoDescifradoCesar = DescifrarCesar().descifrarArchivo(this, uri, desplazamiento)
                     tvMensaje.text = textoDescifradoCesar
+                } catch (e: DescifrarCesar.ErrorCesarException) {
+                    mostrarAviso(getString(e.titulo), getString(e.mensaje, *e.argumentos))
                 } catch (e: Exception) {
-                    Toast.makeText(this, "Error al leer el archivo: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.error_leer_archivo, e.message.orEmpty()),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
     }
 
     // ---------------------------------------------------------------
+    //  Idioma
+    // ---------------------------------------------------------------
+
+    /** Rellena el desplegable del inicio y aplica el idioma que elija el usuario. */
+    private fun configurarSelectorIdioma() {
+        val spinner = findViewById<Spinner>(R.id.spIdioma) ?: return
+        val etiquetas = resources.getStringArray(R.array.idiomas)
+        val adaptador = ArrayAdapter(this, R.layout.item_idioma, etiquetas)
+        adaptador.setDropDownViewResource(R.layout.item_idioma_desplegable)
+        spinner.adapter = adaptador
+        spinner.setSelection(indiceIdiomaActual(), false)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                cambiarIdioma(position)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+        findViewById<View>(R.id.tvIdiomaFlecha)?.setOnClickListener { spinner.performClick() }
+    }
+
+    /** Idioma activo: el elegido en la app o, si no hay ninguno, el del sistema. */
+    private fun idiomaActual(): String =
+        AppCompatDelegate.getApplicationLocales().get(0)?.language
+            ?: resources.configuration.locales[0].language
+
+    /** Posición del idioma activo dentro de [CODIGOS_IDIOMA]. */
+    private fun indiceIdiomaActual(): Int = when {
+        idiomaActual().startsWith("en") -> 1
+        idiomaActual().startsWith("eu") -> 2
+        else -> 0
+    }
+
+    private fun cambiarIdioma(indice: Int) {
+        val codigo = CODIGOS_IDIOMA.getOrNull(indice) ?: return
+        // Tras recrearse la actividad por el cambio, la selección inicial no se reaplica.
+        if (idiomaActual() == codigo) return
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(codigo))
+    }
+
+    // ---------------------------------------------------------------
     //  Descifrado AES
     // ---------------------------------------------------------------
 
+    /** Descifra el `.enc` en segundo plano, con barra de progreso y estado en pantalla. */
     private fun iniciarDescifradoAes(uri: Uri, contrasena: String) {
         val g = generacion
         descifrandoAes = true
@@ -284,7 +381,7 @@ class MainActivity : AppCompatActivity() {
             visibility = View.VISIBLE
         }
         findViewById<TextView>(R.id.tvEstadoAes).apply {
-            text = "Descifrando…"
+            text = getString(R.string.descifrando)
             visibility = View.VISIBLE
         }
 
@@ -296,35 +393,43 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (!pantallaAes(g)) return@runOnUiThread
                     finalizarDescifradoAes(
-                        "Descifrado · ${DescifrarAes.formatearBytes(resultado.tamanoBytes)}"
+                        getString(
+                            R.string.descifrado_tamano,
+                            DescifrarAes.formatearBytes(resultado.tamanoBytes)
+                        )
                     )
                     rutaImagenRecuperada = resultado.archivo.absolutePath
                     mostrarVistaPrevia(resultado.archivo, g)
                     Toast.makeText(
                         this,
-                        "Vista previa lista · se borra al salir de la pantalla",
+                        getString(R.string.vista_previa_lista),
                         Toast.LENGTH_LONG
                     ).show()
                 }
             } catch (e: DescifrarAes.ErrorDescifradoException) {
                 runOnUiThread {
                     if (!pantallaAes(g)) return@runOnUiThread
-                    finalizarDescifradoAes(e.titulo)
-                    mostrarAviso(e.titulo, e.message.orEmpty())
+                    finalizarDescifradoAes(getString(e.titulo))
+                    mostrarAviso(getString(e.titulo), getString(e.mensaje, *e.argumentos))
                 }
             } catch (e: Exception) {
                 runOnUiThread {
                     if (!pantallaAes(g)) return@runOnUiThread
-                    finalizarDescifradoAes("Error al descifrar")
-                    mostrarAviso("Error al descifrar", e.message ?: "No se pudo leer el archivo.")
+                    finalizarDescifradoAes(getString(R.string.error_al_descifrar))
+                    mostrarAviso(
+                        getString(R.string.error_al_descifrar),
+                        e.message ?: getString(R.string.no_escribir_archivo)
+                    )
                 }
             }
         }.start()
     }
 
+    /** True si la pantalla de AES sigue viva y el descifrado [g] no es de una sesión anterior. */
     private fun pantallaAes(g: Int = generacion) =
         g == generacion && pantallaActual == "aes" && !isFinishing && !isDestroyed
 
+    /** Pinta el porcentaje del descifrado en la barra de progreso de AES. */
     private fun mostrarProgreso(g: Int, porcentaje: Int) {
         runOnUiThread {
             if (!pantallaAes(g)) return@runOnUiThread
@@ -332,10 +437,12 @@ class MainActivity : AppCompatActivity() {
                 isIndeterminate = false
                 progress = porcentaje
             }
-            findViewById<TextView>(R.id.tvEstadoAes).text = "Descifrando… $porcentaje %"
+            findViewById<TextView>(R.id.tvEstadoAes).text =
+                getString(R.string.descifrando_progreso, porcentaje)
         }
     }
 
+    /** Devuelve la pantalla de AES a su estado normal mostrando el mensaje [estado]. */
     private fun finalizarDescifradoAes(estado: String) {
         descifrandoAes = false
         findViewById<Button>(R.id.btnDescifrarAes).isEnabled = true
@@ -346,6 +453,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Carga la imagen descifrada en segundo plano y la muestra en el pergamino. */
     private fun mostrarVistaPrevia(archivo: File, g: Int = generacion) {
         Thread {
             val foto = cargarImagen(archivo)
@@ -357,9 +465,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 findViewById<TextView>(R.id.tvTituloImagen).text =
                     if (foto != null) {
-                        "Imagen recuperada · solo en pantalla"
+                        getString(R.string.imagen_recuperada_aviso)
                     } else {
-                        "Archivo recuperado (sin vista previa)"
+                        getString(R.string.imagen_sin_vista)
                     }
             }
         }.start()
@@ -384,12 +492,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Diálogo de aviso compartido por errores, ayuda y «Acerca de». */
     private fun mostrarAviso(titulo: String, mensaje: String) {
         if (isFinishing || isDestroyed) return
         aviso = AlertDialog.Builder(this)
             .setTitle(titulo)
             .setMessage(mensaje)
-            .setPositiveButton("Aceptar", null)
+            .setPositiveButton(R.string.aceptar, null)
             .create()
             .also { it.show() }
     }
@@ -398,6 +507,7 @@ class MainActivity : AppCompatActivity() {
     //  Utilidades
     // ---------------------------------------------------------------
 
+    /** Guarda pantalla, archivos elegidos y textos para sobrevivir a un giro. */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
@@ -423,14 +533,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Selector del `.txt` que se descifra con César. */
     private val selectorTxt =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             selectorPendiente = false
             uri ?: return@registerForActivityResult
             archivoTxtSeleccionado = uri
-            Toast.makeText(this, "Archivo TXT seleccionado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.txt_seleccionado), Toast.LENGTH_SHORT).show()
         }
 
+    /** Selector del contenedor `.png.enc` de AES; valida la extensión al volver. */
     private val selectorEnc =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             selectorPendiente = false
@@ -438,35 +550,38 @@ class MainActivity : AppCompatActivity() {
 
             val nombre = obtenerNombreArchivo(uri)
             if (!nombre.lowercase().endsWith(".png.enc")) {
-                Toast.makeText(this, "Selecciona un archivo con extensión .png.enc", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.extension_enc), Toast.LENGTH_LONG).show()
                 return@registerForActivityResult
             }
 
             archivoEncSeleccionado = uri
             borrarImagenRecuperada()
             findViewById<TextView>(R.id.tvEstadoAes).apply {
-                text = "Archivo: $nombre"
+                text = getString(R.string.archivo_seleccionado, nombre)
                 visibility = View.VISIBLE
             }
             findViewById<ImageView>(R.id.ivImagenRecuperada)
                 .setImageResource(android.R.drawable.ic_menu_gallery)
-            findViewById<TextView>(R.id.tvTituloImagen).text = "Imagen recuperada"
+            findViewById<TextView>(R.id.tvTituloImagen).text = getString(R.string.imagen_recuperada)
 
-            Toast.makeText(this, "Archivo ENC seleccionado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.enc_seleccionado), Toast.LENGTH_SHORT).show()
         }
 
+    /** Abre el selector de archivos de texto. */
     fun abrirSelectorTxt() {
         selectorPendiente = true
         selectorTxt.launch(arrayOf("text/plain", "text/*"))
     }
 
+    /** Abre el selector del archivo cifrado de AES. */
     fun abrirSelectorEnc() {
         selectorPendiente = true
         selectorEnc.launch(arrayOf("*/*"))
     }
 
+    /** Nombre visible del archivo; si el proveedor no lo da, devuelve «Archivo». */
     private fun obtenerNombreArchivo(uri: Uri): String {
-        var nombre = "archivo"
+        var nombre = getString(R.string.archivo)
         contentResolver.query(uri, arrayOf("_display_name"), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val indice = cursor.getColumnIndex("_display_name")
@@ -474,5 +589,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return nombre
+    }
+
+    companion object {
+        /** Mismo orden que `R.array.idiomas`. */
+        private val CODIGOS_IDIOMA = arrayOf("es", "en", "eu")
     }
 }

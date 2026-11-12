@@ -1,0 +1,8 @@
+<resources>
+    <!-- Nombres de los idiomas: se muestran siempre en su propia lengua -->
+    <string-array name="idiomas" translatable="false">
+        <item>Español</item>
+        <item>English</item>
+        <item>Euskara</item>
+    </string-array>
+</resources>

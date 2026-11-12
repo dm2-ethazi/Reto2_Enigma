@@ -1,0 +1,80 @@
+<resources>
+    <!-- Inicio -->
+    <string name="subtitulo_app">Decryption tools</string>
+    <string name="accion_aes">AES · Images</string>
+    <string name="accion_cesar">Caesar · Text</string>
+    <string name="idioma">Language</string>
+
+    <!-- Comunes -->
+    <string name="volver">Back</string>
+    <string name="descifrar">Decrypt</string>
+    <string name="aceptar">OK</string>
+    <string name="error">Error</string>
+    <string name="archivo">File</string>
+    <string name="archivo_seleccionado">File: %1$s</string>
+
+    <!-- AES -->
+    <string name="titulo_aes">AES decryption</string>
+    <string name="archivo_cifrado">ENCRYPTED FILE</string>
+    <string name="importar_enc">Import .png.enc file</string>
+    <string name="contrasena">PASSWORD</string>
+    <string name="contrasena_hint">Enter the password</string>
+    <string name="mostrar_contrasena">Show password</string>
+    <string name="ocultar_contrasena">Hide password</string>
+    <string name="imagen_recuperada">Recovered image</string>
+    <string name="imagen_recuperada_aviso">Recovered image · on screen only</string>
+    <string name="imagen_sin_vista">Recovered file (no preview)</string>
+    <string name="vista_previa_desc">Preview of the recovered PNG</string>
+    <string name="descifrando">Decrypting…</string>
+    <string name="descifrando_progreso">Decrypting… %1$d %%</string>
+    <string name="descifrado_tamano">Decrypted · %1$s</string>
+    <string name="vista_previa_lista">Preview ready · deleted when you leave the screen</string>
+    <string name="archivo_no_seleccionado">No file selected</string>
+    <string name="importa_enc_primero">Import a .enc file created by the AES encryptor first.</string>
+    <string name="contrasena_no_valida">Invalid password</string>
+    <string name="contrasena_formato">The password must have 16 characters A-Z, a-z or 0-9.</string>
+    <string name="enc_seleccionado">ENC file selected</string>
+    <string name="txt_seleccionado">TXT file selected</string>
+    <string name="extension_enc">Select a file with the .png.enc extension</string>
+
+    <!-- César -->
+    <string name="titulo_cesar">Caesar decryption</string>
+    <string name="archivo_texto">TEXT FILE</string>
+    <string name="importar_txt">Import .txt</string>
+    <string name="desplazamiento">SHIFT (1–25)</string>
+    <string name="desplazamiento_hint">1</string>
+    <string name="mensaje_recuperado">RECOVERED MESSAGE</string>
+    <string name="mensaje_hint">The decrypted message will appear here</string>
+    <string name="selecciona_txt">Select a .txt file first</string>
+    <string name="desplazamiento_rango">Enter a shift between 1 and 25</string>
+    <string name="error_leer_archivo">Error reading the file: %1$s</string>
+
+    <!-- Errores de descifrado -->
+    <string name="archivo_grande">File too large</string>
+    <string name="archivo_grande_detalle">The limit is %1$s and this file is %2$s.</string>
+    <string name="archivo_no_valido">Invalid file</string>
+    <string name="contenedor_incompleto">The container is incomplete: the header or the tag is missing.</string>
+    <string name="error_al_leer">Read error</string>
+    <string name="no_abrir_cifrado">The encrypted file could not be opened.</string>
+    <string name="archivo_corto">The file is too short to be R2AE.</string>
+    <string name="contenedor_truncado">The container is truncated: the GCM tag is missing.</string>
+    <string name="contrasena_incorrecta">Wrong password</string>
+    <string name="contrasena_incorrecta_detalle">The password is not valid or the file has been altered. No result was saved.</string>
+    <string name="sin_almacenamiento">No storage available</string>
+    <string name="sin_espacio">The device ran out of free space.</string>
+    <string name="error_al_descifrar">Decryption error</string>
+    <string name="no_escribir_archivo">The file could not be written.</string>
+    <string name="no_r2ae">The file is not an R2AE container.</string>
+    <string name="version_no_compatible">Unsupported R2AE version: %1$d.</string>
+    <string name="iteraciones_incorrectas">The container does not use %1$d PBKDF2 iterations.</string>
+    <string name="espacio_insuficiente">%1$s are needed and only %2$s are free.</string>
+    <string name="carpeta_temporal">The temporary folder for the result could not be created.</string>
+    <!-- About and help -->
+    <string name="acerca_de">About</string>
+    <string name="acerca_de_texto">Tools to decrypt images encrypted with AES-256-GCM (.png.enc) and text encrypted with the Caesar cipher (.txt).\n\nEverything runs on this device and no result is saved: the temporary image is deleted when you leave the screen.</string>
+    <string name="ayuda">Help</string>
+    <string name="ayuda_aes_titulo">How to decrypt an image</string>
+    <string name="ayuda_aes_texto">1. Tap «Import .png.enc file» and pick the encrypted file.\n2. Type the 16-character password (A-Z, a-z or 0-9) used to encrypt it.\n3. Tap «Decrypt» and wait for the progress bar to finish.\n4. The image appears in the preview. It is only shown on screen: it is not saved and is deleted when you leave.</string>
+    <string name="ayuda_cesar_titulo">How to decrypt text</string>
+    <string name="ayuda_cesar_texto">1. Tap «Import .txt» and pick the encrypted text file.\n2. Type the shift used to encrypt it, between 1 and 25.\n3. Tap «Decrypt»: the message appears on the right.\n\nIf the text does not make sense, try another shift.</string>
+</resources>
