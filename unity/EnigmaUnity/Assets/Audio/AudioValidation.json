@@ -1,0 +1,10 @@
+[
+  {
+    "file": "Effects/DementorDefeated.wav",
+    "seconds": 3.2,
+    "peak_dbfs": -3.349821745875273,
+    "rms_dbfs": -23.90432631740878,
+    "loop_boundary_step": 5.2309125272397616e-09,
+    "finite": true
+  }
+]

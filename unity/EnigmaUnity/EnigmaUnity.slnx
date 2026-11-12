@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="Enigma.Game.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Enigma.Game.Tests.csproj" />
+  <Project Path="Enigma.Physics.csproj" />
+  <Project Path="Enigma.Physics.PlayModeTests.csproj" />
+</Solution>
