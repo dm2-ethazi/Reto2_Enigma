@@ -1,125 +1,107 @@
-# Instalación y ejecución en Windows
+# Manual de instalación, configuración y ejecución de JavaFX 25 en Windows
 
-Esta guía cubre únicamente Windows. Describe cómo preparar el entorno, ejecutar
-la aplicación desde el código fuente y generar el JAR empaquetado. No se
-modifica el [README.md](./README.md) existente.
+Guía para Windows 11 de 64 bits, uno de los sistemas definidos para el
+proyecto. El JAR incluye JavaFX y sus dependencias nativas de Windows, pero no
+incluye el JDK.
 
-> **Formato de distribución actual:** el proyecto configura un JAR con
-> dependencias; no configura un instalador `.exe` ni incluye un runtime de Java.
-> Para ejecutarlo se necesita un JDK 25 instalado en Windows.
+## 1. Instalar JDK 25 LTS
 
-## Requisitos
+1. Descarga JDK 25 LTS x64 desde [Eclipse Adoptium](https://adoptium.net/).
+2. Ejecuta el instalador `.msi` y conserva la ruta de instalación. Por ejemplo:
 
-- Windows 10 u 11 de 64 bits.
-- JDK 25. Se puede instalar, por ejemplo, Eclipse Temurin 25 desde
-  [Adoptium](https://adoptium.net/temurin/releases/?version=25).
-- Apache Maven 3.9 o posterior desde
-  [Apache Maven](https://maven.apache.org/download.cgi).
-- El código fuente del repositorio.
+   ```text
+   C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot
+   ```
 
-El proyecto fija `maven.compiler.release` y JavaFX en la versión 25; JDK 21 no
-es suficiente para compilarlo.
+## 2. Instalar Apache Maven 3.6.3
 
-## 1. Comprobar Java y Maven
+1. Descarga `apache-maven-3.6.3-bin.zip` desde el
+   [archivo oficial de Maven](https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/)
+   o una versión posterior desde
+   [Apache Maven](https://maven.apache.org/download.cgi).
+2. Extrae el archivo en una ubicación fija, por ejemplo:
 
-Abre PowerShell y ejecuta:
+   ```text
+   C:\Program Files\Apache\apache-maven-3.6.3
+   ```
+
+El proyecto requiere Maven 3.6.3 o posterior.
+
+## 3. Configurar las variables de entorno
+
+Para configurarlas desde la interfaz de Windows:
+
+1. Pulsa `Win + R`, escribe `sysdm.cpl` y pulsa **Enter**.
+2. Abre **Opciones avanzadas → Variables de entorno**.
+3. En las variables del sistema, crea o actualiza `JAVA_HOME` con la ruta raíz
+   del JDK 25, por ejemplo:
+
+   ```text
+   C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot
+   ```
+
+4. Añade al `Path` las carpetas `bin` del JDK y de Maven:
+
+   ```text
+   C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot\bin
+   C:\Program Files\Apache\apache-maven-3.6.3\bin
+   ```
+
+Como alternativa, para configurar solo la ventana actual de PowerShell:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot"
+$env:Path = "$env:JAVA_HOME\bin;C:\Program Files\Apache\apache-maven-3.6.3\bin;$env:Path"
+```
+
+Adapta las rutas a las ubicaciones reales del equipo.
+
+## 4. Verificar la instalación
+
+Abre una nueva ventana de PowerShell o CMD y ejecuta:
 
 ```powershell
 java -version
+javac -version
 mvn -version
 ```
 
-Comprueba que Java informa la versión 25 y que Maven puede encontrar ese mismo
-JDK. Si `mvn` no se reconoce, instala Maven y añade su carpeta `bin` al `PATH`.
-Si Maven está usando otro Java, configura `JAVA_HOME` con la ruta real de tu
-JDK 25 y abre una nueva consola. Para configurar solo la sesión actual, adapta
-este ejemplo a la carpeta donde lo hayas instalado:
+Comprueba que Java y Maven utilizan JDK 25.
+
+## 5. Clonar, empaquetar y ejecutar
+
+Clona el repositorio y entra en el módulo JavaFX:
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-25"
-$env:Path = "$env:JAVA_HOME\bin;$env:Path"
-mvn -version
+git clone <URL_DEL_REPOSITORIO>
+Set-Location ".\Reto2_Enigma\javafx"
 ```
 
-## 2. Abrir la carpeta del proyecto
-
-Clona el repositorio o descarga el código y, desde PowerShell, entra en la
-carpeta `javafx`:
-
-```powershell
-Set-Location "C:\ruta\al\Reto2_Enigma\javafx"
-```
-
-La carpeta actual debe contener `pom.xml`.
-
-## 3. Ejecutar las pruebas
-
-Antes de ejecutar o empaquetar la aplicación, comprueba el proyecto y la
-cobertura mínima de líneas del 80 %:
-
-```powershell
-mvn clean verify
-```
-
-Maven descargará las dependencias necesarias la primera vez. Si las pruebas y
-la comprobación JaCoCo terminan con `BUILD SUCCESS`, continúa con la ejecución.
-El informe HTML queda en `target\site\jacoco\index.html`.
-
-## 4. Ejecutar desde el código fuente
-
-Para iniciar la ventana JavaFX con Maven:
-
-```powershell
-mvn javafx:run
-```
-
-La ventana se cierra desde sus controles habituales. Si no arranca, conserva y
-revisa el mensaje completo de PowerShell; suele indicar si Maven está usando
-una versión de Java incorrecta o si falta una dependencia.
-
-## 5. Crear y ejecutar el JAR
-
-Desde la carpeta `javafx`, crea el paquete:
+Compila y empaqueta el proyecto:
 
 ```powershell
 mvn clean package
 ```
 
-El artefacto configurado por el proyecto debe aparecer en:
-
-```text
-target\Enigma-GestorAES-Java25-windows.jar
-```
-
-Ejecútalo desde PowerShell:
+Desde la carpeta `target`, ejecuta el JAR de Windows:
 
 ```powershell
-java -jar .\target\Enigma-GestorAES-Java25-windows.jar
+Set-Location ".\target"
+java -jar .\Enigma-GestorAES-Java25-windows.jar
 ```
 
-Para probarlo en otro equipo Windows, copia el JAR y asegúrate de que allí
-también esté instalado JDK 25. No copies únicamente el JAR si el equipo no tiene
-Java. Este proyecto no genera actualmente un `.exe` ni un instalador con Java
-incluido.
+Si el equipo tiene varios JDK instalados y `java` apunta a una versión
+distinta de la 25, ejecuta explícitamente el `java.exe` del JDK 25 desde esa
+misma carpeta `target`:
 
-## Problemas habituales
+```powershell
+& "C:\Program Files\Java\jdk-25.0.2\bin\java.exe" -jar Enigma-GestorAES-Java25-windows.jar
+```
 
-| Síntoma | Qué comprobar |
-|---|---|
-| `mvn` no se reconoce | Maven está instalado y su directorio `bin` está en `PATH`; abre una nueva PowerShell. |
-| Error de compilación por versión de Java | `mvn -version` debe mostrar JDK 25, no solo que `java -version` lo muestre. |
-| No se encuentra `pom.xml` | La consola debe estar en `Reto2_Enigma\javafx`. |
-| El JAR no aparece | `mvn clean package` terminó con `BUILD SUCCESS`; revisa `javafx\target`. |
-| El JAR no inicia la interfaz | Prueba primero `mvn javafx:run` y conserva el error completo. Comprueba que se ejecuta en Windows con JDK 25. |
-| No se puede escribir el resultado | Selecciona una carpeta existente con permisos de escritura y comprueba que no exista ya el archivo final. |
+Si JDK 25 está instalado en otra ruta, sustituye la ruta de `java.exe` por la
+correspondiente de ese equipo.
 
-## Archivos de salida y contraseñas
-
-La aplicación conserva el archivo original al cifrar y crea un contenedor `.enc`
-en la carpeta elegida. Al descifrar, escribe primero un temporal `.part` y solo
-lo publica como archivo final después de validar la autenticidad; si se activó
-la comparación con el original, también espera a que esa comparación coincida.
-
-Guarda la contraseña de cifrado de forma segura y separada del contenedor. Sin
-ella no se podrá recuperar el contenido.
+También puedes iniciar la aplicación desde la carpeta `javafx` con
+`mvn javafx:run`. Para ejecutar el JAR en otro equipo, ese equipo debe tener
+JDK 25 instalado. El proyecto no genera un instalador `.exe`.
 
