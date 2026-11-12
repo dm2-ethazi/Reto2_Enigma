@@ -77,8 +77,10 @@ class AccessibilityContrastTest {
         assertTrue(FXML.contains("accessibleText="));
         assertTrue(countOccurrences(FXML, "accessibleText=") >= 12);
         assertTrue(countOccurrences(FXML, "labelFor=") >= 8);
-        assertTrue(FXML.contains("style=\"-fx-text-fill: #0003C9;\""));
-        assertTrue(FXML.contains("style=\"-fx-text-fill: #C90068;\""));
+        assertTrue(FXML.contains(
+                "style=\"-fx-text-fill: #0003C9; -fx-font-size: 28px; -fx-font-weight: bold;\""));
+        assertTrue(FXML.contains(
+                "style=\"-fx-text-fill: #C90068; -fx-font-size: 28px; -fx-font-weight: bold;\""));
     }
 
     private static void assertContrast(

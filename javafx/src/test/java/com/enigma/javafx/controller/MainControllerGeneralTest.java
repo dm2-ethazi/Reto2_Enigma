@@ -387,6 +387,8 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
 
                 assertEquals(source.toAbsolutePath().toString(),
                                 field(controller, "sourcePathField", TextField.class).getText());
+                assertEquals("",
+                                field(controller, "destinationDirectoryField", TextField.class).getText());
                 assertEquals("Archivo de entrada seleccionado.",
                                 field(controller, "statusLabel", Label.class).getText());
 
@@ -621,6 +623,8 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         assertNotNull(decryptionTitle);
                         assertEquals(javafx.scene.paint.Color.web("#0003C9"), encryptionTitle.getTextFill());
                         assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptionTitle.getTextFill());
+                        assertEquals(28.0, encryptionTitle.getFont().getSize());
+                        assertEquals(28.0, decryptionTitle.getFont().getSize());
                         Button encryptButton = (Button) stage.getScene().getRoot().lookup("#encryptButton");
                         Button encryptionFileButton = (Button) stage.getScene().getRoot()
                                         .lookup("#chooseSourceButton");
@@ -631,6 +635,14 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         assertEquals(javafx.scene.paint.Color.web("#0003C9"), encryptionFileButton.getTextFill());
                         assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptButton.getTextFill());
                         assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptionFileButton.getTextFill());
+                        Node comparisonRow = ((CheckBox) stage.getScene().getRoot()
+                                        .lookup("#verifyCheckbox")).getParent();
+                        Node decryptButtonRow = decryptButton.getParent();
+                        Parent decryptionCard = comparisonRow.getParent();
+                        assertEquals(decryptionCard, decryptButtonRow.getParent());
+                        var decryptionCardChildren = decryptionCard.getChildrenUnmodifiable();
+                        assertEquals(decryptionCardChildren.size() - 1,
+                                        decryptionCardChildren.indexOf(decryptButtonRow));
                         stage.close();
                         return null;
                 });

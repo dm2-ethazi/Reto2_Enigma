@@ -379,11 +379,12 @@ public class MainController {
 
     private String helpContent() {
         return String.join("\n\n",
-                translate("Cifrado: selecciona un archivo .txt, .png o cualquier otro archivo binario y una carpeta "
+                translate("Cifrado: selecciona un archivo .txt, .log, .png o cualquier otro archivo binario y una carpeta "
                         + "de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres."),
                 translate("Descifrado: selecciona el contenedor .enc, la carpeta de salida "
                         + "y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional."),
                 translate("La vista previa se muestra después de un descifrado correcto para archivos de texto "
+                        + "(.txt y .log) "
                         + "e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados "
                         + "existentes no se sobrescriben."),
                 translate("Atajos de teclado:"),
@@ -521,15 +522,25 @@ public class MainController {
             return;
         }
 
-        if (source == null || destination == null) {
-            showError(translate("Selecciona un fichero de origen y una carpeta de destino."));
+        if (source == null) {
+            showError(translate(destination == null
+                    ? "Selecciona un fichero de origen. Se usará su carpeta como destino predeterminado cuando lo elijas."
+                    : "Selecciona un fichero de origen para cifrar."));
             return;
+        }
+        if (destination == null) {
+            destination = defaultDestinationFor(source);
+            if (destination == null) {
+                showError(translate("Selecciona una carpeta de destino."));
+                return;
+            }
         }
         if (!isSupportedSourceFile(source.toFile())) {
             showError(translate("Selecciona un archivo normal y legible."));
             return;
         }
 
+        Path outputDirectory = destination;
         generatedPasswordField.clear();
         showGeneratedPasswordToggle.setSelected(false);
         showGeneratedPasswordToggle.setDisable(true);
@@ -541,7 +552,7 @@ public class MainController {
             protected EncryptionResult call() throws IOException, GeneralSecurityException {
                 long totalBytes = Files.size(source);
                 updateMessage(setTaskStatus("Preparando cifrado..."));
-                EncryptionResult result = fileService.encrypt(source, destination, processed -> {
+                EncryptionResult result = fileService.encrypt(source, outputDirectory, processed -> {
                     long percentage = totalBytes == 0 ? 100
                             : Math.min(100, Math.round(processed * 100.0 / totalBytes));
                     updateMessage(setTaskStatus("Cifrando archivo: {0}%", percentage));
@@ -623,9 +634,18 @@ public class MainController {
             return;
         }
 
-        if (encryptedFile == null || destination == null) {
-            showError(translate("Selecciona el contenedor .enc y una carpeta de destino."));
+        if (encryptedFile == null) {
+            showError(translate(destination == null
+                    ? "Selecciona un contenedor .enc. Se usará su carpeta como destino predeterminado cuando lo elijas."
+                    : "Selecciona un contenedor .enc para descifrar."));
             return;
+        }
+        if (destination == null) {
+            destination = defaultDestinationFor(encryptedFile);
+            if (destination == null) {
+                showError(translate("Selecciona una carpeta de destino."));
+                return;
+            }
         }
         if (decryptPasswordField.getText() == null || decryptPasswordField.getText().isBlank()) {
             showError(translate("Introduce la contraseña del contenedor."));
@@ -636,6 +656,7 @@ public class MainController {
             return;
         }
 
+        Path outputDirectory = destination;
         Path reference = selectedReference;
         char[] password = decryptPasswordField.getText().toCharArray();
         configurePreviewPanels(previewType(encryptedFile));
@@ -648,7 +669,7 @@ public class MainController {
                     long totalBytes = Files.size(encryptedFile);
                     updateMessage(setTaskStatus("Preparando descifrado..."));
                     DecryptionResult result = fileService.decrypt(
-                            encryptedFile, destination, password, reference, processed -> {
+                            encryptedFile, outputDirectory, password, reference, processed -> {
                                 long percentage = totalBytes == 0 ? 100
                                         : Math.min(100, Math.round(processed * 100.0 / totalBytes));
                                 updateMessage(setTaskStatus("Descifrando archivo: {0}%", percentage));
@@ -744,7 +765,7 @@ public class MainController {
         PreviewType previewType = previewType(encryptedFile);
         if (previewType == null) {
             disablePreviewPanels();
-            showPreviewMessage("La vista previa solo está disponible para archivos .txt.enc y .png.enc.");
+            showPreviewMessage("La vista previa solo está disponible para archivos .txt.enc, .log.enc y .png.enc.");
             return;
         }
 
@@ -940,7 +961,7 @@ public class MainController {
 
     private static PreviewType previewType(Path encryptedFile) {
         String fileName = encryptedFile.getFileName().toString().toLowerCase(Locale.ROOT);
-        if (fileName.endsWith(".txt.enc")) {
+        if (fileName.endsWith(".txt.enc") || fileName.endsWith(".log.enc")) {
             return PreviewType.TEXT;
         }
         if (fileName.endsWith(".png.enc")) {
@@ -1053,6 +1074,10 @@ public class MainController {
         decryptSourcePathField.setText(file.getAbsolutePath());
         rememberDirectory(LAST_ENCRYPTED_DIRECTORY, file);
         setStatus("Archivo cifrado seleccionado.");
+    }
+
+    private static Path defaultDestinationFor(Path source) {
+        return source.toAbsolutePath().normalize().getParent();
     }
 
     private void setReferenceFile(File file) {

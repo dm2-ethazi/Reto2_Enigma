@@ -50,14 +50,15 @@ class LanguageServiceTest {
                         "Ctrl+Enter: ejecutar la operación de la vista actual."));
 
         String englishManual = LanguageService.translate(ENGLISH,
-                "Cifrado: selecciona un archivo .txt, .png o cualquier otro archivo binario y una carpeta "
+                "Cifrado: selecciona un archivo .txt, .log, .png o cualquier otro archivo binario y una carpeta "
                         + "de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres.\n\n"
                         + "Descifrado: selecciona el contenedor .enc, la carpeta de salida "
                         + "y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional.\n\n"
                         + "La vista previa se muestra después de un descifrado correcto para archivos de texto "
+                        + "(.txt y .log) "
                         + "e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados "
                         + "existentes no se sobrescriben.");
-        assertTrue(englishManual.startsWith("Encryption: choose a .txt, .png or any other binary file"));
+        assertTrue(englishManual.startsWith("Encryption: choose a .txt, .log, .png or any other binary file"));
         assertTrue(englishManual.contains("Files are processed locally"));
     }
 
