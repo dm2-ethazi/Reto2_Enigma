@@ -3,7 +3,7 @@ package com.dm2.enigma.Descifradores
 import android.content.Context
 import android.net.Uri
 
-class Cesar {
+class DescifrarCesar {
 
     companion object {
         // Rango 1: ASCII imprimible estándar
@@ -24,7 +24,8 @@ class Cesar {
                 var nuevo = codigo - num
 
                 if (nuevo < 32) {
-                    nuevo = 126
+                    val resta = 32 - nuevo
+                    nuevo = 127 - resta
                 }
 
                 sb.append(nuevo.toChar())

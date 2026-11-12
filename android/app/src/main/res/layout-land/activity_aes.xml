@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AES en horizontal: formulario compacto a la izquierda, imagen a la derecha. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/fondo_mesa"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/mesa_margen_h"
+    android:paddingTop="@dimen/mesa_margen_sup"
+    android:paddingEnd="@dimen/mesa_margen_h"
+    android:paddingBottom="@dimen/mesa_margen_inf">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/pergamino"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/pergamino_padding_h"
+        android:paddingTop="@dimen/pergamino_padding_v"
+        android:paddingEnd="@dimen/pergamino_padding_h"
+        android:paddingBottom="@dimen/pergamino_padding_v">
+
+        <!-- Cabecera -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnVolver"
+                android:layout_width="@dimen/ancho_boton_volver"
+                android:layout_height="@dimen/alto_boton_volver"
+                android:background="@drawable/boton_pergamino"
+                android:backgroundTint="@null"
+                android:contentDescription="Volver"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:minWidth="0dp"
+                android:paddingStart="0dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="3dp"
+                android:stateListAnimator="@null"
+                android:text="‹"
+                android:textAllCaps="false"
+                android:textColor="@color/tinta_magenta"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="serif"
+                android:letterSpacing="0.02"
+                android:text="Descifrado AES"
+                android:textColor="@color/pergamino_tinta"
+                android:textSize="@dimen/texto_titulo_pantalla"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/linea_pergamino" />
+
+        <!-- Dos columnas: formulario e imagen -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <ScrollView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1.3"
+                android:fillViewport="true"
+                android:scrollbars="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingEnd="8dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="serif"
+                        android:letterSpacing="0.14"
+                        android:text="ARCHIVO CIFRADO"
+                        android:textColor="@color/tinta_ocre"
+                        android:textSize="@dimen/texto_etiqueta"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnImportarEnc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/boton_pergamino"
+                        android:backgroundTint="@null"
+                        android:fontFamily="serif"
+                        android:minHeight="@dimen/alto_boton_secundario"
+                        android:paddingStart="16dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="11dp"
+                        android:stateListAnimator="@null"
+                        android:text="Importar archivo .png.enc"
+                        android:textAllCaps="false"
+                        android:textColor="@color/tinta_azul"
+                        android:textSize="@dimen/texto_boton_secundario"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@drawable/linea_pergamino" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="serif"
+                        android:labelFor="@id/etContrasena"
+                        android:letterSpacing="0.14"
+                        android:text="CONTRASEÑA"
+                        android:textColor="@color/tinta_ocre"
+                        android:textSize="@dimen/texto_etiqueta"
+                        android:textStyle="bold" />
+
+                    <!-- Contraseña y botón en la misma fila para ahorrar alto -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@drawable/enigma_borde"
+                            android:gravity="center_vertical"
+                            android:minHeight="@dimen/alto_campo"
+                            android:padding="3dp">
+
+                            <EditText
+                                android:id="@+id/etContrasena"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:autofillHints="password"
+                                android:background="@null"
+                                android:fontFamily="serif"
+                                android:hint="Contraseña"
+                                android:importantForAutofill="yes"
+                                android:inputType="textPassword"
+                                android:maxLength="16"
+                                android:minHeight="40dp"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="6dp"
+                                android:singleLine="true"
+                                android:textColor="@color/pergamino_tinta"
+                                android:textColorHint="@color/pergamino_tinta_suave"
+                                android:textSize="@dimen/texto_campo" />
+
+                            <ImageButton
+                                android:id="@+id/btnMostrarContrasena"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:background="?android:attr/selectableItemBackground"
+                                android:contentDescription="Mostrar contraseña"
+                                android:src="@drawable/ic_ojo_abierto"
+                                app:tint="@color/tinta_magenta" />
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="10dp"
+                            android:layout_height="1dp" />
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btnDescifrarAes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/boton_pergamino"
+                            android:backgroundTint="@null"
+                            android:fontFamily="serif"
+                            android:letterSpacing="0.03"
+                            android:minHeight="@dimen/alto_campo"
+                            android:minWidth="0dp"
+                            android:paddingStart="14dp"
+                            android:paddingTop="8dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="11dp"
+                            android:stateListAnimator="@null"
+                            android:text="Descifrar"
+                            android:textAllCaps="false"
+                            android:textColor="@color/tinta_verde"
+                            android:textSize="@dimen/texto_boton"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <ProgressBar
+                        android:id="@+id/pbProgresoAes"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressBackgroundTint="#33A87A3E"
+                        android:progressTint="@color/tinta_verde"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/tvEstadoAes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="serif"
+                        android:textColor="@color/pergamino_tinta_suave"
+                        android:textIsSelectable="true"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </ScrollView>
+
+            <Space
+                android:layout_width="18dp"
+                android:layout_height="1dp" />
+
+            <!-- Imagen recuperada -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTituloImagen"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:letterSpacing="0.14"
+                    android:text="IMAGEN RECUPERADA"
+                    android:textColor="@color/tinta_magenta"
+                    android:textSize="@dimen/texto_etiqueta"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/ivImagenRecuperada"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/enigma_borde"
+                    android:contentDescription="Vista previa del PNG recuperado"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@android:drawable/ic_menu_gallery" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

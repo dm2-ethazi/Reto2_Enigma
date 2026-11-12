@@ -1,0 +1,24 @@
+<resources>
+    <dimen name="mesa_margen_h">56dp</dimen>
+    <dimen name="mesa_margen_sup">8dp</dimen>
+    <dimen name="mesa_margen_inf">14dp</dimen>
+
+    <dimen name="pergamino_padding_h">56dp</dimen>
+    <dimen name="pergamino_padding_v">44dp</dimen>
+
+    <dimen name="texto_titulo_app">40sp</dimen>
+    <dimen name="texto_titulo_pantalla">22sp</dimen>
+    <dimen name="texto_etiqueta">12sp</dimen>
+    <dimen name="texto_boton">18sp</dimen>
+    <dimen name="texto_boton_secundario">16sp</dimen>
+    <dimen name="texto_campo">16sp</dimen>
+
+    <dimen name="alto_boton">52dp</dimen>
+    <dimen name="alto_boton_secundario">50dp</dimen>
+    <dimen name="alto_campo">50dp</dimen>
+    <dimen name="ancho_boton_volver">50dp</dimen>
+    <dimen name="alto_boton_volver">42dp</dimen>
+    <dimen name="espacio_seccion">16dp</dimen>
+    <dimen name="espacio_linea">14dp</dimen>
+    <dimen name="ancho_minimo_contenido">560dp</dimen>
+</resources>

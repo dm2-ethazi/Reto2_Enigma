@@ -39,4 +39,55 @@
     <color name="magenta_hover">#D63378</color>
     <color name="magenta_fondo">#381B2B</color>
     <color name="magenta_texto">#FAD2E1</color>
+
+    <!-- ===== PARED Y GRABADO ===== -->
+    <color name="pared_base">#14162B</color>
+    <color name="pared_luz">#202647</color>
+    <color name="grabado_texto">#0D0F22</color>
+    <color name="grabado_luz">#5D6BB0</color>
+    <color name="ladrillo_surco">#090B18</color>
+
+    <!-- ===== LADRILLO AZUL ===== -->
+    <color name="ladrillo_azul_claro">#7A93FF</color>
+    <color name="ladrillo_azul">#3352D8</color>
+    <color name="ladrillo_azul_borde">#A9BAFF</color>
+    <color name="ladrillo_azul_hundido">#2A3C96</color>
+
+    <!-- ===== LADRILLO VERDE ===== -->
+    <color name="ladrillo_verde_claro">#4BE0B0</color>
+    <color name="ladrillo_verde">#0F9D6E</color>
+    <color name="ladrillo_verde_borde">#8DF2D2</color>
+    <color name="ladrillo_verde_hundido">#0B7A56</color>
+    <color name="ladrillo_verde_texto">#032A1F</color>
+
+    <!-- ===== LADRILLO MAGENTA ===== -->
+    <color name="ladrillo_magenta_claro">#E75C9A</color>
+    <color name="ladrillo_magenta">#B82865</color>
+    <color name="ladrillo_magenta_borde">#FAD2E1</color>
+    <color name="ladrillo_magenta_hundido">#8E1D4E</color>
+
+    <!-- ===== ESTANTES ===== -->
+    <color name="estante_nicho">#1B2040</color>
+    <color name="estante_nicho_oscuro">#101329</color>
+    <color name="estante_tabla">#2B3363</color>
+    <color name="estante_tabla_luz">#A5B4FC</color>
+    <color name="estante_sombra">#0B0D1C</color>
+    <color name="hueco_fondo">#0E1024</color>
+
+    <!-- ===== PERGAMINO ===== -->
+    <color name="mesa">#2A2018</color>
+    <color name="mesa_oscura">#140F0A</color>
+    <color name="pergamino_alto">#F8EBCB</color>
+    <color name="pergamino_bajo">#EDD6AB</color>
+    <color name="pergamino_borde">#A87A3E</color>
+    <color name="pergamino_linea">#B58A52</color>
+    <color name="pergamino_campo">#F2E1BE</color>
+    <color name="pergamino_tinta">#3F2A0E</color>
+    <color name="pergamino_tinta_suave">#6E5227</color>
+
+    <!-- Tintas de los cuatro colores sobre papel -->
+    <color name="tinta_azul">#1F3C8F</color>
+    <color name="tinta_verde">#14563C</color>
+    <color name="tinta_magenta">#9C1F55</color>
+    <color name="tinta_ocre">#86590F</color>
 </resources>
