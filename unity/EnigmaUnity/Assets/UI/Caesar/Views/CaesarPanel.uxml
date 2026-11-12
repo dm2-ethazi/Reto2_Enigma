@@ -1,0 +1,58 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Caesar/Styles/CaesarPanel.uss?fileID=7433441132597879392&amp;guid=adc133a33560e14438729d398691ab91&amp;type=3#CaesarPanel"/>
+    <Style src="../../Game/Styles/GameHud.uss"/>
+    <ui:VisualElement name="caesarScreen" picking-mode="Ignore" class="caesar-screen">
+        <ui:VisualElement name="gameArea" picking-mode="Ignore" class="game-area">
+            <ui:VisualElement class="game-header">
+                <ui:Label name="roundLabel" text="Ronda 1/5" class="game-stat"/>
+                <ui:Label name="livesLabel" text="Vidas 3" class="game-stat"/>
+                <ui:Label name="errorsLabel" text="Errores 0/4" class="game-stat"/>
+                <ui:Label name="timerLabel" text="00:50" tooltip="Tiempo restante antes de que avance el dementor" class="game-stat game-timer"/>
+                <ui:Button name="pauseGame" text="Pausa" class="game-button pause-button"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="sceneViewport" picking-mode="Ignore" class="scene-viewport">
+                <ui:Button name="clueHitArea" tooltip="Revelar pista" class="clue-hit-area"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="answer-panel">
+                <ui:ProgressBar name="doorProgress" title="Puerta: 0/4" low-value="0" high-value="4" value="0" class="door-progress"/>
+                <ui:Label name="clueFeedback" text="Busca el símbolo en el pasillo y tócalo." class="clue-note"/>
+                <ui:Label name="cipherText" text="MENSAJE CIFRADO" class="cipher-message"/>
+                <ui:VisualElement class="answer-row">
+                    <ui:TextField name="answerInput" max-length="120" class="answer-input"/>
+                    <ui:Button name="submitAnswer" text="Validar" class="game-button submit-button"/>
+                </ui:VisualElement>
+                <ui:Label name="gameFeedback" text="Descifra el mensaje." class="game-feedback"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="gameModal" class="game-modal hidden">
+                <ui:VisualElement class="modal-card">
+                    <ui:Label name="modalTitle" class="modal-title"/>
+                    <ui:Label name="modalMessage" class="modal-message"/>
+                    <ui:Button name="resumeGame" text="Continuar" class="game-button"/>
+                    <ui:Button name="restartGame" text="Reiniciar" class="game-button"/>
+                    <ui:Button name="exitGame" text="Salir" class="game-button"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="cipherPanel" class="cipher-panel">
+            <ui:VisualElement class="panel-heading">
+                <ui:VisualElement>
+                    <ui:Label text="CRIPTOGRAFÍA" class="eyebrow"/>
+                    <ui:Label text="Alfabeto César" class="panel-title"/>
+                </ui:VisualElement>
+                <ui:Label text="A → Z" class="alphabet-badge"/>
+            </ui:VisualElement>
+            <ui:Label text="Desplaza todas las letras con las flechas." class="instructions"/>
+            <ui:ScrollView name="alphabetScroll" mode="Vertical" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="alphabet-scroll">
+                <ui:VisualElement name="alphabetGrid" class="alphabet-grid"/>
+            </ui:ScrollView>
+            <ui:VisualElement class="panel-footer">
+                <ui:VisualElement class="alphabet-controls">
+                    <ui:Button name="previousLetter" text="‹  Anterior" tooltip="Retroceder todo el alfabeto una posición" class="step-button"/>
+                    <ui:Button name="nextLetter" text="Siguiente  ›" tooltip="Avanzar todo el alfabeto una posición" class="step-button"/>
+                </ui:VisualElement>
+                <ui:Label text="PEQUEÑA · letra original     GRANDE · letra desplazada" class="legend"/>
+                <ui:Label name="shiftFeedback" text="A–Z · Al llegar al final, el alfabeto vuelve a empezar." class="feedback"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

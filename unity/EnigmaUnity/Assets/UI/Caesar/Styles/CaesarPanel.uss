@@ -1,0 +1,304 @@
+:root {
+    --ink: #eee7d6;
+    --muted: #aaadad;
+    --gold: #d3b77a;
+}
+
+.caesar-screen {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: row;
+    color: var(--ink);
+}
+
+.caesar-screen Label {
+    margin: 0;
+    padding: 0;
+}
+
+.scene-viewport {
+    flex-grow: 1;
+    justify-content: space-between;
+    padding: 30px;
+}
+
+.scene-kicker {
+    color: var(--gold);
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+}
+
+.scene-title {
+    font-size: 30px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+}
+
+.scene-caption {
+    color: #c6c9c7;
+    font-size: 14px;
+    white-space: normal;
+    max-width: 320px;
+}
+
+.cipher-panel {
+    width: 30%;
+    flex-shrink: 0;
+    background-color: #141e24;
+    border-left-width: 2px;
+    border-left-color: #7c6b48;
+    padding: 18px;
+}
+
+.panel-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.eyebrow {
+    color: var(--gold);
+    font-size: 12px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.panel-title {
+    font-size: 24px;
+    -unity-font-style: bold;
+    margin-top: 4px;
+}
+
+.alphabet-badge {
+    color: var(--gold);
+    background-color: #243036;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.instructions {
+    color: var(--muted);
+    white-space: normal;
+    font-size: 18px;
+    margin-top: 10px;
+    margin-bottom: 16px;
+}
+
+.alphabet-scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.alphabet-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-right: 5px;
+}
+
+.alphabet-scroll .unity-scroller--vertical {
+    width: 12px;
+    margin-left: 4px;
+}
+
+.alphabet-scroll .unity-scroller__slider {
+    min-width: 12px;
+    margin: 0;
+}
+
+.alphabet-scroll .unity-scroller__low-button,
+.alphabet-scroll .unity-scroller__high-button {
+    display: none;
+}
+
+.alphabet-scroll .unity-base-slider__tracker {
+    width: 4px;
+    background-color: #26363e;
+    border-radius: 4px;
+}
+
+.alphabet-scroll .unity-base-slider__dragger {
+    width: 8px;
+    min-width: 8px;
+    max-width: 8px;
+    background-color: #ad986b;
+    border-width: 0;
+    border-radius: 4px;
+}
+
+.alphabet-scroll .unity-base-slider__dragger-border {
+    display: none;
+}
+
+.letter-slot {
+    width: 25%;
+    flex-shrink: 0;
+    padding: 3px;
+}
+
+.letter-card {
+    background-color: #202e35;
+    border-width: 1px;
+    border-color: #3e4d51;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.letter-display {
+    height: 50px;
+    align-items: center;
+    justify-content: center;
+}
+
+.shifted-letter {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: #f5e4b8;
+    margin: 0;
+    padding: 0;
+}
+
+.original-letter {
+    position: absolute;
+    top: 0;
+    left: 1px;
+    font-size: 16px;
+    color: #b8c4c7;
+}
+
+.alphabet-controls {
+    flex-direction: row;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.step-button {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    height: 44px;
+    margin: 2px;
+    padding: 0;
+    background-color: #34474d;
+    border-width: 1px;
+    border-color: #536366;
+    border-radius: 5px;
+    color: #f3e6c8;
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.step-button:hover {
+    background-color: #4b6064;
+    border-color: var(--gold);
+}
+
+.step-button:active {
+    background-color: #806b43;
+}
+
+.step-button:focus {
+    border-color: #f5d48d;
+    border-width: 2px;
+}
+
+.panel-footer {
+    flex-shrink: 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: #344248;
+}
+
+.legend {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: normal;
+}
+
+.feedback {
+    font-size: 14px;
+    color: var(--gold);
+    margin-top: 6px;
+    white-space: normal;
+}
+
+.compact .cipher-panel {
+    width: 34%;
+    padding: 8px;
+}
+
+.compact .scene-viewport {
+    padding: 18px;
+}
+
+.compact .scene-title {
+    font-size: 22px;
+}
+
+.compact .panel-title {
+    font-size: 19px;
+}
+
+.compact .instructions {
+    font-size: 14px;
+    margin-top: 5px;
+    margin-bottom: 6px;
+}
+
+.compact .letter-slot {
+    width: 33.3333%;
+    padding: 3px;
+}
+
+.compact .letter-display {
+    height: 60px;
+    padding-top: 12px;
+}
+
+.compact .shifted-letter {
+    font-size: 40px;
+}
+
+.compact .letter-card {
+    padding: 4px;
+}
+
+.compact .panel-footer {
+    margin-top: 6px;
+    padding-top: 6px;
+}
+
+.compact .legend {
+    display: none;
+}
+
+.compact .feedback {
+    font-size: 12px;
+    margin-top: 0;
+}
+
+.compact .original-letter {
+    font-size: 16px;
+}
+
+.compact .alphabet-badge {
+    display: none;
+}
+
+.compact .step-button {
+    font-size: 16px;
+}
+
+.compact .alphabet-controls {
+    margin-bottom: 6px;
+}
+
+.narrow .letter-slot {
+    width: 50%;
+}
