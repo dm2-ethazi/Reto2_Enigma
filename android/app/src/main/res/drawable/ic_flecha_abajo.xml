@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="12dp"
+    android:height="8dp"
+    android:viewportWidth="48"
+    android:viewportHeight="32">
+
+    <!-- Flecha al 65 % del viewport, centrada en (24, 16) -->
+    <path
+        android:fillColor="#9C1F55"
+        android:pathData="M24,24.45 L10.35,10.8 L14,7.15 L24,17.2 L34,7.15 L37.65,10.8 Z" />
+</vector>

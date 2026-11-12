@@ -1,0 +1,10 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Enigma" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/fondo_mesa</item>
+        <item name="android:statusBarColor">@color/mesa_oscura</item>
+        <item name="android:navigationBarColor">@color/mesa_oscura</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

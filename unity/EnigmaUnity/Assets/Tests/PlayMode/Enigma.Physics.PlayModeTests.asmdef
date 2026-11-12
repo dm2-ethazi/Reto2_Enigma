@@ -1,0 +1,11 @@
+{
+    "name": "Enigma.Physics.PlayModeTests",
+    "rootNamespace": "Enigma.Tests.Physics",
+    "references": [
+        "Enigma.Physics"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "autoReferenced": false
+}

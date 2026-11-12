@@ -1,0 +1,80 @@
+<resources>
+    <!-- Inicio -->
+    <string name="subtitulo_app">Deszifratzeko tresnak</string>
+    <string name="accion_aes">AES · Irudiak</string>
+    <string name="accion_cesar">Zesar · Testua</string>
+    <string name="idioma">Hizkuntza</string>
+
+    <!-- Comunes -->
+    <string name="volver">Atzera</string>
+    <string name="descifrar">Deszifratu</string>
+    <string name="aceptar">Ados</string>
+    <string name="error">Errorea</string>
+    <string name="archivo">Fitxategia</string>
+    <string name="archivo_seleccionado">Fitxategia: %1$s</string>
+
+    <!-- AES -->
+    <string name="titulo_aes">AES deszifratzea</string>
+    <string name="archivo_cifrado">FITXATEGI ZIFRATUA</string>
+    <string name="importar_enc">Inportatu .png.enc fitxategia</string>
+    <string name="contrasena">PASAHITZA</string>
+    <string name="contrasena_hint">Sartu pasahitza</string>
+    <string name="mostrar_contrasena">Erakutsi pasahitza</string>
+    <string name="ocultar_contrasena">Ezkutatu pasahitza</string>
+    <string name="imagen_recuperada">Berreskuratutako irudia</string>
+    <string name="imagen_recuperada_aviso">Berreskuratutako irudia · pantailan soilik</string>
+    <string name="imagen_sin_vista">Berreskuratutako fitxategia (aurrebistarik gabe)</string>
+    <string name="vista_previa_desc">Berreskuratutako PNGaren aurrebista</string>
+    <string name="descifrando">Deszifratzen…</string>
+    <string name="descifrando_progreso">Deszifratzen… %1$d %%</string>
+    <string name="descifrado_tamano">Deszifratuta · %1$s</string>
+    <string name="vista_previa_lista">Aurrebista prest · pantailatik irtetean ezabatzen da</string>
+    <string name="archivo_no_seleccionado">Ez da fitxategirik hautatu</string>
+    <string name="importa_enc_primero">Inportatu lehenengo AES zifratzaileak sortutako .enc fitxategi bat.</string>
+    <string name="contrasena_no_valida">Pasahitz baliogabea</string>
+    <string name="contrasena_formato">Pasahitzak 16 karaktere izan behar ditu: A-Z, a-z edo 0-9.</string>
+    <string name="enc_seleccionado">ENC fitxategia hautatuta</string>
+    <string name="txt_seleccionado">TXT fitxategia hautatuta</string>
+    <string name="extension_enc">Hautatu .png.enc luzapena duen fitxategi bat</string>
+
+    <!-- César -->
+    <string name="titulo_cesar">Zesar deszifratzea</string>
+    <string name="archivo_texto">TESTU FITXATEGIA</string>
+    <string name="importar_txt">Inportatu .txt</string>
+    <string name="desplazamiento">DESPLAZAMENDUA (1–25)</string>
+    <string name="desplazamiento_hint">1</string>
+    <string name="mensaje_recuperado">BERRESKURATUTAKO MEZUA</string>
+    <string name="mensaje_hint">Deszifratutako mezua hemen agertuko da</string>
+    <string name="selecciona_txt">Hautatu lehenengo .txt fitxategi bat</string>
+    <string name="desplazamiento_rango">Sartu 1 eta 25 arteko desplazamendu bat</string>
+    <string name="error_leer_archivo">Errorea fitxategia irakurtzean: %1$s</string>
+
+    <!-- Errores de descifrado -->
+    <string name="archivo_grande">Fitxategia handiegia da</string>
+    <string name="archivo_grande_detalle">Gehienezkoa %1$s da eta fitxategi honek %2$s pisatzen du.</string>
+    <string name="archivo_no_valido">Fitxategi baliogabea</string>
+    <string name="contenedor_incompleto">Edukiontzia osatugabea da: goiburua edo etiketa falta zaio.</string>
+    <string name="error_al_leer">Errorea irakurtzean</string>
+    <string name="no_abrir_cifrado">Ezin izan da fitxategi zifratua ireki.</string>
+    <string name="archivo_corto">Fitxategia laburregia da R2AE izateko.</string>
+    <string name="contenedor_truncado">Edukiontzia moztuta dago: GCM etiketa falta da.</string>
+    <string name="contrasena_incorrecta">Pasahitz okerra</string>
+    <string name="contrasena_incorrecta_detalle">Pasahitza ez da baliozkoa edo fitxategia aldatu da. Ez da emaitzarik gorde.</string>
+    <string name="sin_almacenamiento">Ez dago biltegirik</string>
+    <string name="sin_espacio">Gailuak ez zuen leku librerik geratzen.</string>
+    <string name="error_al_descifrar">Errorea deszifratzean</string>
+    <string name="no_escribir_archivo">Ezin izan da fitxategia idatzi.</string>
+    <string name="no_r2ae">Fitxategia ez da R2AE edukiontzi bat.</string>
+    <string name="version_no_compatible">R2AE bertsio ez-onargarria: %1$d.</string>
+    <string name="iteraciones_incorrectas">Edukiontziak ez ditu %1$d PBKDF2 iterazio erabiltzen.</string>
+    <string name="espacio_insuficiente">%1$s behar dira eta %2$s baino ez dago libre.</string>
+    <string name="carpeta_temporal">Ezin izan da emaitzaren aldi baterako karpeta sortu.</string>
+    <!-- Honi buruz eta laguntza -->
+    <string name="acerca_de">Honi buruz</string>
+    <string name="acerca_de_texto">AES-256-GCM bidez zifratutako irudiak (.png.enc) eta Zesar zifratuz zifratutako testuak (.txt) deszifratzeko tresnak.\n\nProzesu guztia gailuan bertan egiten da eta ez da emaitzarik gordetzen: aldi baterako irudia pantailatik irtetean ezabatzen da.</string>
+    <string name="ayuda">Laguntza</string>
+    <string name="ayuda_aes_titulo">Nola deszifratu irudi bat</string>
+    <string name="ayuda_aes_texto">1. Sakatu «Inportatu .png.enc fitxategia» eta hautatu fitxategi zifratua.\n2. Idatzi zifratzeko erabili zen 16 karaktereko pasahitza (A-Z, a-z edo 0-9).\n3. Sakatu «Deszifratu» eta itxaron aurrerapen-barrak bukatu arte.\n4. Irudia aurrebistan agertuko da. Pantailan soilik erakusten da: ez da gordetzen eta irtetean ezabatzen da.</string>
+    <string name="ayuda_cesar_titulo">Nola deszifratu testu bat</string>
+    <string name="ayuda_cesar_texto">1. Sakatu «Inportatu .txt» eta hautatu testu-fitxategi zifratua.\n2. Idatzi zifratzeko erabili zen desplazamendua, 1 eta 25 artean.\n3. Sakatu «Deszifratu»: mezua eskuinean agertuko da.\n\nTestua ulertzen ez bada, probatu beste desplazamendu batekin.</string>
+</resources>

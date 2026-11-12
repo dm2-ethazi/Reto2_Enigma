@@ -19,6 +19,7 @@ class Gates(unittest.TestCase):
 
     def calls(self, stage, branch, refs=""):
         """Simula etapa, rama y referencias y devuelve cuántas veces se solicita la suite."""
+    def calls(self, stage, branch, refs=""):
         with (
             patch.object(sys, "argv", ["quality", stage, "--branch", branch]),
             patch.object(sys, "stdin", io.StringIO(refs)),
