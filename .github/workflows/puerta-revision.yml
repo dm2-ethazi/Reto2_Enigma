@@ -1,9 +1,13 @@
 name: Puerta de revisión
 
 # Se ejecuta en TODAS las pull requests (sin filtro de rutas), así que también
-# cubre los cambios de android/ y javafx/ que antes no comprobaba nadie.
+# cubre los cambios de android/, javafx/ y unity/ que antes no comprobaba nadie.
+#
+# Se usa `pull_request` y no `pull_request_target`: este último toma el archivo
+# del workflow de la rama por defecto (main), no de la rama base, así que no se
+# ejecutaría mientras main no tenga el workflow.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, review_requested]
   pull_request_review:
     types: [submitted, dismissed, edited]
