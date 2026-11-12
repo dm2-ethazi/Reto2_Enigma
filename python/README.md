@@ -65,6 +65,20 @@ En Windows también puedes abrir `python/iniciar_enigma.bat` con doble clic
 después de instalar las dependencias. El lanzador utiliza `python/.venv` cuando
 existe; en caso contrario, intenta usar Python del sistema.
 
+En Ubuntu/Debian puedes usar el lanzador Bash desde la raíz del repositorio:
+
+```bash
+./python/iniciar_enigma.sh
+./python/iniciar_enigma.sh --lang eu
+```
+
+El lanzador utiliza `python/.venv/bin/python` si está disponible. En caso
+contrario, busca `python3.14`, `python3` o `python`, en ese orden. Requiere haber
+instalado Python 3.14 y las dependencias siguiendo los pasos anteriores.
+Admite ejecutarse desde cualquier directorio y pasa los argumentos a `main.py`.
+También puedes iniciarlo con `bash python/iniciar_enigma.sh` si has descargado
+una copia sin permisos de ejecución.
+
 Los selectores gráficos requieren Tcl/Tk y una sesión de escritorio. Tkinter
 es opcional y no se instala con pip: si no está disponible, la aplicación pide
 las rutas por terminal.
@@ -251,6 +265,7 @@ ver qué ramas se validan y localizar los artefactos en GitHub Actions.
 python/
 ├── main.py                  # Punto de entrada
 ├── iniciar_enigma.bat        # Lanzador Windows
+├── iniciar_enigma.sh         # Lanzador Bash para Ubuntu/Debian
 ├── pyproject.toml            # Dependencias y configuración de calidad
 ├── uv.lock                   # Entorno reproducible de aplicación y desarrollo
 ├── requirements.txt          # Dependencia de ejecución para instalación con pip
