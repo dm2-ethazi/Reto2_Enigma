@@ -1,0 +1,34 @@
+<resources>
+    <!-- Mesa alrededor del pergamino -->
+    <dimen name="mesa_margen_h">14dp</dimen>
+    <dimen name="mesa_margen_sup">6dp</dimen>
+    <dimen name="mesa_margen_inf">12dp</dimen>
+
+    <!-- Interior del pergamino: separación del contenido respecto al borde -->
+    <dimen name="pergamino_padding_h">40dp</dimen>
+    <dimen name="pergamino_padding_v">56dp</dimen>
+
+    <!-- Tipografías -->
+    <dimen name="texto_titulo_app">42sp</dimen>
+    <dimen name="texto_subtitulo_app">15sp</dimen>
+    <dimen name="texto_titulo_pantalla">23sp</dimen>
+    <dimen name="texto_etiqueta">12sp</dimen>
+    <dimen name="texto_boton">20sp</dimen>
+    <dimen name="texto_boton_secundario">16sp</dimen>
+    <dimen name="texto_campo">16sp</dimen>
+    <dimen name="texto_mensaje">17sp</dimen>
+
+    <!-- Medidas de contenido -->
+    <dimen name="alto_imagen">220dp</dimen>
+    <dimen name="alto_mensaje">266dp</dimen>
+    <dimen name="alto_boton">60dp</dimen>
+    <dimen name="alto_boton_secundario">54dp</dimen>
+    <dimen name="alto_campo">52dp</dimen>
+    <dimen name="ancho_boton_volver">54dp</dimen>
+    <dimen name="alto_boton_volver">48dp</dimen>
+    <dimen name="espacio_seccion">18dp</dimen>
+    <dimen name="espacio_linea">14dp</dimen>
+
+    <!-- Ancho mínimo de la columna de contenido en horizontal -->
+    <dimen name="ancho_minimo_contenido">360dp</dimen>
+</resources>
