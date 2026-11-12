@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 namespace Enigma.Game
@@ -15,11 +14,8 @@ namespace Enigma.Game
             var result = new StringBuilder();
             bool pendingSpace = false;
 
-            foreach (char character in (text ?? string.Empty).Normalize(NormalizationForm.FormD))
+            foreach (char character in (text ?? string.Empty).Trim().Normalize(NormalizationForm.FormC))
             {
-                if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
-                    continue;
-
                 if (char.IsWhiteSpace(character))
                 {
                     pendingSpace = result.Length > 0;
@@ -30,7 +26,16 @@ namespace Enigma.Game
                     result.Append(' ');
 
                 pendingSpace = false;
-                result.Append(char.ToUpperInvariant(character));
+                char upper = char.ToUpperInvariant(character);
+                if (upper == '\u00d1')
+                {
+                    result.Append(upper);
+                    continue;
+                }
+
+                // Solo las vocales pierden el acento; la Ñ es una letra distinta de N.
+                char basic = upper.ToString().Normalize(NormalizationForm.FormD)[0];
+                result.Append("AEIOU".IndexOf(basic) >= 0 ? basic : upper);
             }
 
             return result.ToString();
@@ -43,7 +48,7 @@ namespace Enigma.Game
         public static string Encode(string text, int shift)
         {
             int offset = (shift % 26 + 26) % 26;
-            char[] letters = Normalize(text).ToCharArray();
+            char[] letters = (text ?? string.Empty).ToCharArray();
 
             for (int index = 0; index < letters.Length; index++)
             {

@@ -57,7 +57,7 @@ namespace Enigma.UI
             submit.clicked += Submit;
             pause.clicked += game.TogglePause;
             clue.clicked += game.RevealClue;
-            resume.clicked += game.TogglePause;
+            resume.clicked += Continue;
             restart.clicked += Restart;
             exit.clicked += game.ExitGame;
             answer.RegisterCallback<KeyDownEvent>(OnAnswerKeyDown);
@@ -99,6 +99,15 @@ namespace Enigma.UI
         /// <summary>Envía la respuesta actual al coordinador de partida.</summary>
         private void Submit() => game.SubmitAnswer(answer.value);
 
+        /// <summary>El boton principal inicia la partida desde tutorial o continua desde pausa.</summary>
+        private void Continue()
+        {
+            if (game.Session.Phase == GamePhase.Tutorial)
+                game.BeginPlaying();
+            else
+                game.TogglePause();
+        }
+
         /// <summary>Permite validar con Intro en Windows sin quitar la entrada táctil del TextField.</summary>
         private void OnAnswerKeyDown(KeyDownEvent evt)
         {
@@ -125,6 +134,7 @@ namespace Enigma.UI
 
             RefreshTimer();
             var session = game.Session;
+            bool tutorial = session.Phase == GamePhase.Tutorial;
             bool ended = session.Phase == GamePhase.Won || session.Phase == GamePhase.Lost;
             bool ready = session.Phase == GamePhase.Ready && !game.IsPaused;
 
@@ -137,8 +147,12 @@ namespace Enigma.UI
             displayedLevel = session.LevelIndex;
             displayedErrors = session.Errors;
             root.Q<Label>("roundLabel").text = $"Ronda {session.LevelIndex + 1}/{session.LevelCount}";
-            root.Q<Label>("livesLabel").text = $"Vidas {session.Lives}";
+            root.Q<Label>("livesLabel").text = $"Vidas {session.Lives} {new string('\u2665', session.Lives)}";
             root.Q<Label>("errorsLabel").text = $"Errores {session.Errors}/{session.ErrorLimit}";
+            var progress = root.Q<ProgressBar>("doorProgress");
+            progress.highValue = session.ErrorLimit;
+            progress.value = session.Errors;
+            progress.title = $"Puerta: {session.Errors}/{session.ErrorLimit} · Quedan {session.ErrorLimit - session.Errors} avances";
             root.Q<Label>("cipherText").text = session.CipherText;
             root.Q<Label>("gameFeedback").text = game.Feedback;
             root.Q<Label>("clueFeedback").text = game.Clue.Revealed
@@ -151,16 +165,20 @@ namespace Enigma.UI
 
             submit.SetEnabled(ready);
             alphabet.SetInteractionEnabled(ready);
-            pause.SetEnabled(!ended);
-            clue.SetEnabled(!ended && !game.IsPaused && session.Phase != GamePhase.Resolving);
-            clue.EnableInClassList("hidden", ended);
-            root.Q("gameModal").EnableInClassList("hidden", !game.IsPaused && !ended);
-            resume.EnableInClassList("hidden", !game.IsPaused);
-            root.Q<Label>("modalTitle").text = game.IsPaused
+            pause.SetEnabled(!ended && !tutorial);
+            clue.SetEnabled(!ended && !tutorial && !game.IsPaused && session.Phase != GamePhase.Resolving);
+            clue.EnableInClassList("hidden", ended || tutorial);
+            root.Q("gameModal").EnableInClassList("hidden", !game.IsPaused && !ended && !tutorial);
+            resume.EnableInClassList("hidden", !game.IsPaused && !tutorial);
+            resume.text = tutorial ? "Comenzar" : "Continuar";
+            restart.EnableInClassList("hidden", tutorial);
+            root.Q<Label>("modalTitle").text = tutorial ? "Cómo jugar" : game.IsPaused
                 ? "En pausa"
                 : session.Phase == GamePhase.Won ? "¡Victoria!" : "Fin de la partida";
 
-            root.Q<Label>("modalMessage").text = game.IsPaused
+            root.Q<Label>("modalMessage").text = tutorial
+                ? "Descifra cinco rondas. Ejemplo: IPMB, desplazamiento 1 → HOLA. Mueve el alfabeto y escribe la respuesta. Tienes 3 vidas; cada cuatro fallos pierdes una. El reloj también provoca avances. Se ignoran mayúsculas, espacios extra y tildes; Ñ y N son distintas."
+                : game.IsPaused
                 ? "Continúa cuando estés preparado."
                 : game.Feedback;
         }
@@ -174,7 +192,7 @@ namespace Enigma.UI
             submit.clicked -= Submit;
             pause.clicked -= game.TogglePause;
             clue.clicked -= game.RevealClue;
-            resume.clicked -= game.TogglePause;
+            resume.clicked -= Continue;
             restart.clicked -= Restart;
             exit.clicked -= game.ExitGame;
             answer.UnregisterCallback<KeyDownEvent>(OnAnswerKeyDown);

@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Level4
   m_EditorClassIdentifier: Enigma.Game::Enigma.Game.LevelDefinition
   phrases:
-  - EL VALOR ROMPE EL MIEDO
-  - LA PUERTA ESTA AL FINAL
-  - JUNTOS SOMOS MAS FUERTES
-  minimumShift: 4
-  maximumShift: 9
-  lifeLimit: 2
+  - LA LUZ NOS GUIA
+  - EL HECHIZO PROTEGE
+  - BUSCA LA LUZ AZUL
+  minimumShift: 1
+  maximumShift: 17
   timeLimitSeconds: 35

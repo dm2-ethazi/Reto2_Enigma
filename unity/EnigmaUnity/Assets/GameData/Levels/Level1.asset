@@ -13,11 +13,10 @@ MonoBehaviour:
   m_Name: Level1
   m_EditorClassIdentifier: Enigma.Game::Enigma.Game.LevelDefinition
   phrases:
-  - HOLA
-  - LUZ
+  - LUNA
+  - MAGIA
   - LLAVE
-  - MAPA
+  - NOCHE
   minimumShift: 1
   maximumShift: 3
-  lifeLimit: 3
   timeLimitSeconds: 50

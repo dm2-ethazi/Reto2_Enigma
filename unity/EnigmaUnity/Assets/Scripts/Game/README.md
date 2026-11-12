@@ -1,127 +1,60 @@
-# Partida CÃ©sar
-
-
+# Partida Cesar
 
 @author koldo
 
-
-
-## Estructura
-
-
-
-- `Configuration`: assets de nivel y campaÃ±a; frases, desplazamientos, vidas y duraciÃ³n de resoluciÃ³n.
-
-- `Model`: cifrado y reglas de la campaÃ±a sin referencias a objetos de escena.
-
-- `Flow`: coordinaciÃ³n de respuestas, movimiento, llegada, pausa y resoluciÃ³n.
-
-- `Clues`: elecciÃ³n de un sÃ­mbolo y uno de los seis puntos ya guardados en la escena.
-
-- `Presentation`: reproducciÃ³n y reinicio de la animaciÃ³n existente del dementor.
-
-  `DoorPassage` contrae y desvanece al personaje hacia `Door Â· Passage Center` al llegar a la puerta;
-
-  la desintegraciÃ³n se reserva para las respuestas correctas. El punto de llegada y el de desapariciÃ³n
-
-  se editan en la escena, y el sprite del dementor se dibuja delante de la puerta.
-
-  `DementorAura` detiene los emisores al resolver un intento y los limpia al reiniciarlo.
-
-  El prefab `Assets/AuraDementor.prefab` configura la niebla y la escarcha en espacio local,
-
-  con escala jerÃ¡rquica y el material `DementorMist`, que usa `Enigma/Dementor Mist 2D`.
-
-- `Assets/Scripts/UI/Game`: vÃ­nculo de los controles UXML con la partida.
-
-- `Assets/UI/Game/Styles`: presentaciÃ³n del HUD, respuesta, pista y menÃºs.
-
-
-
-## Configurar en el Editor
-
-
-
-Abre `SampleScene`. El objeto `Game Â· Campaign` contiene las referencias a la campaÃ±a,
-
-el motor, la puerta, la animaciÃ³n, la pista y la cÃ¡mara. `Assets/GameData/Campaign.asset`
-
-ordena los cinco assets de `Assets/GameData/Levels`; cada uno permite cambiar sus frases,
-
-el intervalo de desplazamientos y el lÃ­mite de vidas desde el Inspector.
-
-
-
-`CluePlacement` tiene seis sprites del atlas `Assets/Sprites/Clues/ClueSymbols.png` y las
-
-seis referencias de `Clues Â· Six Authored Spots`. Mueve esos puntos en Scene View para
-
-editar posiciones. Cada nivel elige un sÃ­mbolo y una posiciÃ³n diferentes de los anteriores;
-
-el reintento conserva el mensaje, desplazamiento y pista del nivel actual. No se generan
-
-GameObjects, prefabs ni posiciones aleatorias fuera de los puntos preparados.
-
-
-
-## Reglas y controles
-
-
-
-Cinco rondas; lÃ­mites de vidas 3, 3, 2, 2 y 1. Cada error mueve al dementor un paso.
-
-El cuarto llega al trigger de la puerta y descuenta una vida. Una respuesta correcta
-
-reproduce la desintegraciÃ³n y abre el siguiente nivel. La pista revela el desplazamiento
-
-al tocar el sÃ­mbolo. Las dos flechas ajustan el alfabeto, sin resolver la respuesta por sÃ­ solas.
-
-
-
-La entrada usa un TextField de UI Toolkit, con teclado mÃ³vil y validaciÃ³n mediante el botÃ³n
-
-o Intro en Windows. Pausa congela la fÃ­sica y los temporizadores. Los menÃºs permiten continuar,
-
-reiniciar o salir; salir termina Play Mode cuando se ejecuta en el Editor.
-
-
-
-Pruebas en `Assets/Tests/Game`: reglas, victoria, derrota, reintento, selecciÃ³n de pistas,
-
-contacto fÃ­sico, pausa y posiciÃ³n del Ã¡rea tÃ¡ctil.
-
-
-
-## Estela de sombra
-
-
-
-`DementorShadowTrail` emite siluetas solo durante los avances. El objeto
-
-`Dementor/VFX · Shadow Trail` y su material estan preparados en la escena.
-
-Las particulas permanecen en coordenadas del mundo y se desvanecen sin seguir al actor.
-
-El Inspector permite ajustar distancia entre siluetas, duracion y color.
-
-La resolucion detiene la emision y cada reinicio elimina las sombras anteriores.
-
-
-## Temporizador de ronda
-
-`Model/RoundTimer.cs` cuenta el tiempo sin depender de Unity. `GameSession` aplica
-una sola penalizacion al agotarse y `CampaignController` inicia el avance fisico.
-Cada asset `LevelDefinition` tiene `Time Limit Seconds`: 50, 45, 40, 35 y 30
-segundos en las cinco rondas actuales. Tras un avance o reintento, se recupera
-el tiempo completo de esa ronda. Pausa, movimiento, resolucion y fin de partida
-detienen la cuenta. El cuarto fallo por tiempo sigue esperando a la puerta
-para descontar una vida, igual que una respuesta incorrecta.
-
-El reloj del HUD usa UXML/USS y cambia de color en los ultimos 10 segundos.
-`GameHudController` solo actualiza la etiqueta cuando cambia el segundo visible.
-
-## Audio
-
-`Presentation/GameAudio.cs` controla el AudioSource preparado bajo `Audio - Game`.
-El efecto del dementor solo se dispara al acertar. Respeta la pausa y se detiene
-al reiniciar. El WAV original y sus instrucciones estan en `Assets/Audio`.
+## Modulos
+
+- `Configuration`: assets de campaña y nivel, con tres vidas iniciales, frases, desplazamientos y tiempos.
+- `Model`: `GameSession`, `RoundTimer` y `CaesarCipher`, independientes de la interfaz y de los objetos de escena.
+- `Flow`: `CampaignController` coordina las acciones y `DementorSpawner` destruye e instancia prefabs.
+- `Clues`: elige un simbolo y una de seis posiciones preparadas en el Editor.
+- `Presentation`: agrupa el prefab enemigo, sus animaciones, puerta, aura, estela y sonido de acierto.
+- `Scripts/UI/Game`: adapta el modelo a UXML/USS sin comparar respuestas desde la vista.
+
+## Estados y flujo
+
+`GamePhase` distingue `Tutorial`, `Ready` (jugando), `Advancing`, `Resolving`,
+`Won` (victoria) y `Lost` (derrota). La escena empieza en tutorial con un ejemplo,
+reglas de normalizacion y el boton Comenzar. El tiempo y el enemigo esperan al jugador.
+Cada fallo mueve una de cuatro posiciones. La llegada fisica del cuarto fallo descuenta
+exactamente una vida; la animacion termina, se destruye el enemigo y se instancia el prefab
+para repetir el mismo desafio. Un acierto crea la ronda siguiente y otro prefab.
+Las tres vidas se conservan durante toda la campaña: los aciertos no recuperan vidas
+ni las rondas reducen su limite. Doce fallos de puerta producen derrota.
+
+Al terminar no hay enemigo activo y el estado bloquea validacion, movimiento e input.
+**Reiniciar** llama a `SceneManager.LoadScene` y devuelve todos los objetos y el tutorial
+a su estado inicial. **Salir** cierra la aplicacion; en el Editor termina Play Mode.
+
+## Desafios y pistas
+
+Cinco rondas con desplazamientos 1-3, 1-5, 1-10, 1-17 y 1-25. Los bancos
+progresan desde 4-6 letras hasta 18-25 letras, sin contar espacios. La primera
+pista esta visible; las siguientes son opcionales y no muestran la respuesta completa.
+Los seis puntos de pista y el recorrido se editan en la escena; no hay posiciones
+ni recursos construidos al iniciar.
+
+## Validacion
+
+`Normalize` aplica `Trim()`, mayusculas invariantes, espacios consecutivos y equivalencia
+de vocales acentuadas. Preserva la Ñ: NIÑO y NINO son distintos. `Encode` desplaza
+exclusivamente A-Z y conserva espacios, puntuacion y cualquier caracter fuera del alfabeto.
+Una entrada vacia avisa sin penalizar. Se normaliza para aceptar escrituras equivalentes
+sin exigir capitalizacion o espacios exactos.
+
+## Temporizador y presentacion
+
+Cada nivel tiene 50, 45, 40, 35 o 30 segundos, editables en el Inspector.
+El tiempo agotado cuenta como un fallo y provoca un avance. Pausa, movimiento,
+resolucion y final detienen la cuenta. Un avance o reintento recupera el tiempo del nivel.
+El HUD muestra vidas, ronda, fallos, reloj y barra de avances restantes.
+La puerta conserva su efecto de contraccion al centro. El efecto sonoro se reproduce
+solo al acertar, y respeta la pausa. No se utiliza sonido de ambiente.
+
+## Evidencias de la rubrica
+
+La justificacion de cuerpos, gravedad, triggers y colisiones esta en `Scripts/Physics/README.md`.
+Las pruebas cubren tutorial, normalizacion y Ñ, cuatro errores por vida, doce errores,
+conservacion de vidas, sustitucion real de prefabs, victoria, derrota, bloqueo,
+recarga de escena, penalizacion de velocidad, pausa, reloj, UI y efectos.
+Las posiciones y componentes de los dos prefabs se pueden inspeccionar en Unity.

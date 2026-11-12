@@ -18,5 +18,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 56b2278fae27a484f9711787622a7cf8, type: 2}
   - {fileID: 11400000, guid: ffdb5726dace0e743b57495b0685352a, type: 2}
   - {fileID: 11400000, guid: 1f3b3b6865ec4e04896f401f4f03981f, type: 2}
+  initialLives: 3
   errorsPerAttempt: 4
   resolutionSeconds: 1.15

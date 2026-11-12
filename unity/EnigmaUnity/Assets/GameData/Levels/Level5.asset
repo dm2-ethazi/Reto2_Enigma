@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: Level5
   m_EditorClassIdentifier: Enigma.Game::Enigma.Game.LevelDefinition
   phrases:
-  - LA LUZ VENCE A LA OSCURIDAD
-  - EL SECRETO ESTA EN EL MAPA
-  - AVANZA SIN MIRAR ATRAS
-  minimumShift: 5
-  maximumShift: 11
-  lifeLimit: 1
+  - LA MAGIA ILUMINA EL CAMINO
+  - EL PATRONUS VENCE AL MIEDO
+  - LA LUZ PROTEGE A LOS MAGOS
+  minimumShift: 1
+  maximumShift: 25
   timeLimitSeconds: 30
