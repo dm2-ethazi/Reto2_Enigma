@@ -36,7 +36,7 @@
                 android:layout_height="@dimen/alto_boton_volver"
                 android:background="@drawable/boton_pergamino"
                 android:backgroundTint="@null"
-                android:contentDescription="Volver"
+                android:contentDescription="@string/volver"
                 android:fontFamily="serif"
                 android:gravity="center"
                 android:minWidth="0dp"
@@ -51,16 +51,44 @@
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="14dp"
                 android:layout_weight="1"
                 android:fontFamily="serif"
                 android:letterSpacing="0.02"
-                android:text="Descifrado AES"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/titulo_aes"
                 android:textColor="@color/pergamino_tinta"
                 android:textSize="@dimen/texto_titulo_pantalla"
+                android:textStyle="bold"
+                app:autoSizeMaxTextSize="@dimen/texto_titulo_pantalla"
+                app:autoSizeMinTextSize="16sp"
+                app:autoSizeStepGranularity="1sp"
+                app:autoSizeTextType="uniform" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnAyuda"
+                android:layout_width="@dimen/alto_boton_volver"
+                android:layout_height="@dimen/alto_boton_volver"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/boton_ayuda"
+                android:backgroundTint="@null"
+                android:contentDescription="@string/ayuda"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:minWidth="0dp"
+                android:paddingStart="0dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:stateListAnimator="@null"
+                android:text="@string/ayuda_simbolo"
+                android:textColor="@color/tinta_azul"
+                android:textSize="19sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -77,7 +105,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="serif"
             android:letterSpacing="0.14"
-            android:text="ARCHIVO CIFRADO"
+            android:text="@string/archivo_cifrado"
             android:textColor="@color/tinta_ocre"
             android:textSize="@dimen/texto_etiqueta"
             android:textStyle="bold" />
@@ -96,7 +124,7 @@
             android:paddingEnd="18dp"
             android:paddingBottom="13dp"
             android:stateListAnimator="@null"
-            android:text="Importar archivo .png.enc"
+            android:text="@string/importar_enc"
             android:textAllCaps="false"
             android:textColor="@color/tinta_azul"
             android:textSize="@dimen/texto_boton_secundario"
@@ -116,7 +144,7 @@
             android:fontFamily="serif"
             android:labelFor="@id/etContrasena"
             android:letterSpacing="0.14"
-            android:text="CONTRASEÑA"
+            android:text="@string/contrasena"
             android:textColor="@color/tinta_ocre"
             android:textSize="@dimen/texto_etiqueta"
             android:textStyle="bold" />
@@ -133,12 +161,12 @@
             <EditText
                 android:id="@+id/etContrasena"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:autofillHints="password"
                 android:background="@null"
                 android:fontFamily="serif"
-                android:hint="Introduce la contraseña"
+                android:hint="@string/contrasena_hint"
                 android:importantForAutofill="yes"
                 android:inputType="textPassword"
                 android:maxLength="16"
@@ -152,10 +180,10 @@
 
             <ImageButton
                 android:id="@+id/btnMostrarContrasena"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Mostrar contraseña"
+                android:contentDescription="@string/mostrar_contrasena"
                 android:src="@drawable/ic_ojo_abierto"
                 app:tint="@color/tinta_magenta" />
         </LinearLayout>
@@ -175,7 +203,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="15dp"
             android:stateListAnimator="@null"
-            android:text="Descifrar"
+            android:text="@string/descifrar"
             android:textAllCaps="false"
             android:textColor="@color/tinta_verde"
             android:textSize="@dimen/texto_boton"
@@ -218,7 +246,8 @@
             android:layout_height="wrap_content"
             android:fontFamily="serif"
             android:letterSpacing="0.14"
-            android:text="IMAGEN RECUPERADA"
+            android:text="@string/imagen_recuperada"
+            android:textAllCaps="true"
             android:textColor="@color/tinta_magenta"
             android:textSize="@dimen/texto_etiqueta"
             android:textStyle="bold" />
@@ -230,7 +259,7 @@
             android:layout_marginTop="8dp"
             android:layout_weight="1"
             android:background="@drawable/enigma_borde"
-            android:contentDescription="Vista previa del PNG recuperado"
+            android:contentDescription="@string/vista_previa_desc"
             android:padding="10dp"
             android:scaleType="centerInside"
             android:src="@android:drawable/ic_menu_gallery" />

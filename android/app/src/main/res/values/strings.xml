@@ -1,3 +1,84 @@
 <resources>
-    <string name="app_name">Enigma</string>
+    <string name="app_name" translatable="false">Enigma</string>
+
+    <!-- Inicio -->
+    <string name="titulo_app" translatable="false">CriptoApp</string>
+    <string name="subtitulo_app">Herramientas de descifrado</string>
+    <string name="accion_aes">AES · Imágenes</string>
+    <string name="accion_cesar">César · Texto</string>
+    <string name="idioma">Idioma</string>
+
+    <!-- Comunes a las dos pantallas -->
+    <string name="volver">Volver</string>
+    <string name="descifrar">Descifrar</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="error">Error</string>
+    <string name="archivo">Archivo</string>
+    <string name="archivo_seleccionado">Archivo: %1$s</string>
+
+    <!-- AES -->
+    <string name="titulo_aes">Descifrado AES</string>
+    <string name="archivo_cifrado">ARCHIVO CIFRADO</string>
+    <string name="importar_enc">Importar archivo .png.enc</string>
+    <string name="contrasena">CONTRASEÑA</string>
+    <string name="contrasena_hint">Introduce la contraseña</string>
+    <string name="mostrar_contrasena">Mostrar contraseña</string>
+    <string name="ocultar_contrasena">Ocultar contraseña</string>
+    <string name="imagen_recuperada">Imagen recuperada</string>
+    <string name="imagen_recuperada_aviso">Imagen recuperada · solo en pantalla</string>
+    <string name="imagen_sin_vista">Archivo recuperado (sin vista previa)</string>
+    <string name="vista_previa_desc">Vista previa del PNG recuperado</string>
+    <string name="descifrando">Descifrando…</string>
+    <string name="descifrando_progreso">Descifrando… %1$d %%</string>
+    <string name="descifrado_tamano">Descifrado · %1$s</string>
+    <string name="vista_previa_lista">Vista previa lista · se borra al salir de la pantalla</string>
+    <string name="archivo_no_seleccionado">Archivo no seleccionado</string>
+    <string name="importa_enc_primero">Importa primero un archivo .enc generado por el cifrador AES.</string>
+    <string name="contrasena_no_valida">Contraseña no válida</string>
+    <string name="contrasena_formato">La contraseña debe tener 16 caracteres A-Z, a-z o 0-9.</string>
+    <string name="enc_seleccionado">Archivo ENC seleccionado</string>
+    <string name="txt_seleccionado">Archivo TXT seleccionado</string>
+    <string name="extension_enc">Selecciona un archivo con extensión .png.enc</string>
+
+    <!-- César -->
+    <string name="titulo_cesar">Descifrado César</string>
+    <string name="archivo_texto">ARCHIVO DE TEXTO</string>
+    <string name="importar_txt">Importar .txt</string>
+    <string name="desplazamiento">DESPLAZAMIENTO (1–25)</string>
+    <string name="desplazamiento_hint">1</string>
+    <string name="mensaje_recuperado">MENSAJE RECUPERADO</string>
+    <string name="mensaje_hint">El mensaje descifrado aparecerá aquí</string>
+    <string name="selecciona_txt">Selecciona primero un archivo .txt</string>
+    <string name="desplazamiento_rango">Introduce un desplazamiento entre 1 y 25</string>
+    <string name="error_leer_archivo">Error al leer el archivo: %1$s</string>
+
+    <!-- Errores de descifrado (DescifrarAes) -->
+    <string name="archivo_grande">Archivo demasiado grande</string>
+    <string name="archivo_grande_detalle">El máximo es %1$s y este archivo pesa %2$s.</string>
+    <string name="archivo_no_valido">Archivo no válido</string>
+    <string name="contenedor_incompleto">El contenedor está incompleto: le falta la cabecera o la etiqueta.</string>
+    <string name="error_al_leer">Error al leer</string>
+    <string name="no_abrir_cifrado">No se pudo abrir el archivo cifrado.</string>
+    <string name="archivo_corto">El archivo es demasiado corto para ser R2AE.</string>
+    <string name="contenedor_truncado">El contenedor está truncado: falta la etiqueta GCM.</string>
+    <string name="contrasena_incorrecta">Contraseña incorrecta</string>
+    <string name="contrasena_incorrecta_detalle">La contraseña no es válida o el archivo ha sido alterado. No se ha guardado ningún resultado.</string>
+    <string name="sin_almacenamiento">No hay almacenamiento</string>
+    <string name="sin_espacio">El dispositivo se quedó sin espacio libre.</string>
+    <string name="error_al_descifrar">Error al descifrar</string>
+    <string name="no_escribir_archivo">No se pudo escribir el archivo.</string>
+    <string name="no_r2ae">El archivo no es un contenedor R2AE.</string>
+    <string name="version_no_compatible">Versión R2AE no compatible: %1$d.</string>
+    <string name="iteraciones_incorrectas">El contenedor no usa %1$d iteraciones PBKDF2.</string>
+    <string name="espacio_insuficiente">Se necesitan %1$s y solo quedan %2$s libres.</string>
+    <string name="carpeta_temporal">No se pudo crear la carpeta temporal para el resultado.</string>
+    <!-- Acerca de y ayuda -->
+    <string name="acerca_de">Acerca de</string>
+    <string name="acerca_de_texto">Herramientas para descifrar imágenes cifradas con AES-256-GCM (.png.enc) y textos con el cifrado César (.txt).\n\nTodo el proceso se hace en el propio dispositivo y ningún resultado se guarda: la imagen temporal se borra al salir de la pantalla.</string>
+    <string name="ayuda">Ayuda</string>
+    <string name="ayuda_simbolo" translatable="false">?</string>
+    <string name="ayuda_aes_titulo">Cómo descifrar una imagen</string>
+    <string name="ayuda_aes_texto">1. Pulsa «Importar archivo .png.enc» y elige el archivo cifrado.\n2. Escribe la contraseña de 16 caracteres (A-Z, a-z o 0-9) con la que se cifró.\n3. Pulsa «Descifrar» y espera a que termine la barra de progreso.\n4. La imagen aparecerá en la vista previa. Solo se muestra en pantalla: no se guarda y se borra al salir.</string>
+    <string name="ayuda_cesar_titulo">Cómo descifrar un texto</string>
+    <string name="ayuda_cesar_texto">1. Pulsa «Importar .txt» y elige el archivo de texto cifrado.\n2. Escribe el desplazamiento que se usó al cifrar, entre 1 y 25.\n3. Pulsa «Descifrar»: el mensaje aparecerá a la derecha.\n\nSi el texto no se entiende, prueba con otro desplazamiento.</string>
 </resources>

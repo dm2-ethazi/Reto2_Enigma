@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- César en horizontal: formulario compacto a la izquierda, mensaje a la derecha. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -35,7 +36,7 @@
                 android:layout_height="@dimen/alto_boton_volver"
                 android:background="@drawable/boton_pergamino"
                 android:backgroundTint="@null"
-                android:contentDescription="Volver"
+                android:contentDescription="@string/volver"
                 android:fontFamily="serif"
                 android:gravity="center"
                 android:minWidth="0dp"
@@ -50,16 +51,44 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <androidx.appcompat.widget.AppCompatTextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:fontFamily="serif"
                 android:letterSpacing="0.02"
-                android:text="Descifrado César"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/titulo_cesar"
                 android:textColor="@color/pergamino_tinta"
                 android:textSize="@dimen/texto_titulo_pantalla"
+                android:textStyle="bold"
+                app:autoSizeMaxTextSize="@dimen/texto_titulo_pantalla"
+                app:autoSizeMinTextSize="16sp"
+                app:autoSizeStepGranularity="1sp"
+                app:autoSizeTextType="uniform" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnAyuda"
+                android:layout_width="@dimen/alto_boton_volver"
+                android:layout_height="@dimen/alto_boton_volver"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/boton_ayuda"
+                android:backgroundTint="@null"
+                android:contentDescription="@string/ayuda"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:minWidth="0dp"
+                android:paddingStart="0dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:stateListAnimator="@null"
+                android:text="@string/ayuda_simbolo"
+                android:textColor="@color/tinta_azul"
+                android:textSize="19sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -95,7 +124,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="serif"
                         android:letterSpacing="0.14"
-                        android:text="ARCHIVO DE TEXTO"
+                        android:text="@string/archivo_texto"
                         android:textColor="@color/tinta_ocre"
                         android:textSize="@dimen/texto_etiqueta"
                         android:textStyle="bold" />
@@ -114,7 +143,7 @@
                         android:paddingEnd="16dp"
                         android:paddingBottom="11dp"
                         android:stateListAnimator="@null"
-                        android:text="Importar .txt"
+                        android:text="@string/importar_txt"
                         android:textAllCaps="false"
                         android:textColor="@color/tinta_azul"
                         android:textSize="@dimen/texto_boton_secundario"
@@ -133,7 +162,7 @@
                         android:fontFamily="serif"
                         android:labelFor="@id/etDesplazamiento"
                         android:letterSpacing="0.14"
-                        android:text="DESPLAZAMIENTO (1–25)"
+                        android:text="@string/desplazamiento"
                         android:textColor="@color/tinta_ocre"
                         android:textSize="@dimen/texto_etiqueta"
                         android:textStyle="bold" />
@@ -154,13 +183,12 @@
                             android:background="@drawable/enigma_borde"
                             android:backgroundTint="@null"
                             android:fontFamily="serif"
-                            android:hint="1"
+                            android:hint="@string/desplazamiento_hint"
                             android:importantForAutofill="no"
                             android:maxLength="2"
                             android:minHeight="@dimen/alto_campo"
                             android:paddingStart="16dp"
                             android:paddingEnd="16dp"
-                            android:text="1"
                             android:textColor="@color/pergamino_tinta"
                             android:textColorHint="@color/pergamino_tinta_suave"
                             android:textSize="@dimen/texto_mensaje" />
@@ -184,7 +212,7 @@
                             android:paddingEnd="16dp"
                             android:paddingBottom="11dp"
                             android:stateListAnimator="@null"
-                            android:text="Descifrar"
+                            android:text="@string/descifrar"
                             android:textAllCaps="false"
                             android:textColor="@color/tinta_verde"
                             android:textSize="@dimen/texto_boton"
@@ -209,7 +237,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="serif"
                     android:letterSpacing="0.14"
-                    android:text="MENSAJE RECUPERADO"
+                    android:text="@string/mensaje_recuperado"
                     android:textColor="@color/tinta_magenta"
                     android:textSize="@dimen/texto_etiqueta"
                     android:textStyle="bold" />
@@ -235,7 +263,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="serif"
                         android:gravity="top|start"
-                        android:hint="El mensaje descifrado aparecerá aquí"
+                        android:hint="@string/mensaje_hint"
                         android:paddingStart="14dp"
                         android:paddingTop="8dp"
                         android:paddingEnd="8dp"

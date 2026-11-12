@@ -18,11 +18,11 @@
 
     <dimen name="alto_imagen">150dp</dimen>
     <dimen name="alto_mensaje">150dp</dimen>
-    <dimen name="alto_boton">46dp</dimen>
-    <dimen name="alto_boton_secundario">46dp</dimen>
-    <dimen name="alto_campo">46dp</dimen>
-    <dimen name="ancho_boton_volver">46dp</dimen>
-    <dimen name="alto_boton_volver">38dp</dimen>
+    <dimen name="alto_boton">48dp</dimen>
+    <dimen name="alto_boton_secundario">48dp</dimen>
+    <dimen name="alto_campo">48dp</dimen>
+    <dimen name="ancho_boton_volver">48dp</dimen>
+    <dimen name="alto_boton_volver">48dp</dimen>
     <dimen name="espacio_seccion">14dp</dimen>
     <dimen name="espacio_linea">12dp</dimen>
     <dimen name="ancho_minimo_contenido">420dp</dimen>

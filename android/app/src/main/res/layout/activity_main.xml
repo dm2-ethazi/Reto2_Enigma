@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Inicio: un pergamino sobre la mesa, con el título y los dos accesos. -->
+<!-- Inicio: un pergamino sobre la mesa, con el título, los dos accesos y el idioma. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -29,7 +29,7 @@
             android:fontFamily="serif"
             android:gravity="center"
             android:letterSpacing="0.04"
-            android:text="CriptoApp"
+            android:text="@string/titulo_app"
             android:textColor="@color/pergamino_tinta"
             android:textSize="@dimen/texto_titulo_app"
             android:textStyle="bold" />
@@ -41,7 +41,7 @@
             android:fontFamily="serif"
             android:gravity="center"
             android:letterSpacing="0.06"
-            android:text="Herramientas de descifrado"
+            android:text="@string/subtitulo_app"
             android:textColor="@color/pergamino_tinta_suave"
             android:textSize="@dimen/texto_subtitulo_app"
             android:textStyle="italic" />
@@ -67,7 +67,7 @@
             android:paddingEnd="22dp"
             android:paddingBottom="15dp"
             android:stateListAnimator="@null"
-            android:text="AES · Imágenes"
+            android:text="@string/accion_aes"
             android:textAllCaps="false"
             android:textColor="@color/tinta_azul"
             android:textSize="@dimen/texto_boton"
@@ -88,10 +88,84 @@
             android:paddingEnd="22dp"
             android:paddingBottom="15dp"
             android:stateListAnimator="@null"
-            android:text="César · Texto"
+            android:text="@string/accion_cesar"
             android:textAllCaps="false"
             android:textColor="@color/tinta_magenta"
             android:textSize="@dimen/texto_boton"
+            android:textStyle="bold" />
+
+        <!-- Idioma de la app -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="serif"
+                android:letterSpacing="0.14"
+                android:text="@string/idioma"
+                android:textAllCaps="true"
+                android:textColor="@color/tinta_ocre"
+                android:textSize="@dimen/texto_etiqueta"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:layout_width="168dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/enigma_borde"
+                android:padding="2dp">
+
+                <androidx.appcompat.widget.AppCompatSpinner
+                    android:id="@+id/spIdioma"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@null"
+                    android:contentDescription="@string/idioma"
+                    android:dropDownWidth="180dp"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="32dp"
+                    android:popupBackground="@color/pergamino_alto"
+                    android:spinnerMode="dropdown" />
+
+                <ImageView
+                    android:id="@+id/tvIdiomaFlecha"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="5dp"
+                    android:background="@null"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:importantForAccessibility="no"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_flecha_abajo" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnAcercaDe"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/boton_pergamino"
+            android:backgroundTint="@null"
+            android:fontFamily="serif"
+            android:minHeight="@dimen/alto_boton_secundario"
+            android:minWidth="0dp"
+            android:paddingStart="22dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="22dp"
+            android:paddingBottom="11dp"
+            android:stateListAnimator="@null"
+            android:text="@string/acerca_de"
+            android:textAllCaps="false"
+            android:textColor="@color/tinta_azul"
+            android:textSize="@dimen/texto_boton_secundario"
             android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>

@@ -3,6 +3,8 @@ package com.dm2.enigma.Descifradores
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.annotation.StringRes
+import com.dm2.enigma.R
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -32,8 +34,15 @@ import javax.crypto.spec.SecretKeySpec
  */
 class DescifrarAes {
 
-    /** Error de descifrado; [titulo] es el encabezado que muestra la interfaz. */
-    class ErrorDescifradoException(val titulo: String, mensaje: String) : Exception(mensaje)
+    /**
+     * Error de descifrado. Los textos son recursos para que la interfaz los
+     * muestre en el idioma elegido; [argumentos] rellena el mensaje.
+     */
+    class ErrorDescifradoException(
+        @StringRes val titulo: Int,
+        @StringRes val mensaje: Int,
+        val argumentos: Array<out Any> = emptyArray<Any>()
+    ) : Exception()
 
     /** Descifra el `.enc` de [origen] en un temporal de la caché. [alProgresar]: 0..100. */
     fun descifrarArchivo(
@@ -47,14 +56,15 @@ class DescifrarAes {
         val tamano = consultar(context, origen, OpenableColumns.SIZE)?.toLongOrNull() ?: -1L
         if (tamano > TAMANO_MAXIMO) {
             throw ErrorDescifradoException(
-                "Archivo demasiado grande",
-                "El máximo es ${formatearBytes(TAMANO_MAXIMO)} y este archivo pesa ${formatearBytes(tamano)}."
+                R.string.archivo_grande,
+                R.string.archivo_grande_detalle,
+                arrayOf(formatearBytes(TAMANO_MAXIMO), formatearBytes(tamano))
             )
         }
         if (tamano in 1 until SOBRECARGA) {
             throw ErrorDescifradoException(
-                "Archivo no válido",
-                "El contenedor está incompleto: le falta la cabecera o la etiqueta."
+                R.string.archivo_no_valido,
+                R.string.contenedor_incompleto
             )
         }
 
@@ -68,7 +78,7 @@ class DescifrarAes {
             context.contentResolver.openInputStream(origen)
         } catch (e: Exception) {
             null
-        } ?: throw ErrorDescifradoException("Error al leer", "No se pudo abrir el archivo cifrado.")
+        } ?: throw ErrorDescifradoException(R.string.error_al_leer, R.string.no_abrir_cifrado)
 
         val escritos = try {
             entrada.use {
@@ -93,7 +103,7 @@ class DescifrarAes {
 
         val cabecera = ByteArray(TAMANO_CABECERA)
         if (!leerExacto(contenedor, cabecera)) {
-            throw ErrorDescifradoException("Archivo no válido", "El archivo es demasiado corto para ser R2AE.")
+            throw ErrorDescifradoException(R.string.archivo_no_valido, R.string.archivo_corto)
         }
         validarCabecera(cabecera)
 
@@ -126,8 +136,8 @@ class DescifrarAes {
                     val cifrado = if (fin) enBuffer - TAMANO_ETIQUETA else buffer.size - TAMANO_ETIQUETA
                     if (cifrado < 0) {
                         throw ErrorDescifradoException(
-                            "Archivo no válido",
-                            "El contenedor está truncado: falta la etiqueta GCM."
+                            R.string.archivo_no_valido,
+                            R.string.contenedor_truncado
                         )
                     }
 
@@ -153,38 +163,44 @@ class DescifrarAes {
             return escritos
         } catch (e: AEADBadTagException) {
             throw ErrorDescifradoException(
-                "Contraseña incorrecta",
-                "La contraseña no es válida o el archivo ha sido alterado. No se ha guardado ningún resultado."
+                R.string.contrasena_incorrecta,
+                R.string.contrasena_incorrecta_detalle
             )
         } catch (e: IOException) {
             if (esFaltaDeEspacio(e)) {
-                throw ErrorDescifradoException("No hay almacenamiento", "El dispositivo se quedó sin espacio libre.")
+                throw ErrorDescifradoException(R.string.sin_almacenamiento, R.string.sin_espacio)
             }
-            throw ErrorDescifradoException("Error al descifrar", e.message ?: "No se pudo escribir el archivo.")
+            throw ErrorDescifradoException(R.string.error_al_descifrar, R.string.no_escribir_archivo)
         } finally {
             if (!publicado) temporal.delete()
         }
     }
 
+    /** Comprueba el magic «R2AE», la versión y las iteraciones antes de derivar la clave. */
     private fun validarCabecera(cabecera: ByteArray) {
-        fun rechazar(motivo: String): Nothing =
-            throw ErrorDescifradoException("Archivo no válido", motivo)
+        fun rechazar(@StringRes motivo: Int, vararg argumentos: Any): Nothing =
+            throw ErrorDescifradoException(
+                R.string.archivo_no_valido,
+                motivo,
+                arrayOf(*argumentos)
+            )
 
         if (String(cabecera, 0, 4, Charsets.US_ASCII) != "R2AE") {
-            rechazar("El archivo no es un contenedor R2AE.")
+            rechazar(R.string.no_r2ae)
         }
         val version = cabecera[4].toInt() and 0xFF
-        if (version != VERSION) rechazar("Versión R2AE no compatible: $version.")
+        if (version != VERSION) rechazar(R.string.version_no_compatible, version)
         if (ByteBuffer.wrap(cabecera).getInt(5) != ITERACIONES) {
-            rechazar("El contenedor no usa $ITERACIONES iteraciones PBKDF2.")
+            rechazar(R.string.iteraciones_incorrectas, ITERACIONES)
         }
     }
 
+    /** Rechaza contraseñas que no sean 16 caracteres alfanuméricos. */
     private fun comprobarContrasena(contrasena: String) {
         if (!esContrasenaValida(contrasena)) {
             throw ErrorDescifradoException(
-                "Contraseña no válida",
-                "La contraseña debe tener $TAMANO_CONTRASENA caracteres A-Z, a-z o 0-9."
+                R.string.contrasena_no_valida,
+                R.string.contrasena_formato
             )
         }
     }
@@ -212,6 +228,7 @@ class DescifrarAes {
         /** Mismo formato que `validate_password` en Python. */
         fun esContrasenaValida(contrasena: String) = PATRON_CONTRASENA.matches(contrasena)
 
+        /** Tamaño legible en B, KiB, MiB o GiB. */
         fun formatearBytes(bytes: Long): String {
             if (bytes < 1024) return "$bytes B"
             val unidades = arrayOf("KiB", "MiB", "GiB")
@@ -224,6 +241,7 @@ class DescifrarAes {
             return String.format(Locale.US, "%.1f %s", valor, unidades[indice])
         }
 
+        /** Clave AES-256 con PBKDF2-HMAC-SHA256 (200 000 iteraciones) y la sal de la cabecera. */
         private fun derivarClave(contrasena: String, sal: ByteArray): SecretKeySpec {
             val especificacion = PBEKeySpec(contrasena.toCharArray(), sal, ITERACIONES, 256)
             try {
@@ -235,6 +253,7 @@ class DescifrarAes {
             }
         }
 
+        /** Llena [destino] desde [entrada]; false si el flujo se acaba antes. */
         private fun leerExacto(entrada: InputStream, destino: ByteArray): Boolean {
             var leidos = 0
             while (leidos < destino.size) {
@@ -245,6 +264,7 @@ class DescifrarAes {
             return true
         }
 
+        /** Renombra el `.part` al destino final; si el renombrado falla, copia y borra. */
         private fun publicar(temporal: File, destino: File) {
             destino.delete()
             if (!temporal.renameTo(destino)) {
@@ -253,11 +273,13 @@ class DescifrarAes {
             }
         }
 
+        /** Detecta el disco lleno (ENOSPC) en el mensaje de la excepción. */
         private fun esFaltaDeEspacio(error: IOException): Boolean {
             val texto = error.message?.lowercase(Locale.ROOT) ?: return false
             return "enospc" in texto || "no space" in texto
         }
 
+        /** Comprueba que queda espacio libre suficiente antes de escribir el temporal. */
         private fun comprobarEspacio(carpeta: File, necesarios: Long) {
             if (necesarios <= 0) return
             val libres = try {
@@ -267,8 +289,9 @@ class DescifrarAes {
             }
             if (libres in 1 until necesarios) {
                 throw ErrorDescifradoException(
-                    "No hay almacenamiento",
-                    "Se necesitan ${formatearBytes(necesarios)} y solo quedan ${formatearBytes(libres)} libres."
+                    R.string.sin_almacenamiento,
+                    R.string.espacio_insuficiente,
+                    arrayOf(formatearBytes(necesarios), formatearBytes(libres))
                 )
             }
         }
@@ -278,8 +301,8 @@ class DescifrarAes {
             val carpeta = File(context.cacheDir, CARPETA_TEMPORAL)
             if (!carpeta.isDirectory && !carpeta.mkdirs()) {
                 throw ErrorDescifradoException(
-                    "No hay almacenamiento",
-                    "No se pudo crear la carpeta temporal para el resultado."
+                    R.string.sin_almacenamiento,
+                    R.string.carpeta_temporal
                 )
             }
             return carpeta
@@ -294,6 +317,7 @@ class DescifrarAes {
             }
         }
 
+        /** Lee una columna del proveedor de documentos (tamaño, nombre…); null si no puede. */
         private fun consultar(context: Context, uri: Uri, columna: String): String? = try {
             context.contentResolver.query(uri, arrayOf(columna), null, null, null)?.use { cursor ->
                 val indice = if (cursor.moveToFirst()) cursor.getColumnIndex(columna) else -1
