@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -14,6 +15,8 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -87,12 +90,60 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 assertFalse(visibilityToggle.isSelected());
                 assertEquals("", visibilityToggle.getText());
                 assertEquals("", decryptVisibilityToggle.getText());
-                assertFalse(showDecryptIcon.isVisible());
-                assertTrue(hideDecryptIcon.isVisible());
+                assertTrue(showDecryptIcon.isVisible());
+                assertFalse(hideDecryptIcon.isVisible());
                 assertEquals("", field(controller, "decryptSourcePathField", TextField.class).getText());
                 assertEquals("", field(controller, "textPreviewArea", TextArea.class).getText());
                 assertTrue(visibilityToggle.isDisable());
                 assertEquals("Selección limpiada.", field(controller, "statusLabel", Label.class).getText());
+        }
+
+        @Test
+        void clearsEachOptionsViewWhenLeavingIt() throws Exception {
+                MainController controller = loadController();
+
+                runOnFxThread(() -> {
+                        invoke(controller, "showEncryptionView");
+                        field(controller, "sourcePathField", TextField.class).setText("source.png");
+                        field(controller, "destinationDirectoryField", TextField.class).setText("output");
+                        field(controller, "generatedPasswordField", PasswordField.class)
+                                        .setText("Generated123456");
+                        field(controller, "visibleGeneratedPasswordField", TextField.class)
+                                        .setText("Generated123456");
+                        field(controller, "showGeneratedPasswordToggle", ToggleButton.class).setSelected(true);
+                        invoke(controller, "showMainMenu");
+
+                        assertEquals("", field(controller, "sourcePathField", TextField.class).getText());
+                        assertEquals("", field(controller, "destinationDirectoryField", TextField.class).getText());
+                        assertEquals("", field(controller, "generatedPasswordField", PasswordField.class).getText());
+                        assertEquals("", field(controller, "visibleGeneratedPasswordField", TextField.class).getText());
+                        assertFalse(field(controller, "showGeneratedPasswordToggle", ToggleButton.class).isSelected());
+
+                        invoke(controller, "showDecryptionView");
+                        field(controller, "decryptSourcePathField", TextField.class).setText("source.png.enc");
+                        field(controller, "decryptDestinationDirectoryField", TextField.class).setText("output");
+                        field(controller, "referencePathField", TextField.class).setText("source.png");
+                        field(controller, "decryptPasswordField", PasswordField.class).setText("Decrypt123456");
+                        field(controller, "showPasswordToggle", ToggleButton.class).setSelected(true);
+                        field(controller, "verifyCheckbox", CheckBox.class).setSelected(true);
+                        field(controller, "textPreviewArea", TextArea.class).setText("preview text");
+                        field(controller, "imagePreview", ImageView.class).setImage(new WritableImage(1, 1));
+                        field(controller, "previewMessageLabel", Label.class).setText("Preview loaded");
+                        invoke(controller, "showMainMenu");
+
+                        assertEquals("", field(controller, "decryptSourcePathField", TextField.class).getText());
+                        assertEquals("", field(controller, "decryptDestinationDirectoryField", TextField.class).getText());
+                        assertEquals("", field(controller, "referencePathField", TextField.class).getText());
+                        assertEquals("", field(controller, "decryptPasswordField", PasswordField.class).getText());
+                        assertFalse(field(controller, "showPasswordToggle", ToggleButton.class).isSelected());
+                        assertFalse(field(controller, "verifyCheckbox", CheckBox.class).isSelected());
+                        assertEquals("", field(controller, "textPreviewArea", TextArea.class).getText());
+                        assertNull(field(controller, "imagePreview", ImageView.class).getImage());
+                        assertEquals("El contenido se mostrará aquí después de pulsar Descifrar archivo.",
+                                        field(controller, "previewMessageLabel", Label.class).getText());
+                        assertEquals("Listo para trabajar.", field(controller, "statusLabel", Label.class).getText());
+                        return null;
+                });
         }
 
         @Test
@@ -536,6 +587,10 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         Stage stage = new Stage();
                         new MainApplication().start(stage);
                         assertEquals("Gestor Enigma AES", stage.getTitle());
+                        assertEquals(1, stage.getIcons().size());
+                        assertFalse(stage.getIcons().get(0).isError());
+                        assertEquals(stage.getIcons().get(0).getWidth(),
+                                        stage.getIcons().get(0).getHeight());
                         assertNotNull(stage.getScene());
                         assertEquals(1, stage.getScene().getStylesheets().size());
                         assertEquals(6, stage.getScene().getAccelerators().size());
@@ -543,13 +598,13 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
                         assertEquals(Math.min(1000.0, screenBounds.getWidth() * 0.90),
                                         stage.getWidth(), 2.0);
-                        assertEquals(Math.min(720.0, screenBounds.getHeight() * 0.85),
+                        assertEquals(Math.min(1200.0, screenBounds.getHeight() * 0.95),
                                         stage.getHeight(), 2.0);
                         assertFalse(stage.isMaximized());
                         assertTrue(stage.getWidth() > 0);
                         assertTrue(stage.getHeight() > 0);
                         assertTrue(stage.getWidth() >= Math.min(800.0, screenBounds.getWidth() * 0.90));
-                        assertTrue(stage.getHeight() >= Math.min(600.0, screenBounds.getHeight() * 0.85));
+                        assertTrue(stage.getHeight() >= Math.min(600.0, screenBounds.getHeight() * 0.95));
                         assertTrue(stage.getWidth() <= screenBounds.getWidth());
                         assertTrue(stage.getHeight() <= screenBounds.getHeight());
                         assertTrue(stage.getX() >= screenBounds.getMinX());
@@ -564,8 +619,18 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                         .lookup("#menuDecryptionTitle");
                         assertNotNull(encryptionTitle);
                         assertNotNull(decryptionTitle);
-                        assertEquals(javafx.scene.paint.Color.web("#5372F6"), encryptionTitle.getTextFill());
-                        assertEquals(javafx.scene.paint.Color.web("#D63378"), decryptionTitle.getTextFill());
+                        assertEquals(javafx.scene.paint.Color.web("#0003C9"), encryptionTitle.getTextFill());
+                        assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptionTitle.getTextFill());
+                        Button encryptButton = (Button) stage.getScene().getRoot().lookup("#encryptButton");
+                        Button encryptionFileButton = (Button) stage.getScene().getRoot()
+                                        .lookup("#chooseSourceButton");
+                        Button decryptButton = (Button) stage.getScene().getRoot().lookup("#decryptButton");
+                        Button decryptionFileButton = (Button) stage.getScene().getRoot()
+                                        .lookup("#chooseEncryptedFileButton");
+                        assertEquals(javafx.scene.paint.Color.web("#0003C9"), encryptButton.getTextFill());
+                        assertEquals(javafx.scene.paint.Color.web("#0003C9"), encryptionFileButton.getTextFill());
+                        assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptButton.getTextFill());
+                        assertEquals(javafx.scene.paint.Color.web("#C90068"), decryptionFileButton.getTextFill());
                         stage.close();
                         return null;
                 });

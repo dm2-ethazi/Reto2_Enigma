@@ -32,10 +32,10 @@
             fx:controller="com.enigma.javafx.controller.MainController">
     <top>
         <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="app-header">
-            <ImageView accessibleText="Escudo de Enigma Hogwarts" fitHeight="68.0" fitWidth="68.0"
+            <ImageView accessibleText="Logo de Hogwarts Enigma" fitHeight="78.0" fitWidth="78.0"
                        preserveRatio="true" smooth="true" styleClass="app-crest">
                 <image>
-                    <Image url="@enigma-hogwarts-crest.png"/>
+                    <Image url="@Hogwarts-Logo.png"/>
                 </image>
             </ImageView>
             <VBox spacing="4.0">
@@ -71,7 +71,7 @@
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuEncryptionTitle"
-                                   style="-fx-text-fill: #5372F6;"
+                                   style="-fx-text-fill: #0003C9;"
                                    styleClass="menu-option-title menu-encryption-title" text="CIFRADO AES"
                                    textOverrun="CLIP"/>
                             <Label styleClass="menu-option-description" textOverrun="CLIP" wrapText="true"
@@ -85,7 +85,7 @@
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuDecryptionTitle"
-                                   style="-fx-text-fill: #D63378;"
+                                   style="-fx-text-fill: #C90068;"
                                    styleClass="menu-option-title menu-decryption-title" text="DESCIFRADO AES"
                                    textOverrun="CLIP"/>
                             <Label styleClass="menu-option-description" textOverrun="CLIP" wrapText="true"
@@ -270,7 +270,8 @@
                             </VBox>
                             <Separator/>
                             <HBox spacing="14.0">
-                                <VBox spacing="8.0" styleClass="preview-panel" HBox.hgrow="ALWAYS">
+                                <VBox fx:id="textPreviewPanel" spacing="8.0"
+                                      styleClass="preview-panel" HBox.hgrow="ALWAYS">
                                     <Label labelFor="$textPreviewArea" styleClass="field-label"
                                            text="Texto recuperado"/>
                                     <TextArea fx:id="textPreviewArea"
@@ -279,7 +280,8 @@
                                               promptText="El texto descifrado aparecerá aquí."
                                               wrapText="true"/>
                                 </VBox>
-                                <VBox spacing="8.0" styleClass="preview-panel" HBox.hgrow="ALWAYS">
+                                <VBox fx:id="imagePreviewPanel" spacing="8.0"
+                                      styleClass="preview-panel" HBox.hgrow="ALWAYS">
                                     <Label labelFor="$imagePreview" styleClass="field-label"
                                            text="Imagen recuperada"/>
                                     <StackPane minHeight="220.0" styleClass="image-preview">

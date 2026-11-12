@@ -1,5 +1,5 @@
 .root {
-    -fx-font-family: "Georgia", "Palatino Linotype", serif;
+    -fx-font-family: "Noto Sans", "Arial", "DejaVu Sans", sans-serif;
     -fx-font-size: 13px;
     -fx-base: #f4ecd8;
     -fx-background-color: #f4ecd8;
@@ -92,7 +92,7 @@
 }
 
 .menu-option-title {
-    -fx-font-family: "Georgia", "Palatino Linotype", serif;
+    -fx-font-family: "Noto Sans", "Arial", "DejaVu Sans", sans-serif;
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-overrun: clip;
@@ -157,11 +157,11 @@
 }
 
 .menu-encryption-title {
-    -fx-text-fill: #5372F6;
+    -fx-text-fill: #0003C9;
 }
 
 .menu-decryption-title {
-    -fx-text-fill: #D63378;
+    -fx-text-fill: #C90068;
 }
 
 .preview-title {
@@ -209,7 +209,7 @@
 .menu-option {
     -fx-background-color: #f4ecd8;
     -fx-text-fill: #5a452c;
-    -fx-font-family: "Georgia", "Palatino Linotype", serif;
+    -fx-font-family: "Noto Sans", "Arial", "DejaVu Sans", sans-serif;
     -fx-font-weight: bold;
     -fx-border-color: #8c6f47;
     -fx-border-radius: 6px;
@@ -220,7 +220,19 @@
 }
 
 .header-button {
-    -fx-text-fill: #D4AF37;
+    -fx-text-fill: #5a452c;
+}
+
+#encryptionView .primary-button,
+#encryptionView .secondary-button,
+#encryptionView .back-button {
+    -fx-text-fill: #0003C9;
+}
+
+#decryptionView .primary-button,
+#decryptionView .secondary-button,
+#decryptionView .back-button {
+    -fx-text-fill: #C90068;
 }
 
 .primary-button:hover,
@@ -307,12 +319,15 @@
 .status-dot {
     -fx-min-width: 12px;
     -fx-min-height: 12px;
-    -fx-background-color: #10B981;
+    -fx-background-color: #00C962;
     -fx-background-radius: 6px;
+    -fx-border-color: #00602E;
+    -fx-border-radius: 6px;
+    -fx-border-width: 2px;
 }
 
 .status-text {
-    -fx-text-fill: #10B981;
+    -fx-text-fill: #00602E;
     -fx-font-size: 11px;
 }
 
@@ -326,13 +341,13 @@
 }
 
 .progress-bar > .bar {
-    -fx-background-color: #10B981;
+    -fx-background-color: #00602E;
     -fx-background-radius: 4px;
     -fx-background-insets: 0;
 }
 
 .progress-indicator {
-    -fx-progress-color: #10B981;
+    -fx-progress-color: #00602E;
 }
 
 .check-box {
@@ -347,11 +362,11 @@
 }
 
 .check-box:selected .mark {
-    -fx-background-color: #ffffff;
+    -fx-background-color: #4b3825;
 }
 
 .check-box:selected .box {
-    -fx-background-color: #8c6f47;
+    -fx-background-color: #C9C600;
     -fx-border-color: #6d5030;
 }
 

@@ -60,6 +60,7 @@ class MainControllerEncryptionTest extends JavaFxTestSupport {
             field(controller, "destinationDirectoryField", TextField.class)
                     .setText(destination.toString());
             invoke(controller, "encryptFile");
+            assertControlsDisabled(controller, true);
             return null;
         });
         Object task = field(controller, "encryptionTask");

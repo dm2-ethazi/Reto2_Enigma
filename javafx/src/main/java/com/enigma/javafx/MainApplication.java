@@ -6,9 +6,12 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -19,10 +22,11 @@ import java.io.IOException;
  * una hoja CSS externa.</p>
  */
 public class MainApplication extends Application {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainApplication.class);
     private static final double PREFERRED_WINDOW_WIDTH = 1000.0;
-    private static final double PREFERRED_WINDOW_HEIGHT = 720.0;
+    private static final double MAX_WINDOW_HEIGHT = 1200.0;
     private static final double MAX_SCREEN_WIDTH_RATIO = 0.90;
-    private static final double MAX_SCREEN_HEIGHT_RATIO = 0.85;
+    private static final double MAX_SCREEN_HEIGHT_RATIO = 0.95;
     private static final Duration OPENING_FADE_DURATION = Duration.millis(220);
 
     /**
@@ -36,7 +40,13 @@ public class MainApplication extends Application {
         // FXMLLoader crea los nodos de la interfaz e instancia su controlador.
         FXMLLoader loader = new FXMLLoader(
                 MainApplication.class.getResource("/com/enigma/javafx/main-view.fxml"));
-        Scene scene = new Scene(loader.load());
+        Scene scene;
+        try {
+            scene = new Scene(loader.load());
+        } catch (IOException | RuntimeException failure) {
+            LOGGER.error("Failed to load the main application view", failure);
+            throw failure;
+        }
         MainController controller = loader.getController();
         controller.installKeyboardShortcuts(scene);
         // Los estilos se mantienen separados del diseño declarativo de la vista.
@@ -45,12 +55,14 @@ public class MainApplication extends Application {
 
         // Asocia la escena a la ventana y la muestra al usuario.
         stage.setTitle("Gestor Enigma AES");
+        stage.getIcons().add(new Image(MainApplication.class
+                .getResource("/com/enigma/javafx/Hogwarts-App-Icon.png").toExternalForm()));
         stage.setScene(scene);
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
         double windowWidth = Math.min(
                 PREFERRED_WINDOW_WIDTH, screenBounds.getWidth() * MAX_SCREEN_WIDTH_RATIO);
         double windowHeight = Math.min(
-                PREFERRED_WINDOW_HEIGHT, screenBounds.getHeight() * MAX_SCREEN_HEIGHT_RATIO);
+                MAX_WINDOW_HEIGHT, screenBounds.getHeight() * MAX_SCREEN_HEIGHT_RATIO);
         stage.setMaximized(false);
         stage.setWidth(windowWidth);
         stage.setHeight(windowHeight);
@@ -58,6 +70,7 @@ public class MainApplication extends Application {
         stage.setY(screenBounds.getMinY() + (screenBounds.getHeight() - windowHeight) / 2);
         scene.getRoot().setOpacity(0);
         stage.show();
+        LOGGER.info("Application window opened");
 
         FadeTransition openingFade = new FadeTransition(OPENING_FADE_DURATION, scene.getRoot());
         openingFade.setFromValue(0);

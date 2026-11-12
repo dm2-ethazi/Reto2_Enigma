@@ -8,6 +8,9 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.control.DialogPane;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.junit.jupiter.api.Test;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
@@ -16,10 +19,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MainControllerDecryptionTest extends JavaFxTestSupport {
+    @Test
+    void acceptsPngPreviewFilesUpTo850Mebibytes() {
+        long limit = 850L * 1024 * 1024;
+        assertTrue(MainController.isWithinPngPreviewLimit(limit - 1));
+        assertTrue(MainController.isWithinPngPreviewLimit(limit));
+        assertFalse(MainController.isWithinPngPreviewLimit(-1L));
+        assertFalse(MainController.isWithinPngPreviewLimit(limit + 1));
+    }
+
     @Test
     void decryptsSelectedContainerAndReportsOutputPath() throws Exception {
         MainController controller = loadController();
@@ -38,6 +52,7 @@ class MainControllerDecryptionTest extends JavaFxTestSupport {
             field(controller, "destinationDirectoryField", TextField.class).setText(destination.toString());
             field(controller, "decryptPasswordField", PasswordField.class).setText(encrypted.password());
             invoke(controller, "decryptFile");
+            assertControlsDisabled(controller, true);
             return null;
         });
 
@@ -56,6 +71,55 @@ class MainControllerDecryptionTest extends JavaFxTestSupport {
         assertEquals("Archivo descifrado: " + decryptedFile,
                 field(controller, "statusLabel", Label.class).getText());
         assertControlsDisabled(controller, false);
+    }
+
+    @Test
+    void showsComparisonNotificationOnlyWhenComparisonIsSelected() throws Exception {
+        Path directory = Files.createTempDirectory("enigma-comparison-notification");
+        Path source = Files.writeString(directory.resolve("source.txt"), "texto original");
+        Path encryptedDirectory = Files.createDirectory(directory.resolve("encrypted"));
+        FileService.EncryptionResult encrypted = new FileService().encrypt(source, encryptedDirectory);
+
+        MainController withoutComparison = loadController();
+        Path firstDestination = Files.createDirectory(directory.resolve("without-comparison"));
+        runOnFxThread(() -> {
+            field(withoutComparison, "decryptSourcePathField", TextField.class)
+                    .setText(encrypted.outputPath().toString());
+            field(withoutComparison, "decryptPasswordField", PasswordField.class)
+                    .setText(encrypted.password());
+            field(withoutComparison, "destinationDirectoryField", TextField.class)
+                    .setText(firstDestination.toString());
+            invoke(withoutComparison, "decryptFile");
+            return null;
+        });
+        awaitDecryptionAndPreview(withoutComparison);
+        assertNull(findComparisonAlert());
+
+        MainController withComparison = loadController();
+        Path secondDestination = Files.createDirectory(directory.resolve("with-comparison"));
+        runOnFxThread(() -> {
+            field(withComparison, "decryptSourcePathField", TextField.class)
+                    .setText(encrypted.outputPath().toString());
+            field(withComparison, "decryptPasswordField", PasswordField.class)
+                    .setText(encrypted.password());
+            field(withComparison, "destinationDirectoryField", TextField.class)
+                    .setText(secondDestination.toString());
+            field(withComparison, "referencePathField", TextField.class).setText(source.toString());
+            field(withComparison, "verifyCheckbox", javafx.scene.control.CheckBox.class)
+                    .setSelected(true);
+            invoke(withComparison, "decryptFile");
+            return null;
+        });
+        awaitDecryptionAndPreview(withComparison);
+
+        Stage alert = findComparisonAlert();
+        assertNotNull(alert, "La comparación seleccionada debe mostrar una notificación.");
+        assertTrue(runOnFxThread(() -> ((DialogPane) alert.getScene().getRoot())
+                .getHeaderText().contains("coincide")));
+        runOnFxThread(() -> {
+            alert.close();
+            return null;
+        });
     }
 
     @Test
@@ -92,6 +156,11 @@ class MainControllerDecryptionTest extends JavaFxTestSupport {
 
         assertEquals(Files.readString(source),
                 field(controller, "textPreviewArea", TextArea.class).getText());
+        assertTrue(field(controller, "textPreviewPanel", javafx.scene.Node.class).isVisible());
+        assertTrue(field(controller, "imagePreviewPanel", javafx.scene.Node.class).isVisible());
+        assertFalse(field(controller, "textPreviewPanel", javafx.scene.Node.class).isDisable());
+        assertTrue(field(controller, "imagePreviewPanel", javafx.scene.Node.class).isDisable());
+        assertFalse(field(controller, "textPreviewArea", TextArea.class).isEditable());
         assertTrue(Files.exists(destination.resolve(source.getFileName())));
         assertTrue(field(controller, "previewMessageLabel", Label.class).getText()
                 .contains("Contenido completo"));
@@ -152,6 +221,10 @@ class MainControllerDecryptionTest extends JavaFxTestSupport {
         assertNotNull(field(controller, "imagePreview", ImageView.class).getImage(),
                 field(controller, "previewMessageLabel", Label.class).getText());
         assertEquals("", field(controller, "textPreviewArea", TextArea.class).getText());
+        assertTrue(field(controller, "textPreviewPanel", javafx.scene.Node.class).isVisible());
+        assertTrue(field(controller, "imagePreviewPanel", javafx.scene.Node.class).isVisible());
+        assertTrue(field(controller, "textPreviewPanel", javafx.scene.Node.class).isDisable());
+        assertFalse(field(controller, "imagePreviewPanel", javafx.scene.Node.class).isDisable());
         assertControlsDisabled(controller, false);
     }
 
@@ -187,5 +260,25 @@ class MainControllerDecryptionTest extends JavaFxTestSupport {
             Thread.sleep(25);
         }
         throw new AssertionError("La vista previa no inició después de descifrar el archivo.");
+    }
+
+    private static void awaitDecryptionAndPreview(MainController controller) throws Exception {
+        Object decryptionTask = field(controller, "decryptionTask");
+        decryptionTask.getClass().getMethod("get", long.class, TimeUnit.class)
+                .invoke(decryptionTask, FX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        Object previewTask = awaitPreviewTask(controller);
+        previewTask.getClass().getMethod("get", long.class, TimeUnit.class)
+                .invoke(previewTask, FX_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        runOnFxThread(() -> null);
+    }
+
+    private static Stage findComparisonAlert() throws Exception {
+        return runOnFxThread(() -> Window.getWindows().stream()
+                .filter(Window::isShowing)
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .filter(stage -> "Resultado de la comparación".equals(stage.getTitle()))
+                .findFirst()
+                .orElse(null));
     }
 }

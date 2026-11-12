@@ -7,12 +7,11 @@ Java y explica con fragmentos seleccionados las partes que requieren más
 contexto. No sustituye a los documentos generales del Reto 2 ni al contrato
 técnico.
 
-> **Estado funcional:** la selección de ficheros y carpetas, el cifrado AES
-> (R2AE v1), la generación de contraseña, el progreso textual y la copia de la
-> contraseña están implementados. El descifrado, la comparación con un original
-> y la vista previa aparecen en la interfaz, pero todavía no están conectados a
-> una implementación. «Ayuda» y «Acerca de» también muestran un aviso de función
-> pendiente.
+> **Estado funcional:** el cifrado y descifrado AES (R2AE v1), la comparación
+> opcional con el original, la vista previa de texto/PNG, la navegación, la
+> generación segura de contraseñas y el registro local están implementados.
+> La vista previa PNG admite archivos de hasta 850 MiB; existe una prueba
+> optativa que cifra, descifra y carga un PNG válido en ese límite.
 
 ## Índice
 
@@ -29,6 +28,7 @@ técnico.
 6. [Clases de prueba](#clases-de-prueba)
 7. [Formato R2AE v1](#formato-r2ae-v1)
 8. [Compilar, ejecutar y probar](#compilar-ejecutar-y-probar)
+9. [Registro de errores](#registro-de-errores)
 
 ## Qué hace la aplicación
 
@@ -38,11 +38,10 @@ salida y cifrar el contenido. El archivo original se conserva y el resultado se
 guarda con la extensión `.enc`. La contraseña que se genera para ese cifrado se
 muestra inicialmente oculta y se puede revelar o copiar.
 
-El pliego del reto solicita que el cliente de escritorio pueda seleccionar un
-fichero de entrada y, cuando corresponda, una ubicación de salida. Ese flujo de
-selección está disponible en esta versión. La interfaz incluye además controles
-pensados para la futura recuperación de ficheros, pero no se debe confundir su
-presencia visual con una función terminada.
+El cliente procesa los archivos localmente. Conserva los originales, evita
+sobrescribir resultados existentes y publica archivos descifrados solo después
+de validar la autenticidad AES-GCM. La comparación con una copia original es
+opcional y se solicita en la pantalla de descifrado.
 
 ### Funciones disponibles y pendientes
 
@@ -51,16 +50,18 @@ presencia visual con una función terminada.
 | Seleccionar fichero de entrada con el diálogo del sistema | Implementada |
 | Soltar un único fichero sobre el campo de origen | Implementada |
 | Seleccionar carpeta de destino | Implementada |
-| Seleccionar un archivo original de referencia | El selector está implementado; la verificación aún no |
-| Limpiar rutas y contraseñas de la pantalla | Implementada; no borra archivos |
+| Seleccionar un archivo original de referencia | Implementada |
+| Limpiar las opciones al salir y volver a entrar | Implementada; no borra archivos |
 | Cifrar un fichero con AES-256-GCM | Implementada |
 | Generar y mostrar una contraseña segura de 16 caracteres | Implementada |
 | Mostrar u ocultar la contraseña generada | Implementada |
 | Copiar la contraseña al portapapeles | Implementada |
-| Descifrar contenedores `.enc` | Pendiente |
-| Comparar el resultado con un original | Pendiente |
-| Vista previa de texto o imagen recuperados | Pendiente |
-| Ayuda y ventana «Acerca de» | Pendientes; presentan un aviso informativo |
+| Descifrar contenedores `.enc` | Implementada con autenticación AES-GCM |
+| Comparar el resultado con un original | Implementada de forma opcional, byte a byte |
+| Vista previa de texto y PNG | Implementada; PNG hasta 850 MiB y dimensiones limitadas |
+| Ayuda y ventana «Acerca de» | Implementadas |
+| Informe y umbral JaCoCo | `mvn verify`; cobertura de líneas mínima del 80 % |
+| Fat JAR de Windows/Linux | Windows con Maven local; Linux con Maven en Docker/JDK 25 |
 
 ## Estructura del proyecto
 
@@ -76,14 +77,22 @@ javafx/
     │   │   └── service/
     │   │       ├── CryptoService.java
     │   │       └── FileService.java
-    │   └── resources/com/enigma/javafx/
-    │       ├── main-view.fxml
-    │       └── styles.css
+    │   └── resources/
+    │       ├── logback.xml
+    │       └── com/enigma/javafx/
+    │           ├── main-view.fxml
+    │           └── styles.css
     └── test/java/com/enigma/javafx/
-        ├── controller/MainControllerTest.java
+        ├── AccessibilityContrastTest.java
+        ├── LoggingConfigurationTest.java
+        ├── controller/
+        │   ├── MainControllerDecryptionTest.java
+        │   ├── MainControllerEncryptionTest.java
+        │   ├── MainControllerGeneralTest.java
+        │   └── LargePngPreviewValidationTest.java
         └── service/
-            ├── CryptoServiceTest.java
-            └── FileServiceTest.java
+            ├── CryptoService*Test.java
+            └── FileService*Test.java
 ```
 
 La responsabilidad está separada en capas:
@@ -97,6 +106,7 @@ La responsabilidad está separada en capas:
 5. `FileService` valida las rutas y administra los flujos y el archivo de
    salida.
 6. `CryptoService` genera la contraseña y realiza el cifrado criptográfico.
+7. SLF4J y Logback registran el inicio y los errores de ejecución.
 
 ## Recorrido de una operación de cifrado
 
@@ -148,8 +158,9 @@ Extiende `javafx.application.Application`; configura la ventana principal.
 1. Construye un `FXMLLoader` con el recurso `main-view.fxml`.
 2. Carga el árbol de controles y crea el controlador declarado en el FXML.
 3. Crea una `Scene` y añade `styles.css`.
-4. Asigna el título **Enigma**, coloca la escena en el `Stage` y muestra la
-   ventana.
+4. Asigna el título, calcula una ventana centrada con hasta el 90 % del ancho
+   y el 95 % de la altura útil de la pantalla (con un máximo de 1200 píxeles
+   de alto), coloca la escena en el `Stage` y la muestra.
 
 La función declara `throws IOException`: si falta el FXML o no se pueden leer
 los recursos, el error no se transforma en una ventana que parezca haber
@@ -548,21 +559,20 @@ vinculan controles con sus campos Java, y los atributos `onAction` asocian
 botones con funciones del controlador. Por ejemplo,
 `onAction="#chooseSourceFile"` llama a `chooseSourceFile()`.
 
-Algunos controles son preparatorios: la tarjeta de descifrado, la comparación
-con referencia, la vista previa, la barra y el indicador de progreso están en
-la vista, pero no todos están conectados a lógica funcional. En concreto, el
-progreso actual se comunica mediante el texto de estado; no se actualiza
-numéricamente la `ProgressBar` del FXML.
+El descifrado, la comprobación opcional con el original y la vista previa están
+conectados al controlador. Las rutas, contraseñas, opción de comparación y
+vista previa se limpian al salir de una pantalla de operación; los archivos
+guardados no se modifican. El progreso se informa en el estado de la ventana.
 
 ### `styles.css`
 
 **Archivo:** `src/main/resources/com/enigma/javafx/styles.css`
 
-Define colores, tipografía, tarjetas, campos, botones, barra de estado y
-variantes de tema oscuro. Las clases nombradas en FXML mediante `styleClass`
-seleccionan estas reglas. El selector `.drop-target:drag-over` y su variante
-oscura muestran el resaltado cuando el controlador activa el pseudoestado
-`drag-over`.
+Define el tema pergamino, la paleta tetrádica como acentos y una pila tipográfica
+Noto Sans con alternativas Arial/DejaVu Sans. Los colores de texto y superficies
+se comprueban con pruebas de contraste WCAG AA para los pares principales; los
+controles conservan un indicador de foco visible. Las etiquetas y los campos
+FXML incluyen asociaciones y nombres accesibles.
 
 CSS solo modifica la presentación: no implementa selección, cifrado ni
 descifrado.
@@ -570,91 +580,37 @@ descifrado.
 ### `pom.xml`
 
 Declara Maven como sistema de construcción, Java 25 como versión de compilación,
-JavaFX 25 para controles y FXML, y JUnit 5.12.1 para pruebas. Configura los
-plugins de compilación, ejecución JavaFX, pruebas y empaquetado con Shade para
-crear un JAR con dependencias.
+JavaFX 25 para controles y FXML, JUnit 5.12.1 para pruebas y JaCoCo 0.8.15 para
+medir cobertura. `mvn verify` genera `target/site/jacoco/index.html` y falla si
+la cobertura de líneas del código JavaFX queda por debajo del 80 %. Shade
+empaqueta las dependencias y activa los componentes nativos del sistema donde
+se ejecuta Maven.
 
 ## Clases de prueba
 
-Las pruebas están en `src/test/java`. Comprueban el comportamiento y las reglas
-de los servicios y del controlador; no añaden funciones a la aplicación.
+Las pruebas cubren cifrado/descifrado, errores, rutas, autenticidad, comparación
+con originales, vista previa, navegación y logging. La recuperación de archivos
+de 0 B, 1 B, 1 MiB y 20 MiB compara bytes exactos y SHA-256.
 
-### `CryptoServiceTest`
+`AccessibilityContrastTest` calcula los ratios de contraste de texto y foco
+para los pares principales del CSS. `LargePngPreviewValidationTest` contiene
+una prueba optativa de extremo a extremo para una imagen PNG válida de 850 MiB;
+por su uso de disco y memoria no se ejecuta en cada `mvn verify`.
 
-Prueba `CryptoService` con datos en memoria:
+Para repetir la prueba de 850 MiB en un equipo con al menos 4 GiB de memoria
+disponible y 3 GiB de espacio temporal:
 
-- `generatesSixteenCharacterAlphanumericPasswords`: longitud y alfabeto de la
-  contraseña.
-- `encryptsEmptyBinaryAndUtf8ContentIntoR2aeContainers`: cabecera, versión,
-  iteraciones y tamaño para contenido vacío, binario y UTF-8.
-- `usesFreshSaltAndNonceForEveryEncryption`: valores distintos de sal/nonce en
-  operaciones separadas.
-- `reportsProcessedBytesWhileEncrypting`: cantidad de bytes comunicada por el
-  callback.
-- `rejectsMissingStreamsCallbacksAndPasswords`: rechazo de argumentos
-  incompletos.
-- `encrypt(byte[] content)`: auxiliar privado que cifra bytes en memoria y
-  devuelve el contenedor para las aserciones.
+```powershell
+mvn "-Dtest=LargePngPreviewValidationTest" "-Denigma.large-png-test=true" "-DargLine=-Xmx4g" test
+```
 
-### `FileServiceTest`
+La prueba informa duración y pico de heap muestreado. Es una medición local,
+dependiente del hardware, no una garantía de rendimiento en todos los equipos.
 
-Utiliza una carpeta temporal JUnit aislada para probar el acceso al disco:
+### `LoggingConfigurationTest`
 
-- `encryptsRequiredFileSizesWithoutChangingTheOriginal`: tamaños de 0 bytes,
-  1 byte, 1 MiB y 20 MiB; verifica nombre, tamaño, contraseña y conservación
-  del hash del original.
-- `doesNotOverwriteAnExistingEncryptedFile`: comprueba que un segundo cifrado
-  no reemplaza el resultado y no deja temporales.
-- `rejectsMissingSourceOrDestination`: rutas que no existen.
-- `rejectsNullAndWrongTypePaths`: valores nulos y rutas de tipos incorrectos.
-- `removesTemporaryOutputWhenProgressCallbackFails`: garantiza la limpieza del
-  temporal al interrumpirse el callback.
-- `writePattern(Path file, int size)`: genera datos deterministas por bloques
-  para probar ficheros grandes.
-- `sha256(Path file)`: calcula SHA-256 leyendo el fichero en bloques, sin
-  cargarlo entero en memoria.
-
-### `MainControllerTest`
-
-Prueba el controlador y el arranque de la ventana en el hilo de JavaFX:
-
-- `startJavaFxToolkit`: inicia el toolkit una sola vez y permite que siga
-  disponible durante las pruebas.
-- `initializesPasswordVisibilityAndClearsAllInputFields`: verifica la
-  visibilidad inicial de la contraseña y que limpiar borre los campos.
-- `selectsSourceFileAndFindsExistingDirectoriesFromPathFields`: verifica la
-  carga de un origen y la búsqueda de carpetas válidas para los selectores.
-- `convertsOptionalPathsAndReportsMissingOwnerWindow`: prueba rutas vacías y
-  rutas seleccionadas, y el caso de un control sin ventana propietaria.
-- `enablesAndDisablesEncryptionControls`: comprueba el bloqueo y la
-  rehabilitación de los botones durante la tarea.
-- `encryptsSelectedFileAndDisplaysGeneratedPassword`: prueba el flujo
-  completo de cifrado desde el controlador.
-- `encryptsEmptyFileAndReportsSuccessfulCompletion`: comprueba el cifrado de
-  un archivo vacío y el tamaño esperado del contenedor.
-- `reportsEncryptionFailureAndPreservesAnExistingResult`: verifica el fallo
-  cuando el resultado ya existe y que no se altere el archivo previo.
-- `clearingPasswordCopyAttemptExplainsThatEncryptionIsNeeded`: comprueba el
-  mensaje al intentar copiar sin haber cifrado.
-- `copiesGeneratedPasswordToSystemClipboard`: valida la copia al portapapeles.
-- `configuresBothChooserTypesFromTheCurrentFileLocation`: comprueba la carpeta
-  inicial para selectores de archivo y de carpeta.
-- `displaysInformationalMessagesForUnimplementedActions`: cubre los avisos de
-  Ayuda, Acerca de y Descifrar.
-- `reportsInvalidPathsWithoutStartingEncryption`: verifica que una ruta mal
-  formada produce un aviso y no inicia la tarea.
-- `startsApplicationAndLoadsItsFxmlAndStylesheet`: inicia la aplicación y
-  verifica el título, la escena y la hoja de estilos.
-- `invokeWhileDismissingAlert`: auxiliar para cerrar alertas durante las
-  pruebas de forma programada.
-- `loadController`: carga el FXML con `FXMLLoader` y devuelve su controlador.
-- `assertControlsDisabled`: verifica el estado habilitado/deshabilitado de
-  los controles relevantes.
-- `runOnFxThread`: ejecuta una acción en el hilo de JavaFX y espera su
-  resultado mediante `CompletableFuture` con límite de tiempo.
-- `invoke` y `field`: auxiliares de reflexión para invocar funciones privadas y
-  consultar campos privados en pruebas. La reflexión se limita al código de
-  pruebas.
+Comprueba que Logback inicia el appender de archivo rotativo en la carpeta de
+logs del usuario y que el nivel raíz está configurado en `INFO`.
 
 ## Formato R2AE v1
 
@@ -675,7 +631,31 @@ se cifra como flujo; no se interpreta como texto, por lo que también se
 preservan los bytes de archivos binarios. La contraseña no se incluye en el
 contenedor: debe conservarse aparte.
 
-## Compilar, ejecutar y probar
+## Registro de errores
+
+La aplicación utiliza SLF4J como API de logging y Logback como implementación,
+configurados mediante `src/main/resources/logback.xml`. Los mensajes se envían
+a la consola y a un archivo para que puedan consultarse aunque la aplicación se
+ejecute como escritorio empaquetado.
+
+El archivo activo se guarda en la carpeta de usuario de Java:
+
+- Windows: `%USERPROFILE%\.gestor-enigma\logs\gestor-enigma.log`
+- Linux/macOS: `~/.gestor-enigma/logs/gestor-enigma.log`
+
+Logback rota el archivo cuando alcanza 1 MiB y también por fecha. Conserva los
+archivos comprimidos hasta 7 días, con un máximo total de 10 MiB.
+
+El arranque se registra como `INFO`; rutas no válidas como `WARN`; y los fallos
+de cifrado, descifrado y vista previa como `ERROR`, incluyendo la excepción
+técnica para facilitar el diagnóstico. Las excepciones no controladas también
+se envían al log. La interfaz sigue mostrando sus avisos habituales.
+
+No se registran contraseñas ni contenidos de archivos. Los detalles que aporta
+el sistema operativo en una excepción pueden incluir rutas locales; revisa el
+log antes de compartirlo.
+
+## Compilar, ejecutar, probar y empaquetar
 
 Se requiere el JDK 25 declarado por el proyecto y Maven instalado.
 
@@ -683,14 +663,27 @@ Desde esta carpeta (`javafx/`):
 
 ```powershell
 mvn test
+mvn verify
 mvn javafx:run
-mvn package
 ```
 
 - `mvn test`: compila y ejecuta las pruebas.
+- `mvn verify`: ejecuta las pruebas, genera el informe JaCoCo y exige cobertura
+  de líneas de al menos el 80 %.
 - `mvn javafx:run`: inicia la aplicación JavaFX.
-- `mvn package`: compila y empaqueta el JAR; el nombre final configurado es
-  `Enigma-GestorAES-Java25.jar`.
+- En Windows, `mvn package` genera
+  `target/Enigma-GestorAES-Java25-windows.jar`.
+- En Ubuntu/Debian, ejecuta `mvn package` en Linux para generar
+  `target/Enigma-GestorAES-Java25-linux.jar`. También puede compilarse desde la
+  raíz del repositorio con Docker:
+
+  ```powershell
+  docker run --rm -v "${PWD}:/workspace" -w /workspace/javafx `
+    maven:3.9-eclipse-temurin-25 mvn -B -DskipTests package
+  ```
+
+  Maven selecciona los binarios nativos según el sistema donde se ejecuta;
+  no se debe renombrar el JAR de Windows para presentarlo como paquete Linux.
 
 Si Maven informa `release version 25 not supported`, el JDK seleccionado para
 ejecutar Maven es anterior al 25. Comprueba `java --version` y configura

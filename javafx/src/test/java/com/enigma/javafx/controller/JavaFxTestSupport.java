@@ -81,6 +81,13 @@ abstract class JavaFxTestSupport {
             throws Exception {
         runOnFxThread(() -> {
             assertEquals(disabled, field(controller, "encryptButton", Button.class).isDisable());
+            assertEquals(disabled, field(controller, "sourcePathField", TextField.class).isDisable());
+            assertEquals(disabled,
+                    field(controller, "destinationDirectoryField", TextField.class).isDisable());
+            assertEquals(disabled,
+                    field(controller, "decryptSourcePathField", TextField.class).isDisable());
+            assertEquals(disabled,
+                    field(controller, "referencePathField", TextField.class).isDisable());
             assertEquals(disabled, field(controller, "chooseSourceButton", Button.class).isDisable());
             assertEquals(disabled, field(controller, "chooseDestinationButton", Button.class).isDisable());
             assertEquals(disabled,

@@ -6,8 +6,9 @@ import com.enigma.javafx.service.FileService.EncryptionResult;
 import com.enigma.javafx.i18n.LanguageService;
 import com.enigma.javafx.i18n.LanguageService.Language;
 
-import javafx.css.PseudoClass;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -42,11 +43,14 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
@@ -55,6 +59,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.prefs.Preferences;
 import java.util.function.Consumer;
@@ -72,15 +77,14 @@ import java.util.function.Predicate;
  * </p>
  */
 public class MainController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MainController.class);
     /** Estado visual aplicado al campo cuando se arrastra un archivo válido. */
     private static final PseudoClass DRAG_OVER = PseudoClass.getPseudoClass("drag-over");
     private static final int TEXT_PREVIEW_LIMIT = 256 * 1024;
-    private static final int PNG_PREVIEW_LIMIT = 8 * 1024 * 1024;
+    private static final long PNG_PREVIEW_LIMIT = 850L * 1024 * 1024;
+    private static final long MEBIBYTE = 1024L * 1024;
     private static final int PNG_MAX_DIMENSION = 8192;
     private static final long PNG_MAX_PIXELS = 16_777_216L;
-    private static final byte[] PNG_SIGNATURE = {
-            (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
-    };
     private static final Preferences PREFERENCES = Preferences.userNodeForPackage(MainController.class);
     private static final String LAST_SOURCE_DIRECTORY = "lastSourceDirectory";
     private static final String LAST_DESTINATION_DIRECTORY = "lastDestinationDirectory";
@@ -105,7 +109,7 @@ public class MainController {
     /** Tarea activa de descifrado, si la hay. */
     private Task<DecryptionResult> decryptionTask;
     /** Tarea activa de vista previa, si la hay. */
-    private Task<FileService.PreviewResult> previewTask;
+    private Task<PreviewPayload> previewTask;
     private long previewGeneration;
     private volatile Language selectedLanguage = Language.SPANISH;
     private volatile LocalizedText currentStatus = new LocalizedText("Listo para trabajar.", new Object[0]);
@@ -260,6 +264,12 @@ public class MainController {
     @FXML
     private ImageView imagePreview;
 
+    @FXML
+    private Node textPreviewPanel;
+
+    @FXML
+    private Node imagePreviewPanel;
+
     /**
      * Configura los controles después de que FXMLLoader los haya inyectado.
      *
@@ -282,6 +292,7 @@ public class MainController {
                 "contraseña generada");
         generatedPasswordField.setEditable(false);
         visibleGeneratedPasswordField.setEditable(false);
+        textPreviewArea.setEditable(false);
         showGeneratedPasswordToggle.setDisable(true);
         languageSelector.getItems().setAll(Language.values());
         languageSelector.setValue(Language.SPANISH);
@@ -320,6 +331,18 @@ public class MainController {
     }
 
     private void showView(Node activeView) {
+        boolean leavingOptionsView = encryptionView.isVisible() && activeView != encryptionView
+                || decryptionView.isVisible() && activeView != decryptionView;
+        if (leavingOptionsView) {
+            if (isOperationRunning()) {
+                setStatus("Espera a que termine la operación actual.");
+                return;
+            }
+            resetSelections();
+            clearRememberedDirectories();
+            setStatus("Listo para trabajar.");
+        }
+
         menuView.setVisible(activeView == menuView);
         menuView.setManaged(activeView == menuView);
         encryptionView.setVisible(activeView == encryptionView);
@@ -440,17 +463,34 @@ public class MainController {
      */
     @FXML
     private void clearSelection() {
+        resetSelections();
+        setStatus("Selección limpiada.");
+    }
+
+    private void resetSelections() {
         sourcePathField.clear();
         destinationDirectoryField.clear();
         decryptSourcePathField.clear();
         referencePathField.clear();
         decryptPasswordField.clear();
         visibleDecryptPasswordField.clear();
+        verifyCheckbox.setSelected(false);
+        showPasswordToggle.setSelected(false);
         generatedPasswordField.clear();
+        visibleGeneratedPasswordField.clear();
         showGeneratedPasswordToggle.setSelected(false);
         showGeneratedPasswordToggle.setDisable(true);
         clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
-        setStatus("Selección limpiada.");
+        setOperationProgressVisible(false);
+        setEncryptionControlsDisabled(false);
+        setPreviewControlsDisabled(false);
+    }
+
+    private static void clearRememberedDirectories() {
+        PREFERENCES.remove(LAST_SOURCE_DIRECTORY);
+        PREFERENCES.remove(LAST_DESTINATION_DIRECTORY);
+        PREFERENCES.remove(LAST_ENCRYPTED_DIRECTORY);
+        PREFERENCES.remove(LAST_REFERENCE_DIRECTORY);
     }
 
     /**
@@ -475,6 +515,8 @@ public class MainController {
             source = selectedPath(sourcePathField);
             destination = selectedPath(destinationDirectoryField);
         } catch (InvalidPathException exception) {
+            LOGGER.warn("Invalid path rejected during encryption ({})",
+                    exception.getClass().getSimpleName());
             showError(translate("Una de las rutas seleccionadas no es válida."));
             return;
         }
@@ -524,6 +566,7 @@ public class MainController {
             setOperationProgressVisible(false);
             generatedPasswordField.clear();
             Throwable failure = encryptionTask.getException();
+            LOGGER.error("File encryption failed", failure);
             showError(translateFailure(failure, "No se pudo cifrar el archivo."));
         });
         encryptionTask.setOnCancelled(event -> {
@@ -574,6 +617,8 @@ public class MainController {
                 selectedReference = selectedPath(referencePathField);
             }
         } catch (InvalidPathException exception) {
+            LOGGER.warn("Invalid path rejected during decryption ({})",
+                    exception.getClass().getSimpleName());
             showError(translate("Una de las rutas seleccionadas no es válida."));
             return;
         }
@@ -593,6 +638,7 @@ public class MainController {
 
         Path reference = selectedReference;
         char[] password = decryptPasswordField.getText().toCharArray();
+        configurePreviewPanels(previewType(encryptedFile));
         setEncryptionControlsDisabled(true);
         setOperationProgressVisible(true);
         decryptionTask = new Task<>() {
@@ -620,12 +666,16 @@ public class MainController {
             setEncryptionControlsDisabled(false);
             setOperationProgressVisible(false);
             setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
+            if (reference != null) {
+                showComparisonSuccess();
+            }
             startPreview();
         });
         decryptionTask.setOnFailed(event -> {
             setEncryptionControlsDisabled(false);
             setOperationProgressVisible(false);
             Throwable failure = decryptionTask.getException();
+            LOGGER.error("File decryption failed", failure);
             showError(translateFailure(failure, "No se pudo descifrar el archivo."));
         });
         decryptionTask.setOnCancelled(event -> {
@@ -637,6 +687,23 @@ public class MainController {
         Thread worker = new Thread(decryptionTask, "enigma-aes-decryption");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    private void showComparisonSuccess() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        styleAlert(alert, "app-alert-info");
+        alert.setTitle(translate("Resultado de la comparación"));
+        alert.setHeaderText(translate("El archivo descifrado coincide con el original."));
+        alert.setContentText(translate(
+                "La comparación byte a byte ha confirmado que ambos archivos son iguales."));
+        alert.setResizable(true);
+        alert.getButtonTypes().setAll(
+                new ButtonType(translate("Cerrar"), ButtonBar.ButtonData.OK_DONE));
+        Window owner = getOwnerWindow(sourcePathField);
+        if (owner != null) {
+            alert.initOwner(owner);
+        }
+        alert.show();
     }
 
     private void onPreviewInputChanged() {
@@ -660,6 +727,8 @@ public class MainController {
         try {
             encryptedFile = selectedPath(decryptSourcePathField);
         } catch (InvalidPathException exception) {
+            LOGGER.warn("Invalid path rejected while preparing a preview ({})",
+                    exception.getClass().getSimpleName());
             showPreviewMessage("Una de las rutas seleccionadas no es válida.");
             return;
         }
@@ -674,23 +743,36 @@ public class MainController {
 
         PreviewType previewType = previewType(encryptedFile);
         if (previewType == null) {
+            disablePreviewPanels();
             showPreviewMessage("La vista previa solo está disponible para archivos .txt.enc y .png.enc.");
             return;
         }
 
         long requestGeneration = previewGeneration;
-        int previewLimit = previewType == PreviewType.TEXT
-                ? TEXT_PREVIEW_LIMIT
-                : PNG_PREVIEW_LIMIT;
+        int previewLimit = TEXT_PREVIEW_LIMIT;
+        Path decryptedFile = decryptionTask.getValue().outputPath();
         char[] password = decryptPasswordField.getText().toCharArray();
         clearPreview("Validando el contenedor para preparar la vista previa...");
+        configurePreviewPanels(previewType);
         setEncryptionControlsDisabled(true);
         setPreviewControlsDisabled(true);
         setOperationProgressVisible(true);
         previewTask = new Task<>() {
             @Override
-            protected FileService.PreviewResult call() throws IOException, GeneralSecurityException {
+            protected PreviewPayload call() throws IOException, GeneralSecurityException {
                 try {
+                    if (previewType == PreviewType.IMAGE) {
+                        updateMessage(setTaskStatus("Validando archivo para vista previa: {0}%", 0));
+                        long totalBytes = Files.size(decryptedFile);
+                        if (!isWithinPngPreviewLimit(totalBytes)) {
+                            updateMessage(setTaskStatus("Vista previa autenticada."));
+                            return new PreviewPayload(null, decryptedFile, totalBytes, true, false);
+                        }
+                        boolean validPng = hasSafePngDimensions(decryptedFile);
+                        updateMessage(setTaskStatus("Vista previa autenticada."));
+                        return new PreviewPayload(null, decryptedFile, totalBytes, false, validPng);
+                    }
+
                     long totalBytes = Files.size(encryptedFile);
                     updateMessage(setTaskStatus("Validando archivo para vista previa: {0}%", 0));
                     FileService.PreviewResult result = fileService.preview(
@@ -701,7 +783,7 @@ public class MainController {
                                         "Validando archivo para vista previa: {0}%", percentage));
                             });
                     updateMessage(setTaskStatus("Vista previa autenticada."));
-                    return result;
+                    return new PreviewPayload(result, null, result.totalBytes(), false, true);
                 } finally {
                     Arrays.fill(password, '\0');
                 }
@@ -714,7 +796,7 @@ public class MainController {
             setPreviewControlsDisabled(false);
             setOperationProgressVisible(false);
             if (requestGeneration == previewGeneration) {
-                displayPreview(previewTask.getValue(), previewType);
+                displayPreview(previewTask.getValue(), previewType, requestGeneration);
                 setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
             } else {
                 clearPreview("El contenido se mostrará aquí después de pulsar Descifrar archivo.");
@@ -726,8 +808,10 @@ public class MainController {
             setOperationProgressVisible(false);
             if (requestGeneration == previewGeneration) {
                 clearPreviewContent();
+                Throwable failure = previewTask.getException();
+                LOGGER.error("File preview failed", failure);
                 String message = translateFailure(
-                        previewTask.getException(), "No se pudo mostrar la vista previa.");
+                        failure, "No se pudo mostrar la vista previa.");
                 previewMessageLabel.setText(message);
                 setStatus("Archivo descifrado: {0}", decryptionTask.getValue().outputPath());
             } else {
@@ -750,75 +834,108 @@ public class MainController {
         worker.start();
     }
 
-    private void displayPreview(FileService.PreviewResult result, PreviewType previewType) {
+    private void displayPreview(PreviewPayload payload, PreviewType previewType, long requestGeneration) {
+        if (previewType == PreviewType.IMAGE) {
+            displayPngPreview(payload, requestGeneration);
+            return;
+        }
+
+        FileService.PreviewResult result = payload.textResult();
         byte[] content = result.content();
         try {
-            if (previewType == PreviewType.TEXT) {
-                textPreviewArea.setText(new String(content, StandardCharsets.UTF_8));
-                imagePreview.setImage(null);
-                if (result.truncated()) {
-                    setPreviewMessage(
-                            "Vista previa autenticada. Se muestran los primeros {0} bytes de {1}.",
-                            content.length, result.totalBytes());
-                } else {
-                    setPreviewMessage(
-                            "Vista previa autenticada. Contenido completo ({0} bytes).",
-                            result.totalBytes());
-                }
-                setStatus("Vista previa autenticada.");
-                return;
-            }
-
+            textPreviewArea.setText(new String(content, StandardCharsets.UTF_8));
+            imagePreview.setImage(null);
             if (result.truncated()) {
-                clearPreviewContent();
                 setPreviewMessage(
-                        "El PNG supera el límite de vista previa de {0} MiB; no se muestra.",
-                        PNG_PREVIEW_LIMIT / (1024 * 1024));
-                setStatus("Vista previa autenticada; la imagen supera el límite de tamaño.");
-                return;
+                        "Vista previa autenticada. Se muestran los primeros {0} bytes de {1}.",
+                        content.length, result.totalBytes());
+            } else {
+                setPreviewMessage(
+                        "Vista previa autenticada. Contenido completo ({0} bytes).",
+                        result.totalBytes());
             }
-            if (!hasSafePngDimensions(content)) {
-                clearPreviewContent();
-                showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
-                setStatus("El contenido no se puede mostrar como imagen PNG.");
-                return;
-            }
-
-            Image image = new Image(new ByteArrayInputStream(content),
-                    360, 220, true, true);
-            if (image.isError() || image.getWidth() <= 0 || image.getHeight() <= 0) {
-                clearPreviewContent();
-                showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
-                setStatus("El contenido no se puede mostrar como imagen PNG.");
-                return;
-            }
-            textPreviewArea.clear();
-            imagePreview.setImage(image);
-            setPreviewMessage("Vista previa autenticada. La imagen PNG se ha cargado.");
             setStatus("Vista previa autenticada.");
         } finally {
             Arrays.fill(content, (byte) 0);
         }
     }
 
-    private static boolean hasSafePngDimensions(byte[] content) {
-        if (content.length < 24) {
-            return false;
+    private void displayPngPreview(PreviewPayload payload, long requestGeneration) {
+        if (payload.oversized()) {
+            clearPreviewContent();
+            setPreviewMessage(
+                    "El PNG supera el límite de vista previa de {0} MiB; no se muestra.",
+                    PNG_PREVIEW_LIMIT / MEBIBYTE);
+            setStatus("Vista previa autenticada; la imagen supera el límite de tamaño.");
+            return;
         }
-        for (int index = 0; index < PNG_SIGNATURE.length; index++) {
-            if (content[index] != PNG_SIGNATURE[index]) {
+        if (!payload.validPng()) {
+            clearPreviewContent();
+            showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
+            setStatus("El contenido no se puede mostrar como imagen PNG.");
+            return;
+        }
+
+        textPreviewArea.clear();
+        Image image = new Image(payload.imagePath().toUri().toString(),
+                360, 220, true, true, true);
+        imagePreview.setImage(image);
+        setPreviewMessage("Cargando vista previa PNG...");
+        image.errorProperty().addListener((observable, previousError, error) ->
+                Platform.runLater(() -> updatePngPreviewStatus(image, requestGeneration)));
+        image.progressProperty().addListener((observable, previousProgress, progress) -> {
+            if (progress.doubleValue() >= 1.0) {
+                Platform.runLater(() -> updatePngPreviewStatus(image, requestGeneration));
+            }
+        });
+        updatePngPreviewStatus(image, requestGeneration);
+    }
+
+    private void updatePngPreviewStatus(Image image, long requestGeneration) {
+        if (requestGeneration != previewGeneration || imagePreview.getImage() != image) {
+            return;
+        }
+        if (image.isError()) {
+            Throwable failure = image.getException();
+            if (failure == null) {
+                LOGGER.warn("PNG preview could not be loaded because the image data is invalid");
+            } else {
+                LOGGER.warn("PNG preview could not be loaded", failure);
+            }
+            clearPreviewContent();
+            showPreviewMessage("El archivo descifrado no es un PNG válido o supera el tamaño permitido.");
+            setStatus("El contenido no se puede mostrar como imagen PNG.");
+        } else if (image.getProgress() >= 1.0) {
+            setPreviewMessage("Vista previa autenticada. La imagen PNG se ha cargado.");
+            setStatus("Vista previa autenticada.");
+        }
+    }
+
+    private static boolean hasSafePngDimensions(Path path) throws IOException {
+        try (ImageInputStream input = ImageIO.createImageInputStream(path.toFile())) {
+            if (input == null) {
                 return false;
             }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) {
+                return false;
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, true, true);
+                long width = reader.getWidth(0);
+                long height = reader.getHeight(0);
+                return width > 0 && height > 0
+                        && width <= PNG_MAX_DIMENSION && height <= PNG_MAX_DIMENSION
+                        && width * height <= PNG_MAX_PIXELS;
+            } finally {
+                reader.dispose();
+            }
         }
-        if (content[12] != 'I' || content[13] != 'H'
-                || content[14] != 'D' || content[15] != 'R') {
-            return false;
-        }
-        long width = Integer.toUnsignedLong(ByteBuffer.wrap(content, 16, 4).getInt());
-        long height = Integer.toUnsignedLong(ByteBuffer.wrap(content, 20, 4).getInt());
-        return width > 0 && height > 0
-                && width <= PNG_MAX_DIMENSION && height <= PNG_MAX_DIMENSION
-                && width * height <= PNG_MAX_PIXELS;
+    }
+
+    static boolean isWithinPngPreviewLimit(long fileSize) {
+        return fileSize >= 0 && fileSize <= PNG_PREVIEW_LIMIT;
     }
 
     private static PreviewType previewType(Path encryptedFile) {
@@ -834,7 +951,25 @@ public class MainController {
 
     private void clearPreview(String spanishMessage) {
         clearPreviewContent();
+        textPreviewPanel.setDisable(false);
+        imagePreviewPanel.setDisable(false);
         previewMessageLabel.setText(translate(spanishMessage));
+    }
+
+    private void configurePreviewPanels(PreviewType previewType) {
+        textPreviewPanel.setDisable(previewType == PreviewType.IMAGE);
+        imagePreviewPanel.setDisable(previewType == PreviewType.TEXT);
+        if (previewType == PreviewType.IMAGE) {
+            textPreviewArea.clear();
+        } else if (previewType == PreviewType.TEXT) {
+            imagePreview.setImage(null);
+        }
+    }
+
+    private void disablePreviewPanels() {
+        textPreviewPanel.setDisable(true);
+        imagePreviewPanel.setDisable(true);
+        clearPreviewContent();
     }
 
     private void clearPreviewContent() {
@@ -1077,6 +1212,10 @@ public class MainController {
     private void setEncryptionControlsDisabled(boolean disabled) {
         encryptButton.setDisable(disabled);
         decryptButton.setDisable(disabled);
+        sourcePathField.setDisable(disabled);
+        destinationDirectoryField.setDisable(disabled);
+        decryptSourcePathField.setDisable(disabled);
+        referencePathField.setDisable(disabled);
         chooseEncryptedFileButton.setDisable(disabled);
         chooseSourceButton.setDisable(disabled);
         chooseDestinationButton.setDisable(disabled);
@@ -1206,6 +1345,10 @@ public class MainController {
     }
 
     private record LocalizedText(String template, Object[] arguments) {
+    }
+
+    private record PreviewPayload(FileService.PreviewResult textResult, Path imagePath,
+                                  long totalBytes, boolean oversized, boolean validPng) {
     }
 
     private enum PreviewType {

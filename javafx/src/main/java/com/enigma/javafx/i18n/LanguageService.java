@@ -201,6 +201,14 @@ public final class LanguageService {
         add("Opcional: selecciona el original", "Optional: choose the original",
                 "Aukerakoa: aukeratu jatorrizkoa");
         add("Seleccionar original", "Choose original", "Aukeratu jatorrizkoa");
+        add("Resultado de la comparación", "Comparison result", "Konparazioaren emaitza");
+        add("El archivo descifrado coincide con el original.",
+                "The decrypted file matches the original.",
+                "Deszifratutako fitxategia jatorrizkoarekin bat dator.");
+        add("La comparación byte a byte ha confirmado que ambos archivos son iguales.",
+                "A byte-for-byte comparison confirmed that both files are identical.",
+                "Bytez byteko konparazioak bi fitxategiak berdinak direla baieztatu du.");
+        add("Cerrar", "Close", "Itxi");
         add("La etiqueta GCM valida el contenedor. La comparación opcional comprueba además tamaño y SHA-256.",
                 "The GCM tag validates the container. Optional comparison also checks size and SHA-256.",
                 "GCM etiketak edukiontzia baliozkotzen du. Aukerako konparazioak tamaina eta SHA-256 ere egiaztatzen ditu.");
@@ -240,6 +248,9 @@ public final class LanguageService {
         add("Vista previa autenticada. La imagen PNG se ha cargado.",
                 "Authenticated preview. The PNG image has been loaded.",
                 "Autentifikatutako aurrebista. PNG irudia kargatu da.");
+        add("Cargando vista previa PNG...",
+                "Loading PNG preview...",
+                "PNG aurrebista kargatzen...");
         add("Validando el contenedor para preparar la vista previa...",
                 "Authenticating the container for preview...",
                 "Edukiontzia baliozkotzen aurrebista prestatzeko...");
@@ -270,7 +281,7 @@ public final class LanguageService {
 
         add("Seleccionar archivo de origen", "Choose source file",
                 "Aukeratu sarrerako fitxategia");
-        add("Escudo de Enigma Hogwarts", "Enigma Hogwarts crest", "Enigma Hogwartsen armarria");
+        add("Logo de Hogwarts Enigma", "Hogwarts Enigma logo", "Hogwarts Enigmaren logotipoa");
         add("Seleccionar carpeta de destino", "Choose destination folder",
                 "Aukeratu helburuko karpeta");
         add("Seleccionar archivo cifrado", "Choose encrypted file",
