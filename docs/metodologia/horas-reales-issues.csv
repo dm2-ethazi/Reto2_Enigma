@@ -1,0 +1,63 @@
+Fase;Issue;Titulo;Responsable;Estimado_h;Real_h;Nota
+Discovery;#1;Aprobación de la propuesta;(sin asignar);;;sin horas en el tablero
+Discovery;#2;Creacion estructura de proyecto (ramas y commits iniciales);Carlos;1;;
+Sprint 1;#3;Selector de archivos Python;Koldo;2;;
+Sprint 1;#4;Generador de contraseñas;(sin asignar);1;;
+Sprint 1;#5;Cifrado AES Python;Koldo;10;;
+Sprint 1;#6;Cifrado AES Java;Carlos;10;;
+Sprint 1;#7;Cifrado Vigenere Python;Koldo;4;;
+Sprint 1;#9;Selector de archivos Java;Carlos;2;;
+Sprint 1;#10;Selector de archivos Android;Kenneth;2;;
+Sprint 1;#12;Descifrado Java;Carlos;10;;
+Sprint 1;#16;Verificacion Java;Carlos;6;;
+Sprint 1;#22;Chunks Python;Koldo;10;;
+Sprint 1;#23;Chunks Java;Carlos;10;;
+Sprint 1;#28;Ventanas Python;Koldo;2;;
+Sprint 1;#29;Ventanas Java;Carlos;4;;
+Sprint 1;#30;Ventanas Android;Kenneth;8;;
+Sprint 1;#31;Ventana Unity;Koldo;2;;
+Sprint 1;#32;Sprites Unity;Koldo;1;;
+Sprint 1;#38;Generador contraseñas javfx;Carlos;;;sin horas en el tablero
+Sprint 1;#39;Generador contraseñas Python;Koldo;;;sin horas en el tablero
+Sprint 1;#47;Descifrado cesar Android;Kenneth;;;sin horas en el tablero
+Sprint 2;#8;Cifrado Cesar Unity;Koldo;4;;
+Sprint 2;#11;Descifrado Python;Koldo;10;;
+Sprint 2;#13;Descifrado Android;Kenneth;7;;
+Sprint 2;#14;Descifrado Unity;Koldo;3;;
+Sprint 2;#15;Verificacion Python;Koldo;6;;
+Sprint 2;#17;Verificacion Android;Kenneth;6;;
+Sprint 2;#18;Vista previa Python;Koldo;4;;
+Sprint 2;#19;Vista previa Java;Carlos;4;;
+Sprint 2;#20;Vista previa Android;Kenneth;4;;
+Sprint 2;#24;Chunks Android;Kenneth;5;;
+Sprint 2;#25;Pre-commit;Kenneth;5;;
+Sprint 2;#25;Pre-commit;Koldo;5;;
+Sprint 2;#26;Pre-push;Kenneth;5;;
+Sprint 2;#26;Pre-push;Koldo;5;;
+Sprint 2;#27;CI/CD;Kenneth;5;;
+Sprint 2;#27;CI/CD;Koldo;5;;
+Sprint 2;#33;Coliders + Fisicas;Koldo;4;;
+Sprint 2;#34;Estados de juego Unity;Koldo;5;;
+Sprint 2;#48;Descifrado AES Android;Kenneth;;;sin horas en el tablero
+Abiertas;#21;Pruebas cifrado / descrifrado;(sin asignar);8;;
+RESUMEN;Horas por integrante y fase, sumando sus Issues;;;;;
+Fase;Integrante;N_Issues;Estimado_h;Real_h;Desviacion_h;Desviacion_pct
+Discovery;Carlos;=COUNTIFS($A$2:$A$42;"Discovery";$D$2:$D$42;"Carlos");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Carlos");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Carlos");=E45-D45;=IF(D45=0;"";F45/D45)
+Discovery;Koldo;=COUNTIFS($A$2:$A$42;"Discovery";$D$2:$D$42;"Koldo");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Koldo");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Koldo");=E46-D46;=IF(D46=0;"";F46/D46)
+Discovery;Kenneth;=COUNTIFS($A$2:$A$42;"Discovery";$D$2:$D$42;"Kenneth");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Kenneth");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Discovery";$D$2:$D$42;"Kenneth");=E47-D47;=IF(D47=0;"";F47/D47)
+Sprint 1;Carlos;=COUNTIFS($A$2:$A$42;"Sprint 1";$D$2:$D$42;"Carlos");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Carlos");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Carlos");=E48-D48;=IF(D48=0;"";F48/D48)
+Sprint 1;Koldo;=COUNTIFS($A$2:$A$42;"Sprint 1";$D$2:$D$42;"Koldo");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Koldo");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Koldo");=E49-D49;=IF(D49=0;"";F49/D49)
+Sprint 1;Kenneth;=COUNTIFS($A$2:$A$42;"Sprint 1";$D$2:$D$42;"Kenneth");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Kenneth");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 1";$D$2:$D$42;"Kenneth");=E50-D50;=IF(D50=0;"";F50/D50)
+Sprint 2;Carlos;=COUNTIFS($A$2:$A$42;"Sprint 2";$D$2:$D$42;"Carlos");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Carlos");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Carlos");=E51-D51;=IF(D51=0;"";F51/D51)
+Sprint 2;Koldo;=COUNTIFS($A$2:$A$42;"Sprint 2";$D$2:$D$42;"Koldo");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Koldo");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Koldo");=E52-D52;=IF(D52=0;"";F52/D52)
+Sprint 2;Kenneth;=COUNTIFS($A$2:$A$42;"Sprint 2";$D$2:$D$42;"Kenneth");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Kenneth");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Sprint 2";$D$2:$D$42;"Kenneth");=E53-D53;=IF(D53=0;"";F53/D53)
+Abiertas;Carlos;=COUNTIFS($A$2:$A$42;"Abiertas";$D$2:$D$42;"Carlos");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Carlos");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Carlos");=E54-D54;=IF(D54=0;"";F54/D54)
+Abiertas;Koldo;=COUNTIFS($A$2:$A$42;"Abiertas";$D$2:$D$42;"Koldo");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Koldo");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Koldo");=E55-D55;=IF(D55=0;"";F55/D55)
+Abiertas;Kenneth;=COUNTIFS($A$2:$A$42;"Abiertas";$D$2:$D$42;"Kenneth");=SUMIFS($E$2:$E$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Kenneth");=SUMIFS($F$2:$F$42;$A$2:$A$42;"Abiertas";$D$2:$D$42;"Kenneth");=E56-D56;=IF(D56=0;"";F56/D56)
+TOTAL;;;=SUM(D45:D56);=SUM(E45:E56);=E57-D57;=IF(D57=0;"";F57/D57)
+
+# ===== HORAS REALES DECLARADAS (a mano, el tablero solo trae estimaciones) =====
+Integrante;Horas_reales;Nota;;;;
+Koldo;50;Declarado por el equipo; frente a 82 h estimadas en el tablero;;;;
+Carlos;;PENDIENTE;;;;
+Kenneth;;PENDIENTE;;;;
