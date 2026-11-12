@@ -32,8 +32,8 @@ El tutorial, la pausa y los estados finales bloquean el avance.
 
 ## Prefabs y referencias (RA3)
 
-- `Assets/Prefabs/Characters/Dementor.prefab`: cuerpo, collider, animacion, aura y estela.
-- `Assets/Prefabs/Environment/CorridorDoor.prefab`: arte, cuerpo estatico, trigger y centro de paso.
+- `unity/EnigmaUnity/Assets/Prefabs/Characters/Dementor.prefab`: cuerpo, collider, animacion, aura y estela.
+- `unity/EnigmaUnity/Assets/Prefabs/Environment/CorridorDoor.prefab`: arte, cuerpo estatico, trigger y centro de paso.
 - `Enemies/DementorSpawner`: prefab, instancia inicial y recorrido de la escena.
 - `Physics · Corridor/Dementor Route`: inicio y cuatro destinos editables en Scene View.
 
@@ -43,12 +43,12 @@ por codigo: posiciones, arte, componentes y parametros quedan preparados en el E
 
 ## Demostracion sin intervencion tecnica
 
-1. Abre `Assets/Scenes/EnigmaGame.unity` y entra en Play.
+1. Abre `unity/EnigmaUnity/Assets/Scenes/EnigmaGame.unity` y entra en Play.
 2. Lee el ejemplo del tutorial y pulsa **Comenzar**.
 3. Introduce una respuesta incorrecta: observa un tramo de avance y su penalizacion de velocidad.
 4. Tras cuatro errores entra por la puerta y se pierde una vida; aparece un prefab nuevo al inicio.
 5. Con tres intentos fallidos aparece **Derrota**. **Reiniciar** recarga la escena y el tutorial.
 6. Resuelve las cinco rondas para mostrar **Victoria**. En ambos finales se bloquea la entrada.
 
-Pruebas locales: `Assets/Tests/PlayMode/CorridorPhysicsTests.cs` y
-`Assets/Tests/Game/CampaignSceneTests.cs`.
+Pruebas locales: `unity/EnigmaUnity/Assets/Tests/PlayMode/CorridorPhysicsTests.cs` y
+`unity/EnigmaUnity/Assets/Tests/Game/CampaignSceneTests.cs`.

@@ -53,7 +53,7 @@ solo al acertar, y respeta la pausa. No se utiliza sonido de ambiente.
 
 ## Evidencias de la rubrica
 
-La justificacion de cuerpos, gravedad, triggers y colisiones esta en `Scripts/Physics/README.md`.
+La justificación de cuerpos, gravedad, triggers y colisiones está en [la guía de físicas](README_unity_physics.md).
 Las pruebas cubren tutorial, normalizacion y Ñ, cuatro errores por vida, doce errores,
 conservacion de vidas, sustitucion real de prefabs, victoria, derrota, bloqueo,
 recarga de escena, penalizacion de velocidad, pausa, reloj, UI y efectos.
