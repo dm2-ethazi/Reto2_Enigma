@@ -1,5 +1,7 @@
 """Opciones y presentación del menú principal."""
 
+import logging
+
 from ..i18n import LANGUAGES, set_language
 from .aes import SCREENS as AES_SCREENS
 from .navigation import choose
@@ -8,6 +10,7 @@ from .vigenere import SCREENS as VIGENERE_SCREENS
 SCREENS = VIGENERE_SCREENS + AES_SCREENS
 # Mantener Salir en la quinta posición conserva la navegación numerada existente.
 CHOICES = [title for title, _ in SCREENS] + ["Salir", "Idioma / Hizkuntza / Language"]
+logger = logging.getLogger("enigma")
 
 
 def show_main_menu(*, interactive=False):
@@ -28,3 +31,4 @@ def change_language(*, interactive=False):
     )
     if selected is not None:
         set_language(list(LANGUAGES)[selected])
+        logger.info("Language selected; language=%s", list(LANGUAGES)[selected])

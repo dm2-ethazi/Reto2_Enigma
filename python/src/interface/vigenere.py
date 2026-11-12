@@ -1,6 +1,7 @@
 """Flujo de cifrado y descifrado Vigenère, sin colores."""
 
 import sys
+import logging
 from pathlib import Path
 
 from ..encrypt import vigenere
@@ -19,6 +20,7 @@ from .navigation import choose
 from .passwords import read_password
 
 SCREENS = (("Cifrar Vigenère", ()), ("Descifrar Vigenère", ()))
+logger = logging.getLogger("enigma")
 
 
 def run_encryption(*, interactive: bool = False) -> None:
@@ -42,6 +44,8 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
     y solo se muestran o publican tras completar la transformación. Propaga las
     cancelaciones y los errores al bucle principal para comunicarlos al usuario.
     """
+    operation = "decryption" if decrypt else "encryption"
+    logger.info("Vigenere %s started", operation)
     title = tr("Descifrar Vigenère") if decrypt else tr("Cifrar Vigenère")
     progress = tr("Descifrando") if decrypt else tr("Cifrando")
     transform = vigenere.decrypt if decrypt else vigenere.encrypt
@@ -88,6 +92,7 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
             result = transform(text, key)
             if destination is not None:
                 write_text(destination, result)
+        logger.info("Vigenere %s completed", operation)
         if mode in (0, 2):
             print(tr("\nResultado:\n{result}", result=result))
     else:
@@ -99,6 +104,7 @@ def _run(*, interactive: bool, decrypt: bool) -> None:
                 parts.finish()
                 if destination is not None:
                     parts.publish(destination)
+            logger.info("Vigenere %s completed", operation)
             if mode in (0, 2):
                 print(tr("\nResultado:"))
                 for block in parts.iter_text():

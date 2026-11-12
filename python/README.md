@@ -114,6 +114,18 @@ Al guardar, Windows y macOS abren el explorador con el resultado seleccionado;
 Linux abre su carpeta mediante `xdg-open`. El resultado no se ejecuta. Si no se
 puede iniciar el explorador, se muestra la ruta y se conserva el archivo.
 
+## Registros locales
+
+La aplicación guarda actividad y errores en archivos diarios dentro de
+`python/logs/`, por ejemplo `enigma-2026-11-12.log`. Añade entradas al mismo
+archivo durante el día local y crea uno nuevo al cambiar el día, incluso si la
+aplicación sigue abierta a medianoche. La carpeta se crea al iniciar Enigma y
+Git la excluye para mantener los registros en el equipo local.
+
+Los registros incluyen el inicio y cierre, el idioma elegido, el inicio y
+resultado de las operaciones, las cancelaciones y el tipo de error. No guardan
+contraseñas, texto cifrado o descifrado ni las rutas de los archivos.
+
 ## Idiomas
 
 La interfaz está disponible en **español** (`es`), **euskera** (`eu`) e

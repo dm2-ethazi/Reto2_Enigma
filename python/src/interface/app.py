@@ -1,13 +1,18 @@
 """Menú de cifrado y descifrado con errores y cancelación controlados."""
 
+import logging
+
 from ..errors import EnigmaError, OperationCancelled
 from ..i18n import get_language, tr
+from ..logging_config import configure_logging
 from .aes import run_encryption as run_aes_encryption
 from .aes import run_decryption as run_aes_decryption
 from .menu import SCREENS, change_language, show_main_menu
 from .terminal import enable_cursor_control
 from .vigenere import run_encryption
 from .vigenere import run_decryption
+
+logger = logging.getLogger("enigma")
 
 
 def run():
@@ -19,6 +24,8 @@ def run():
     Comunica errores controlados en el idioma activo y permite volver al menú.
     Las cancelaciones no requieren confirmación y conservan la sesión.
     """
+    logger = configure_logging()
+    logger.info("Application started; language=%s", get_language())
     interactive = enable_cursor_control()
     try:
         while True:
@@ -37,8 +44,11 @@ def run():
                 elif selected == len(SCREENS) + 1:
                     change_language(interactive=interactive)
             except OperationCancelled:
+                logger.info("Operation cancelled by user")
                 print(tr("Operación cancelada. Volviendo al menú."))
             except (EnigmaError, OSError, UnicodeError, MemoryError) as error:
+                # No guardar str(error): algunos errores incluyen rutas privadas.
+                logger.error("Operation failed; error_type=%s", type(error).__name__)
                 message = str(error) or tr(
                     "Recursos insuficientes para completar la operación."
                 )
@@ -65,7 +75,14 @@ def run():
                         message += f" {error.filename}"
                 print(tr("Error: {message}", message=message))
                 input(tr("\nPulsa Enter para volver al menú principal."))
+            except Exception as error:
+                # Registrar fallos inesperados por tipo, sin volcar rutas ni secretos.
+                logger.error(
+                    "Unexpected operation failure; error_type=%s", type(error).__name__
+                )
+                raise
     except (EOFError, KeyboardInterrupt):
-        pass
+        logger.info("Application interrupted or input closed")
     print(tr("Hasta pronto."))
+    logger.info("Application stopped")
     return 0

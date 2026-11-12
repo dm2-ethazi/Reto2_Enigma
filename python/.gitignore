@@ -6,6 +6,7 @@ __pycache__/
 .coverage
 python/.coverage
 python/reports/
+logs/
 python/dist/
 python/build/
 *.egg-info/

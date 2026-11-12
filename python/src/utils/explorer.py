@@ -1,10 +1,13 @@
 """Muestra el resultado en el explorador sin ejecutar el archivo generado."""
 
 import subprocess
+import logging
 import sys
 from pathlib import Path
 
 from ..i18n import tr
+
+logger = logging.getLogger("enigma")
 
 
 def reveal_file(path: str | Path) -> bool:
@@ -29,7 +32,10 @@ def reveal_file(path: str | Path) -> bool:
         command = ["xdg-open", str(path.parent)]
     try:
         subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError:
+    except OSError as error:
+        logger.warning(
+            "File manager could not be opened; error_type=%s", type(error).__name__
+        )
         print(
             tr("No se pudo abrir el explorador. Archivo guardado en: {path}", path=path)
         )

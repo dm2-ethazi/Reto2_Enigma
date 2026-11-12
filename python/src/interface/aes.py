@@ -1,5 +1,6 @@
 """Selección de archivos, cifrado y descifrado autenticado AES, sin colores."""
 
+import logging
 from pathlib import Path
 
 from ..errors import ValidationError
@@ -10,6 +11,7 @@ from .loading import loading
 from .passwords import read_password
 
 SCREENS = (("Cifrar archivo AES", ()), ("Descifrar archivo AES", ()))
+logger = logging.getLogger("enigma")
 
 
 def run_encryption(*, interactive: bool = False) -> None:
@@ -36,6 +38,8 @@ def _run(*, decrypt: bool) -> None:
     si falta cryptography, los convierte en una validación con ayuda de instalación.
     La contraseña generada solo se muestra después de guardar correctamente.
     """
+    operation = "decryption" if decrypt else "encryption"
+    logger.info("AES %s started", operation)
     try:
         from ..encrypt import aes
     except ModuleNotFoundError as error:
@@ -64,6 +68,7 @@ def _run(*, decrypt: bool) -> None:
         )
         with loading(tr("Descifrando AES y verificando autenticidad")):
             path = aes.decrypt_file(source, password, destination)
+        logger.info("AES decryption completed")
         print(tr("Archivo descifrado y autenticado: {path}", path=path))
         reveal_file(path)
         input(tr("\nPulsa Enter para volver al menú principal."))
@@ -79,6 +84,7 @@ def _run(*, decrypt: bool) -> None:
     )
     with loading(tr("Cifrando AES")):
         result = aes.encrypt_file(source, destination)
+    logger.info("AES encryption completed")
     print(tr("Archivo cifrado: {path}", path=result.path))
     print(tr("Contraseña generada: {password}", password=result.password))
     print(
