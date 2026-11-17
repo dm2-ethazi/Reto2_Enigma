@@ -135,6 +135,33 @@ public class MainController {
     @FXML
     private ComboBox<Language> languageSelector;
 
+    @FXML
+    private Label generatedPasswordLabel;
+
+    @FXML
+    private Label decryptPasswordLabel;
+
+    @FXML
+    private Label sourcePathLabel;
+
+    @FXML
+    private Label destinationDirectoryLabel;
+
+    @FXML
+    private Label decryptSourceLabel;
+
+    @FXML
+    private Label decryptDestinationLabel;
+
+    @FXML
+    private Label referencePathLabel;
+
+    @FXML
+    private Label textPreviewLabel;
+
+    @FXML
+    private Label imagePreviewLabel;
+
     /** Campo de ruta del fichero que se cifrará. */
     @FXML
     private TextField sourcePathField;
@@ -288,11 +315,13 @@ public class MainController {
                 .bindBidirectional(decryptDestinationDirectoryField.textProperty());
         configurePasswordVisibility(
                 showPasswordToggle, showDecryptPasswordIcon, hideDecryptPasswordIcon,
-                decryptPasswordField, visibleDecryptPasswordField, "contraseña");
+                decryptPasswordField, visibleDecryptPasswordField, decryptPasswordLabel,
+                "contraseña");
         configurePasswordVisibility(
                 showGeneratedPasswordToggle, showGeneratedPasswordIcon, hideGeneratedPasswordIcon,
-                generatedPasswordField, visibleGeneratedPasswordField,
+                generatedPasswordField, visibleGeneratedPasswordField, generatedPasswordLabel,
                 "contraseña generada");
+        associateFormLabels();
         generatedPasswordField.setEditable(false);
         visibleGeneratedPasswordField.setEditable(false);
         textPreviewArea.setEditable(false);
@@ -319,6 +348,17 @@ public class MainController {
                 "Arrastra un único contenedor .enc.");
         configureFileDropTarget(referencePathField, MainController::isSupportedSourceFile,
                 this::setReferenceFile, "Arrastra un único archivo normal y legible.");
+    }
+
+    private void associateFormLabels() {
+        languageLabel.setLabelFor(languageSelector);
+        sourcePathLabel.setLabelFor(sourcePathField);
+        destinationDirectoryLabel.setLabelFor(destinationDirectoryField);
+        decryptSourceLabel.setLabelFor(decryptSourcePathField);
+        decryptDestinationLabel.setLabelFor(decryptDestinationDirectoryField);
+        referencePathLabel.setLabelFor(referencePathField);
+        textPreviewLabel.setLabelFor(textPreviewArea);
+        imagePreviewLabel.setLabelFor(imagePreview);
     }
 
     @FXML
@@ -1452,7 +1492,7 @@ public class MainController {
      */
     private void configurePasswordVisibility(ToggleButton toggle, FontIcon showIcon,
             FontIcon hideIcon, PasswordField maskedField,
-            TextField visibleField, String accessibleName) {
+            TextField visibleField, Label fieldLabel, String accessibleName) {
         Color iconColor = Color.web("#8c6f47");
         showIcon.setIconColor(iconColor);
         hideIcon.setIconColor(iconColor);
@@ -1461,6 +1501,10 @@ public class MainController {
         visibleField.managedProperty().bind(toggle.selectedProperty());
         maskedField.visibleProperty().bind(toggle.selectedProperty().not());
         maskedField.managedProperty().bind(toggle.selectedProperty().not());
+        fieldLabel.labelForProperty().bind(
+                javafx.beans.binding.Bindings.when(toggle.selectedProperty())
+                        .then(visibleField)
+                        .otherwise(maskedField));
         showIcon.visibleProperty().bind(toggle.selectedProperty().not());
         showIcon.managedProperty().bind(toggle.selectedProperty().not());
         hideIcon.visibleProperty().bind(toggle.selectedProperty());

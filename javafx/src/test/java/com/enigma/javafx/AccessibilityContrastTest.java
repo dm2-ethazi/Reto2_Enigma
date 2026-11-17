@@ -82,6 +82,11 @@ class AccessibilityContrastTest {
         assertTrue(countOccurrences(FXML, "accessibleText=") >= 12);
         assertTrue(countOccurrences(FXML, "accessibleHelp=") >= 15);
         assertTrue(countOccurrences(FXML, "labelFor=") >= 8);
+        assertTrue(FXML.contains("labelFor=\"$languageSelector\""));
+        assertTrue(FXML.contains("accessibleText=\"← Atrás\""));
+        assertTrue(FXML.contains("accessibleHelp=\"Esc: volver al menú principal.\""));
+        assertTrue(FXML.contains("fx:id=\"generatedPasswordLabel\""));
+        assertTrue(FXML.contains("fx:id=\"decryptPasswordLabel\""));
         assertTrue(FXML.contains(
                 "style=\"-fx-text-fill: #0003C9; -fx-font-size: 28px; -fx-font-weight: bold;\""));
         assertTrue(FXML.contains(

@@ -44,8 +44,30 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 TextField visiblePassword = field(controller, "visibleGeneratedPasswordField");
                 ToggleButton visibilityToggle = field(controller, "showGeneratedPasswordToggle");
                 ToggleButton decryptVisibilityToggle = field(controller, "showPasswordToggle");
+                Label generatedPasswordLabel = field(controller, "generatedPasswordLabel", Label.class);
+                Label decryptPasswordLabel = field(controller, "decryptPasswordLabel", Label.class);
+                Label languageLabel = field(controller, "languageLabel", Label.class);
+                ComboBox<?> languageSelector = field(controller, "languageSelector", ComboBox.class);
+                assertEquals(field(controller, "sourcePathField", TextField.class),
+                                field(controller, "sourcePathLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "destinationDirectoryField", TextField.class),
+                                field(controller, "destinationDirectoryLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "decryptSourcePathField", TextField.class),
+                                field(controller, "decryptSourceLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "decryptDestinationDirectoryField", TextField.class),
+                                field(controller, "decryptDestinationLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "referencePathField", TextField.class),
+                                field(controller, "referencePathLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "textPreviewArea", TextArea.class),
+                                field(controller, "textPreviewLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "imagePreview", ImageView.class),
+                                field(controller, "imagePreviewLabel", Label.class).getLabelFor());
                 assertTrue(maskedPassword.isVisible());
                 assertFalse(visiblePassword.isVisible());
+                assertEquals(languageSelector, languageLabel.getLabelFor());
+                assertEquals(maskedPassword, generatedPasswordLabel.getLabelFor());
+                assertEquals(field(controller, "decryptPasswordField", PasswordField.class),
+                                decryptPasswordLabel.getLabelFor());
                 assertFalse(field(controller, "progressIndicator", ProgressIndicator.class).isVisible());
                 assertFalse(field(controller, "progressBar", ProgressBar.class).isVisible());
                 assertTrue(visibilityToggle.isDisable());
@@ -73,6 +95,9 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 runOnFxThread(() -> {
                         visibilityToggle.setSelected(true);
                         decryptVisibilityToggle.setSelected(true);
+                        assertEquals(visiblePassword, generatedPasswordLabel.getLabelFor());
+                        assertEquals(field(controller, "visibleDecryptPasswordField", TextField.class),
+                                        decryptPasswordLabel.getLabelFor());
                         maskedPassword.setText("SafePassword1234");
                         field(controller, "sourcePathField", TextField.class).setText("source.txt");
                         field(controller, "destinationDirectoryField", TextField.class).setText("output");
@@ -88,6 +113,9 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 assertEquals("", maskedPassword.getText());
                 assertEquals("", visiblePassword.getText());
                 assertFalse(visibilityToggle.isSelected());
+                assertEquals(maskedPassword, generatedPasswordLabel.getLabelFor());
+                assertEquals(field(controller, "decryptPasswordField", PasswordField.class),
+                                decryptPasswordLabel.getLabelFor());
                 assertEquals("", visibilityToggle.getText());
                 assertEquals("", decryptVisibilityToggle.getText());
                 assertTrue(showDecryptIcon.isVisible());

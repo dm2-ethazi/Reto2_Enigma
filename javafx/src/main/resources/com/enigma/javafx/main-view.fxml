@@ -45,7 +45,8 @@
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox alignment="CENTER_RIGHT" spacing="10.0" styleClass="header-actions">
-                <Label fx:id="languageLabel" styleClass="field-label" text="Idioma"/>
+                <Label fx:id="languageLabel" labelFor="$languageSelector"
+                       styleClass="field-label" text="Idioma"/>
                 <ComboBox fx:id="languageSelector" accessibleText="Idioma de la aplicación"
                           accessibleHelp="Selecciona el idioma de la interfaz."
                           prefWidth="120.0"/>
@@ -107,7 +108,9 @@
                 <content>
                     <VBox spacing="18.0" styleClass="content">
                         <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="view-toolbar">
-                            <Button onAction="#showMainMenu" styleClass="back-button" text="← Atrás"/>
+                            <Button accessibleText="← Atrás"
+                                    accessibleHelp="Esc: volver al menú principal."
+                                    onAction="#showMainMenu" styleClass="back-button" text="← Atrás"/>
                             <VBox spacing="3.0">
                                 <Label styleClass="view-title encryption-title" text="Cifrado AES"/>
                                 <Label styleClass="section-description"
@@ -122,7 +125,8 @@
                                        text="Elige el archivo que quieres proteger y la carpeta de destino. Si la dejas vacía, se usará la carpeta del archivo."/>
                             </VBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$sourcePathField" minWidth="125.0" styleClass="field-label"
+                                <Label fx:id="sourcePathLabel" labelFor="$sourcePathField"
+                                       minWidth="125.0" styleClass="field-label"
                                        text="Fichero de origen"/>
                                 <TextField fx:id="sourcePathField"
                                            accessibleText="Fichero de origen. También puedes arrastrar y soltar un archivo aquí."
@@ -134,9 +138,11 @@
                                         styleClass="secondary-button" text="Seleccionar archivo"/>
                             </HBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$destinationDirectoryField" minWidth="125.0"
+                                <Label fx:id="destinationDirectoryLabel"
+                                       labelFor="$destinationDirectoryField" minWidth="125.0"
                                        styleClass="field-label" text="Carpeta destino"/>
                                 <TextField fx:id="destinationDirectoryField"
+                                           accessibleText="Carpeta destino"
                                            accessibleHelp="Carpeta donde se guardará el archivo cifrado. Si se deja vacía, se usa la carpeta del archivo."
                                            promptText="Carpeta del archivo resultante"/>
                                 <Button fx:id="chooseDestinationButton" onAction="#chooseDestinationDirectory"
@@ -166,7 +172,8 @@
                                         onAction="#encryptFile"
                                         styleClass="primary-button" text="Cifrar archivo"/>
                                 <VBox spacing="6.0" HBox.hgrow="ALWAYS">
-                                    <Label labelFor="$generatedPasswordField" styleClass="field-label"
+                                    <Label fx:id="generatedPasswordLabel" labelFor="$generatedPasswordField"
+                                           styleClass="field-label"
                                            text="Contraseña generada (16 caracteres)"/>
                                     <HBox alignment="CENTER_LEFT" spacing="8.0">
                                         <StackPane minWidth="180.0" HBox.hgrow="ALWAYS">
@@ -177,6 +184,7 @@
                                                            promptText="Aparecerá al terminar el cifrado"/>
                                             <TextField fx:id="visibleGeneratedPasswordField"
                                                        accessibleText="Contraseña generada visible"
+                                                       accessibleHelp="Contraseña necesaria para descifrar el archivo. Guárdala en un lugar seguro."
                                                        editable="false" managed="false" visible="false"/>
                                         </StackPane>
                                         <ToggleButton fx:id="showGeneratedPasswordToggle"
@@ -209,7 +217,9 @@
                 <content>
                     <VBox spacing="18.0" styleClass="content">
                         <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="view-toolbar">
-                            <Button onAction="#showMainMenu" styleClass="back-button" text="← Atrás"/>
+                            <Button accessibleText="← Atrás"
+                                    accessibleHelp="Esc: volver al menú principal."
+                                    onAction="#showMainMenu" styleClass="back-button" text="← Atrás"/>
                             <VBox spacing="3.0">
                                 <Label styleClass="view-title decryption-title" text="Descifrado AES"/>
                                 <Label styleClass="section-description"
@@ -224,9 +234,11 @@
                                        text="Selecciona el contenedor .enc y la carpeta donde guardar el archivo recuperado. Si la dejas vacía, se usará la carpeta del contenedor."/>
                             </VBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$decryptSourcePathField" minWidth="125.0"
+                                <Label fx:id="decryptSourceLabel" labelFor="$decryptSourcePathField"
+                                       minWidth="125.0"
                                        styleClass="field-label" text="Archivo cifrado"/>
-                                <TextField fx:id="decryptSourcePathField" HBox.hgrow="ALWAYS"
+                                <TextField fx:id="decryptSourcePathField"
+                                           accessibleText="Archivo cifrado" HBox.hgrow="ALWAYS"
                                            accessibleHelp="Selecciona el contenedor .enc que quieres descifrar."
                                            promptText="Selecciona un archivo .enc"/>
                                 <Button fx:id="chooseEncryptedFileButton" onAction="#chooseEncryptedFile"
@@ -234,9 +246,11 @@
                                         styleClass="secondary-button" text="Seleccionar archivo"/>
                             </HBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$decryptDestinationDirectoryField" minWidth="125.0"
+                                <Label fx:id="decryptDestinationLabel"
+                                       labelFor="$decryptDestinationDirectoryField" minWidth="125.0"
                                        styleClass="field-label" text="Carpeta destino"/>
-                                <TextField fx:id="decryptDestinationDirectoryField" HBox.hgrow="ALWAYS"
+                                <TextField fx:id="decryptDestinationDirectoryField"
+                                           accessibleText="Carpeta destino" HBox.hgrow="ALWAYS"
                                            accessibleHelp="Carpeta donde se guardará el archivo recuperado. Si se deja vacía, se usa la carpeta del contenedor."
                                            promptText="Carpeta del archivo recuperado"/>
                                 <Button fx:id="chooseDecryptDestinationButton"
@@ -245,7 +259,8 @@
                                         styleClass="secondary-button" text="Seleccionar destino"/>
                             </HBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$decryptPasswordField" minWidth="125.0"
+                                <Label fx:id="decryptPasswordLabel" labelFor="$decryptPasswordField"
+                                       minWidth="125.0"
                                        styleClass="field-label" text="Contraseña"/>
                                 <StackPane minWidth="180.0" HBox.hgrow="ALWAYS">
                                     <PasswordField fx:id="decryptPasswordField"
@@ -254,6 +269,7 @@
                                                    promptText="Contraseña del archivo .enc"/>
                                     <TextField fx:id="visibleDecryptPasswordField"
                                                accessibleText="Contraseña visible del archivo cifrado"
+                                               accessibleHelp="Introduce la contraseña que se utilizó para cifrar el archivo."
                                                managed="false" visible="false"
                                                promptText="Contraseña del archivo .enc"/>
                                 </StackPane>
@@ -275,9 +291,11 @@
                                           text="Comparar con el archivo original"/>
                             </HBox>
                             <HBox alignment="CENTER_LEFT" spacing="12.0">
-                                <Label labelFor="$referencePathField" styleClass="field-label"
+                                <Label fx:id="referencePathLabel" labelFor="$referencePathField"
+                                       styleClass="field-label"
                                        text="Archivo original"/>
                                 <TextField fx:id="referencePathField"
+                                           accessibleText="Archivo original"
                                            accessibleHelp="Archivo opcional usado para verificar el resultado del descifrado."
                                            promptText="Opcional: selecciona el original"/>
                                 <Button fx:id="chooseReferenceButton" onAction="#chooseReferenceFile"
@@ -305,7 +323,8 @@
                             <HBox spacing="14.0">
                                 <VBox fx:id="textPreviewPanel" spacing="8.0"
                                       styleClass="preview-panel" HBox.hgrow="ALWAYS">
-                                    <Label labelFor="$textPreviewArea" styleClass="field-label"
+                                    <Label fx:id="textPreviewLabel" labelFor="$textPreviewArea"
+                                           styleClass="field-label"
                                            text="Texto recuperado"/>
                                     <TextArea fx:id="textPreviewArea"
                                               accessibleText="Vista previa del texto descifrado"
@@ -316,7 +335,8 @@
                                 </VBox>
                                 <VBox fx:id="imagePreviewPanel" spacing="8.0"
                                       styleClass="preview-panel" HBox.hgrow="ALWAYS">
-                                    <Label labelFor="$imagePreview" styleClass="field-label"
+                                    <Label fx:id="imagePreviewLabel" labelFor="$imagePreview"
+                                           styleClass="field-label"
                                            text="Imagen recuperada"/>
                                     <StackPane minHeight="220.0" styleClass="image-preview">
                                         <ImageView fx:id="imagePreview"
