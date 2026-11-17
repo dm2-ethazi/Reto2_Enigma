@@ -244,6 +244,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 assertTrue(spanishHelp.contains("Ctrl+Enter: ejecutar"));
                                 assertTrue(spanishHelp.contains("Esc: volver"));
                                 assertTrue(spanishHelp.contains("F2: mostrar información acerca de la aplicación."));
+                                assertTrue(spanishHelp.contains("Recorre los controles con Tab y Mayús+Tab."));
 
                                 ComboBox<?> languageSelector = field(controller, "languageSelector", ComboBox.class);
                                 languageSelector.getSelectionModel().select(1);
@@ -253,6 +254,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 assertTrue(englishHelp.contains("F2: show information about the application."));
                                 assertTrue(englishHelp.contains("Ctrl+1: open the encryption view."));
                                 assertTrue(englishHelp.contains("Ctrl+Enter: run the operation"));
+                                assertTrue(englishHelp.contains("Move through controls with Tab and Shift+Tab."));
 
                                 field(controller, "sourcePathField", TextField.class).setText(source.toString());
                                 field(controller, "destinationDirectoryField", TextField.class)
@@ -277,6 +279,41 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 return null;
                         });
                 }
+        }
+
+        @Test
+        void updatesAccessibleStatusAndProvidesLocalizedTooltips() throws Exception {
+                MainController controller = loadController();
+
+                runOnFxThread(() -> {
+                        Label status = field(controller, "statusLabel", Label.class);
+                        Button chooseSource = field(controller, "chooseSourceButton", Button.class);
+                        Button clearSelection = field(controller, "clearSelectionButton", Button.class);
+                        ToggleButton passwordToggle = field(controller, "showPasswordToggle",
+                                        ToggleButton.class);
+
+                        assertEquals("Estado de la aplicación: Listo para trabajar.",
+                                        status.getAccessibleText());
+                        assertNotNull(chooseSource.getTooltip());
+                        assertEquals("Abre el selector para elegir el archivo que quieres cifrar.",
+                                        chooseSource.getTooltip().getText());
+
+                        clearSelection.fire();
+                        assertEquals("Estado de la aplicación: Selección limpiada.",
+                                        status.getAccessibleText());
+                        passwordToggle.setSelected(true);
+                        assertEquals("Ocultar contraseña", passwordToggle.getAccessibleText());
+                        assertEquals("Ocultar contraseña", passwordToggle.getTooltip().getText());
+
+                        ComboBox<?> languageSelector = field(controller, "languageSelector");
+                        languageSelector.getSelectionModel().select(1);
+                        languageSelector.fireEvent(new ActionEvent());
+                        assertEquals("Application status: Selection cleared.",
+                                        status.getAccessibleText());
+                        assertEquals("Opens the file chooser to select the file to encrypt.",
+                                        chooseSource.getTooltip().getText());
+                        return null;
+                });
         }
 
         @Test
