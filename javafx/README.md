@@ -673,6 +673,10 @@ mvn javafx:run
 - `mvn javafx:run`: inicia la aplicación JavaFX.
 - En Windows, `mvn package` genera
   `target/Enigma-GestorAES-Java25-windows.jar`.
+- Ejecuta ese JAR sombreado, no `target/GestorAES-JavaFX-1.0-SNAPSHOT.jar`,
+  que es el JAR interno sin dependencias integradas. Usa `mvn clean package`;
+  ejecutar `mvn jar:jar` directamente no ejecuta el empaquetado con
+  `maven-shade-plugin`.
 - En Ubuntu/Debian, ejecuta `mvn package` en Linux para generar
   `target/Enigma-GestorAES-Java25-linux.jar`. También puede compilarse desde la
   raíz del repositorio con Docker:

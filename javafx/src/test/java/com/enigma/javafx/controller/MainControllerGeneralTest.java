@@ -345,6 +345,39 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
         }
 
         @Test
+        void translatesAllHelpSectionsWhenTheInterfaceLanguageChanges() throws Exception {
+                MainController controller = loadController();
+
+                runOnFxThread(() -> {
+                        ComboBox<?> languageSelector = field(controller, "languageSelector");
+
+                        languageSelector.getSelectionModel().select(0);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String spanishHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(spanishHelp.contains("Cifrado: selecciona un archivo"));
+                        assertTrue(spanishHelp.contains("Descifrado: selecciona el contenedor"));
+                        assertTrue(spanishHelp.contains("La vista previa se muestra"));
+
+                        languageSelector.getSelectionModel().select(1);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String englishHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(englishHelp.contains("Encryption: select a .txt, .log, .png"));
+                        assertTrue(englishHelp.contains("Decryption: select the .enc container"));
+                        assertTrue(englishHelp.contains("A preview is shown after successful decryption"));
+                        assertTrue(englishHelp.contains("Move through controls with Tab and Shift+Tab."));
+
+                        languageSelector.getSelectionModel().select(2);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String basqueHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(basqueHelp.contains("Zifratzea: aukeratu .txt, .log, .png"));
+                        assertTrue(basqueHelp.contains("Deszifratzea: aukeratu .enc edukiontzia"));
+                        assertTrue(basqueHelp.contains("Aurrebista behar bezala deszifratu ondoren"));
+                        assertTrue(basqueHelp.contains("Teklatuko lasterbideak:"));
+                        return null;
+                });
+        }
+
+        @Test
         void switchesInterfaceLanguageWithoutChangingSelectedPathsOrFileContents() throws Exception {
                 MainController controller = loadController();
                 Path file = Files.createTempFile("enigma-language", ".txt");
@@ -680,6 +713,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         assertTrue(stage.getY() + stage.getHeight() <= screenBounds.getMaxY() + 2.0);
 
                         stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
                         Label encryptionTitle = (Label) stage.getScene().getRoot()
                                         .lookup("#menuEncryptionTitle");
                         Label decryptionTitle = (Label) stage.getScene().getRoot()
@@ -711,5 +745,49 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         stage.close();
                         return null;
                 });
+        }
+
+        @Test
+        void expandsMainMenuActionsAcrossLargeWindow() throws Exception {
+                MainController controller = loadController();
+                Stage stage = runOnFxThread(() -> {
+                        Parent root = field(controller, "rootPane", Parent.class);
+                        Stage window = new Stage();
+                        Scene scene = new Scene(root, 1200.0, 900.0);
+                        scene.getStylesheets().add(MainApplication.class
+                                        .getResource("/com/enigma/javafx/styles.css").toExternalForm());
+                        window.setScene(scene);
+                        window.show();
+                        root.applyCss();
+                        root.layout();
+                        return window;
+                });
+
+                try {
+                        runOnFxThread(() -> {
+                                var menuButtons = ((Parent) field(controller, "menuView", Parent.class))
+                                                .getChildrenUnmodifiable().stream()
+                                                .filter(Button.class::isInstance)
+                                                .map(Button.class::cast)
+                                                .toList();
+                                assertEquals(2, menuButtons.size());
+                                Button encryptionButton = menuButtons.get(0);
+                                Button decryptionButton = menuButtons.get(1);
+                                assertTrue(encryptionButton.getWidth() >= 700.0,
+                                                "Encryption button width: " + encryptionButton.getWidth());
+                                assertTrue(decryptionButton.getWidth() >= 700.0,
+                                                "Decryption button width: " + decryptionButton.getWidth());
+                                assertTrue(encryptionButton.getHeight() >= 170.0,
+                                                "Encryption button height: " + encryptionButton.getHeight());
+                                assertTrue(decryptionButton.getHeight() >= 170.0,
+                                                "Decryption button height: " + decryptionButton.getHeight());
+                                return null;
+                        });
+                } finally {
+                        runOnFxThread(() -> {
+                                stage.close();
+                                return null;
+                        });
+                }
         }
 }

@@ -83,12 +83,21 @@ Compila y empaqueta el proyecto:
 mvn clean package
 ```
 
+No ejecutes `mvn jar:jar` para generar el ejecutable: ese objetivo crea el JAR
+básico, sin las dependencias JavaFX integradas ni el manifiesto que configura
+el punto de entrada. `package` ejecuta también el empaquetado con
+`maven-shade-plugin`.
+
 Desde la carpeta `target`, ejecuta el JAR de Windows:
 
 ```powershell
 Set-Location ".\target"
 java -jar .\Enigma-GestorAES-Java25-windows.jar
 ```
+
+Usa exactamente `Enigma-GestorAES-Java25-windows.jar`. Maven también deja
+`GestorAES-JavaFX-1.0-SNAPSHOT.jar` en `target`; ese es el JAR interno sin
+integrar y no se debe ejecutar con `java -jar`.
 
 Si el equipo tiene varios JDK instalados y `java` apunta a una versión
 distinta de la 25, ejecuta explícitamente el `java.exe` del JDK 25 desde esa

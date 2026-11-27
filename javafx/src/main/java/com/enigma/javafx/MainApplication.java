@@ -24,9 +24,9 @@ import java.io.IOException;
 public class MainApplication extends Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainApplication.class);
     private static final double PREFERRED_WINDOW_WIDTH = 1000.0;
-    private static final double MIN_WINDOW_WIDTH = 800.0;
-    private static final double MIN_WINDOW_HEIGHT = 600.0;
-    private static final double MAX_WINDOW_HEIGHT = 1200.0;
+    private static final double MIN_WINDOW_WIDTH = 1000.0;
+    private static final double MIN_WINDOW_HEIGHT = 800.0;
+    private static final double MAX_WINDOW_HEIGHT = 800.0;
     private static final double MAX_SCREEN_WIDTH_RATIO = 0.90;
     private static final double MAX_SCREEN_HEIGHT_RATIO = 0.95;
     private static final Duration OPENING_FADE_DURATION = Duration.millis(220);

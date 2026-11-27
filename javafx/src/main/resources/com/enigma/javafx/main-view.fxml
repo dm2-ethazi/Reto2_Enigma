@@ -61,7 +61,7 @@
     </top>
     <center>
         <StackPane styleClass="view-host">
-            <VBox fx:id="menuView" alignment="CENTER" maxWidth="680.0"
+            <VBox fx:id="menuView" alignment="CENTER" maxHeight="Infinity" maxWidth="1080.0"
                   spacing="22.0" styleClass="menu-view">
                 <VBox alignment="CENTER" spacing="7.0" styleClass="menu-heading">
                     <Label styleClass="eyebrow accent-yellow" text="GESTOR ENIGMA AES"/>
@@ -71,8 +71,10 @@
                 </VBox>
                 <Button accessibleText="Abrir la sección de cifrado AES"
                         accessibleHelp="Abre las opciones para cifrar un archivo."
+                        maxHeight="Infinity"
                         maxWidth="Infinity" onAction="#showEncryptionView"
-                        prefHeight="142.0" styleClass="menu-option back-button encryption-option">
+                        prefHeight="200.0" styleClass="menu-option back-button encryption-option"
+                        VBox.vgrow="ALWAYS">
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuEncryptionTitle"
@@ -87,8 +89,10 @@
                 </Button>
                 <Button accessibleText="Abrir la sección de descifrado AES"
                         accessibleHelp="Abre las opciones para descifrar un contenedor .enc."
+                        maxHeight="Infinity"
                         maxWidth="Infinity" onAction="#showDecryptionView"
-                        prefHeight="142.0" styleClass="menu-option back-button decryption-option">
+                        prefHeight="200.0" styleClass="menu-option back-button decryption-option"
+                        VBox.vgrow="ALWAYS">
                     <graphic>
                         <VBox alignment="CENTER" maxWidth="Infinity" spacing="8.0">
                             <Label fx:id="menuDecryptionTitle"
