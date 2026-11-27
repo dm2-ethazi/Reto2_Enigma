@@ -6,7 +6,6 @@ import static com.enigma.javafx.i18n.LanguageService.Language.ENGLISH;
 import static com.enigma.javafx.i18n.LanguageService.Language.SPANISH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LanguageServiceTest {
     @Test
@@ -34,6 +33,20 @@ class LanguageServiceTest {
     }
 
     @Test
+    void preservesDistinctSourceAndOriginalFileLabelsAcrossLanguageChanges() {
+        String englishOriginal = LanguageService.translate(ENGLISH, "Archivo original");
+        String basqueOriginal = LanguageService.translate(BASQUE, englishOriginal);
+        String englishSource = LanguageService.translate(ENGLISH, "Archivo de origen");
+        String basqueSource = LanguageService.translate(BASQUE, englishSource);
+
+        assertEquals("Original file", englishOriginal);
+        assertEquals("Jatorrizko fitxategia", basqueOriginal);
+        assertEquals("Archivo original", LanguageService.translate(SPANISH, basqueOriginal));
+        assertEquals("Iturburu-fitxategia", basqueSource);
+        assertEquals("Archivo de origen", LanguageService.translate(SPANISH, basqueSource));
+    }
+
+    @Test
     void translatesNewViewsAndHelpCopyAcrossLanguages() {
         assertEquals("AES ENCRYPTION", LanguageService.translate(ENGLISH, "CIFRADO AES"));
         assertEquals("AES DESZIFRATZEA", LanguageService.translate(BASQUE, "DESCIFRADO AES"));
@@ -49,17 +62,18 @@ class LanguageServiceTest {
                 LanguageService.translate(BASQUE,
                         "Ctrl+Enter: ejecutar la operación de la vista actual."));
 
-        String englishManual = LanguageService.translate(ENGLISH,
-                "Cifrado: selecciona un archivo .txt, .log, .png o cualquier otro archivo binario y una carpeta "
-                        + "de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres.\n\n"
-                        + "Descifrado: selecciona el contenedor .enc, la carpeta de salida "
-                        + "y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional.\n\n"
-                        + "La vista previa se muestra después de un descifrado correcto para archivos de texto "
-                        + "(.txt y .log) "
-                        + "e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados "
-                        + "existentes no se sobrescriben.");
-        assertTrue(englishManual.startsWith("Encryption: choose a .txt, .log, .png or any other binary file"));
-        assertTrue(englishManual.contains("Files are processed locally"));
+        assertEquals(
+                "Encryption: select a .txt, .log, .png or any other binary file and a destination folder; click Encrypt file and save the generated 16-character password.",
+                LanguageService.translate(ENGLISH,
+                        "Cifrado: selecciona un archivo .txt, .log, .png o cualquier otro archivo binario y una carpeta de destino; pulsa Cifrar archivo y guarda la contraseña generada de 16 caracteres."));
+        assertEquals(
+                "Decryption: select the .enc container, the output folder and the password; click Decrypt file. Comparing with the original is optional.",
+                LanguageService.translate(ENGLISH,
+                        "Descifrado: selecciona el contenedor .enc, la carpeta de salida y la contraseña; pulsa Descifrar archivo. La comparación con el original es opcional."));
+        assertEquals(
+                "A preview is shown after successful decryption for text files (.txt and .log) and supported PNG images. Files are processed locally and existing results are not overwritten.",
+                LanguageService.translate(ENGLISH,
+                        "La vista previa se muestra después de un descifrado correcto para archivos de texto (.txt y .log) e imágenes PNG compatibles. Los archivos se procesan localmente y los resultados existentes no se sobrescriben."));
     }
 
     @Test
@@ -70,6 +84,13 @@ class LanguageServiceTest {
                 LanguageService.format(ENGLISH, "Archivo cifrado: {0}", path));
         assertEquals("Zifratutako fitxategia: " + path,
                 LanguageService.format(BASQUE, "Archivo cifrado: {0}", path));
+        assertEquals(
+                "Supported files include .txt, .log, images and other binary files. Originals are kept and existing results are not overwritten.",
+                LanguageService.translate(ENGLISH,
+                        "Se admiten archivos .txt, .log, imágenes y otros binarios. Los originales se conservan y no se sobrescriben resultados existentes."));
+        assertEquals("The GCM tag validates the container. Optional comparison checks size and SHA-256.",
+                LanguageService.translate(ENGLISH,
+                        "La etiqueta GCM valida el contenedor. La comparación opcional comprueba tamaño y SHA-256."));
         assertEquals("Encrypting file: 75%",
                 LanguageService.format(ENGLISH, "Cifrando archivo: {0}%", 75));
         assertEquals("Authenticated preview. Full contents (42 bytes).",

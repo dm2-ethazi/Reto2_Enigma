@@ -8,8 +8,10 @@ import com.enigma.javafx.i18n.LanguageService.Language;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.scene.AccessibleAttribute;
 import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
+import javafx.scene.control.Control;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -28,6 +30,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -131,6 +134,33 @@ public class MainController {
 
     @FXML
     private ComboBox<Language> languageSelector;
+
+    @FXML
+    private Label generatedPasswordLabel;
+
+    @FXML
+    private Label decryptPasswordLabel;
+
+    @FXML
+    private Label sourcePathLabel;
+
+    @FXML
+    private Label destinationDirectoryLabel;
+
+    @FXML
+    private Label decryptSourceLabel;
+
+    @FXML
+    private Label decryptDestinationLabel;
+
+    @FXML
+    private Label referencePathLabel;
+
+    @FXML
+    private Label textPreviewLabel;
+
+    @FXML
+    private Label imagePreviewLabel;
 
     /** Campo de ruta del fichero que se cifrará. */
     @FXML
@@ -285,11 +315,13 @@ public class MainController {
                 .bindBidirectional(decryptDestinationDirectoryField.textProperty());
         configurePasswordVisibility(
                 showPasswordToggle, showDecryptPasswordIcon, hideDecryptPasswordIcon,
-                decryptPasswordField, visibleDecryptPasswordField, "contraseña");
+                decryptPasswordField, visibleDecryptPasswordField, decryptPasswordLabel,
+                "contraseña");
         configurePasswordVisibility(
                 showGeneratedPasswordToggle, showGeneratedPasswordIcon, hideGeneratedPasswordIcon,
-                generatedPasswordField, visibleGeneratedPasswordField,
+                generatedPasswordField, visibleGeneratedPasswordField, generatedPasswordLabel,
                 "contraseña generada");
+        associateFormLabels();
         generatedPasswordField.setEditable(false);
         visibleGeneratedPasswordField.setEditable(false);
         textPreviewArea.setEditable(false);
@@ -298,6 +330,9 @@ public class MainController {
         languageSelector.setValue(Language.SPANISH);
         languageSelector.setOnAction(event -> changeLanguage());
         applyLanguage(Language.SPANISH);
+        installAccessibleTooltips(rootPane);
+        updatePasswordVisibilityText(showPasswordToggle, "contraseña");
+        updatePasswordVisibilityText(showGeneratedPasswordToggle, "contraseña generada");
         setOperationProgressVisible(false);
         decryptSourcePathField.textProperty().addListener(
                 (observable, oldValue, newValue) -> onPreviewInputChanged());
@@ -313,6 +348,17 @@ public class MainController {
                 "Arrastra un único contenedor .enc.");
         configureFileDropTarget(referencePathField, MainController::isSupportedSourceFile,
                 this::setReferenceFile, "Arrastra un único archivo normal y legible.");
+    }
+
+    private void associateFormLabels() {
+        languageLabel.setLabelFor(languageSelector);
+        sourcePathLabel.setLabelFor(sourcePathField);
+        destinationDirectoryLabel.setLabelFor(destinationDirectoryField);
+        decryptSourceLabel.setLabelFor(decryptSourcePathField);
+        decryptDestinationLabel.setLabelFor(decryptDestinationDirectoryField);
+        referencePathLabel.setLabelFor(referencePathField);
+        textPreviewLabel.setLabelFor(textPreviewArea);
+        imagePreviewLabel.setLabelFor(imagePreview);
     }
 
     @FXML
@@ -393,7 +439,8 @@ public class MainController {
                 translate("Ctrl+1: abrir la vista de cifrado."),
                 translate("Ctrl+2: abrir la vista de descifrado."),
                 translate("Ctrl+Enter: ejecutar la operación de la vista actual."),
-                translate("Esc: volver al menú principal."));
+                translate("Esc: volver al menú principal."),
+                translate("Recorre los controles con Tab y Mayús+Tab. Activa las casillas con Espacio y los botones con Espacio o Intro."));
     }
 
     @FXML
@@ -546,6 +593,7 @@ public class MainController {
         showGeneratedPasswordToggle.setDisable(true);
         setEncryptionControlsDisabled(true);
         setOperationProgressVisible(true);
+        setStatus("Iniciando cifrado...");
         // Task.call se ejecuta en el hilo de trabajo, no en el hilo de la interfaz.
         encryptionTask = new Task<>() {
             @Override
@@ -578,6 +626,7 @@ public class MainController {
             generatedPasswordField.clear();
             Throwable failure = encryptionTask.getException();
             LOGGER.error("File encryption failed", failure);
+            setStatus("No se pudo cifrar el archivo.");
             showError(translateFailure(failure, "No se pudo cifrar el archivo."));
         });
         encryptionTask.setOnCancelled(event -> {
@@ -662,6 +711,7 @@ public class MainController {
         configurePreviewPanels(previewType(encryptedFile));
         setEncryptionControlsDisabled(true);
         setOperationProgressVisible(true);
+        setStatus("Iniciando descifrado...");
         decryptionTask = new Task<>() {
             @Override
             protected DecryptionResult call() throws IOException, GeneralSecurityException {
@@ -697,6 +747,7 @@ public class MainController {
             setOperationProgressVisible(false);
             Throwable failure = decryptionTask.getException();
             LOGGER.error("File decryption failed", failure);
+            setStatus("No se pudo descifrar el archivo.");
             showError(translateFailure(failure, "No se pudo descifrar el archivo."));
         });
         decryptionTask.setOnCancelled(event -> {
@@ -1022,6 +1073,24 @@ public class MainController {
         progressBar.setManaged(visible);
     }
 
+    private void installAccessibleTooltips(Node node) {
+        if (node instanceof Control control && node.getAccessibleHelp() != null
+                && !node.getAccessibleHelp().isBlank()) {
+            Tooltip tooltip = new Tooltip(node.getAccessibleHelp());
+            tooltip.setWrapText(true);
+            control.setTooltip(tooltip);
+        }
+
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                installAccessibleTooltips(child);
+            }
+        }
+        if (node instanceof ScrollPane scrollPane && scrollPane.getContent() != null) {
+            installAccessibleTooltips(scrollPane.getContent());
+        }
+    }
+
     /** Abre el selector para elegir el contenedor .enc que se va a descifrar. */
     @FXML
     private void chooseEncryptedFile() {
@@ -1292,6 +1361,7 @@ public class MainController {
         selectedLanguage = language;
         translateNode(rootPane);
         statusLabel.setText(renderStatus(currentStatus));
+        updateStatusAccessibleText();
         updatePasswordVisibilityText(showPasswordToggle, "contraseña");
         updatePasswordVisibilityText(showGeneratedPasswordToggle, "contraseña generada");
     }
@@ -1304,6 +1374,10 @@ public class MainController {
             input.setPromptText(translate(input.getPromptText()));
         }
         node.setAccessibleText(translate(node.getAccessibleText()));
+        node.setAccessibleHelp(translate(node.getAccessibleHelp()));
+        if (node instanceof Control control && control.getTooltip() != null) {
+            control.getTooltip().setText(translate(control.getTooltip().getText()));
+        }
 
         if (node instanceof Parent parent) {
             for (Node child : parent.getChildrenUnmodifiable()) {
@@ -1322,6 +1396,7 @@ public class MainController {
     private void setStatus(String spanishTemplate, Object... arguments) {
         currentStatus = new LocalizedText(spanishTemplate, arguments);
         statusLabel.setText(renderStatus(currentStatus));
+        updateStatusAccessibleText();
     }
 
     private String setTaskStatus(String spanishTemplate, Object... arguments) {
@@ -1337,13 +1412,26 @@ public class MainController {
         task.messageProperty().addListener((observable, oldMessage, newMessage) -> {
             if (newMessage != null && !newMessage.isBlank()) {
                 statusLabel.setText(renderStatus(currentStatus));
+                if (!newMessage.contains("%")) {
+                    updateStatusAccessibleText();
+                }
             }
         });
+    }
+
+    private void updateStatusAccessibleText() {
+        statusLabel.setAccessibleText(LanguageService.format(
+                selectedLanguage, "Estado de la aplicación: {0}", statusLabel.getText()));
+        statusLabel.notifyAccessibleAttributeChanged(AccessibleAttribute.TEXT);
     }
 
     private void updatePasswordVisibilityText(ToggleButton toggle, String passwordName) {
         String verb = toggle.isSelected() ? "Ocultar " : "Mostrar ";
         toggle.setAccessibleText(translate(verb + passwordName));
+        toggle.notifyAccessibleAttributeChanged(AccessibleAttribute.TEXT);
+        if (toggle.getTooltip() != null) {
+            toggle.getTooltip().setText(toggle.getAccessibleText());
+        }
     }
 
     private String translateFailure(Throwable failure, String fallback) {
@@ -1404,7 +1492,7 @@ public class MainController {
      */
     private void configurePasswordVisibility(ToggleButton toggle, FontIcon showIcon,
             FontIcon hideIcon, PasswordField maskedField,
-            TextField visibleField, String accessibleName) {
+            TextField visibleField, Label fieldLabel, String accessibleName) {
         Color iconColor = Color.web("#8c6f47");
         showIcon.setIconColor(iconColor);
         hideIcon.setIconColor(iconColor);
@@ -1413,6 +1501,10 @@ public class MainController {
         visibleField.managedProperty().bind(toggle.selectedProperty());
         maskedField.visibleProperty().bind(toggle.selectedProperty().not());
         maskedField.managedProperty().bind(toggle.selectedProperty().not());
+        fieldLabel.labelForProperty().bind(
+                javafx.beans.binding.Bindings.when(toggle.selectedProperty())
+                        .then(visibleField)
+                        .otherwise(maskedField));
         showIcon.visibleProperty().bind(toggle.selectedProperty().not());
         showIcon.managedProperty().bind(toggle.selectedProperty().not());
         hideIcon.visibleProperty().bind(toggle.selectedProperty());
