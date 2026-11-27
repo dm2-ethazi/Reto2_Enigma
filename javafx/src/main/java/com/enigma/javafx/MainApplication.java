@@ -24,7 +24,9 @@ import java.io.IOException;
 public class MainApplication extends Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(MainApplication.class);
     private static final double PREFERRED_WINDOW_WIDTH = 1000.0;
-    private static final double MAX_WINDOW_HEIGHT = 1200.0;
+    private static final double MIN_WINDOW_WIDTH = 1000.0;
+    private static final double MIN_WINDOW_HEIGHT = 800.0;
+    private static final double MAX_WINDOW_HEIGHT = 800.0;
     private static final double MAX_SCREEN_WIDTH_RATIO = 0.90;
     private static final double MAX_SCREEN_HEIGHT_RATIO = 0.95;
     private static final Duration OPENING_FADE_DURATION = Duration.millis(220);
@@ -58,11 +60,13 @@ public class MainApplication extends Application {
         stage.getIcons().add(new Image(MainApplication.class
                 .getResource("/com/enigma/javafx/Hogwarts-App-Icon.png").toExternalForm()));
         stage.setScene(scene);
+        stage.setMinWidth(MIN_WINDOW_WIDTH);
+        stage.setMinHeight(MIN_WINDOW_HEIGHT);
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-        double windowWidth = Math.min(
-                PREFERRED_WINDOW_WIDTH, screenBounds.getWidth() * MAX_SCREEN_WIDTH_RATIO);
-        double windowHeight = Math.min(
-                MAX_WINDOW_HEIGHT, screenBounds.getHeight() * MAX_SCREEN_HEIGHT_RATIO);
+        double windowWidth = Math.max(MIN_WINDOW_WIDTH, Math.min(
+                PREFERRED_WINDOW_WIDTH, screenBounds.getWidth() * MAX_SCREEN_WIDTH_RATIO));
+        double windowHeight = Math.max(MIN_WINDOW_HEIGHT, Math.min(
+                MAX_WINDOW_HEIGHT, screenBounds.getHeight() * MAX_SCREEN_HEIGHT_RATIO));
         stage.setMaximized(false);
         stage.setWidth(windowWidth);
         stage.setHeight(windowHeight);

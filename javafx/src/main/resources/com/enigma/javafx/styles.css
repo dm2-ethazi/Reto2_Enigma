@@ -192,6 +192,13 @@
     -fx-background-color: #fffefa;
 }
 
+.combo-box:focused {
+    -fx-border-color: #8c6f47;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
 .text-area .content {
     -fx-background-color: #fffdf7;
 }
@@ -335,6 +342,13 @@
     -fx-font-size: 10px;
 }
 
+.tooltip {
+    -fx-background-color: #3f3425;
+    -fx-text-fill: #fffdf7;
+    -fx-font-size: 13px;
+    -fx-wrap-text: true;
+}
+
 .progress-bar > .track {
     -fx-background-color: #f8f2e4;
     -fx-background-radius: 4px;
@@ -372,6 +386,7 @@
 
 .check-box:focused .box {
     -fx-border-color: #8c6f47;
+    -fx-border-width: 2px;
 }
 
 .app-alert {

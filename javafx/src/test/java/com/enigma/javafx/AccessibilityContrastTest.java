@@ -41,6 +41,10 @@ class AccessibilityContrastTest {
                 ".app-alert-error .header-panel", "-fx-background-color", 4.5);
         assertContrast(".check-box:selected .mark", "-fx-background-color",
                 ".check-box:selected .box", "-fx-background-color", 4.5);
+        assertContrast(".combo-box:focused", "-fx-border-color",
+                ".root", "-fx-background-color", 3.0);
+        assertContrast(".check-box:focused .box", "-fx-border-color",
+                ".root", "-fx-background-color", 3.0);
     }
 
     @Test
@@ -76,7 +80,13 @@ class AccessibilityContrastTest {
                 ".text-field:focused", "-fx-background-color", 3.0);
         assertTrue(FXML.contains("accessibleText="));
         assertTrue(countOccurrences(FXML, "accessibleText=") >= 12);
+        assertTrue(countOccurrences(FXML, "accessibleHelp=") >= 15);
         assertTrue(countOccurrences(FXML, "labelFor=") >= 8);
+        assertTrue(FXML.contains("labelFor=\"$languageSelector\""));
+        assertTrue(FXML.contains("accessibleText=\"← Atrás\""));
+        assertTrue(FXML.contains("accessibleHelp=\"Esc: volver al menú principal.\""));
+        assertTrue(FXML.contains("fx:id=\"generatedPasswordLabel\""));
+        assertTrue(FXML.contains("fx:id=\"decryptPasswordLabel\""));
         assertTrue(FXML.contains(
                 "style=\"-fx-text-fill: #0003C9; -fx-font-size: 28px; -fx-font-weight: bold;\""));
         assertTrue(FXML.contains(

@@ -44,8 +44,30 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 TextField visiblePassword = field(controller, "visibleGeneratedPasswordField");
                 ToggleButton visibilityToggle = field(controller, "showGeneratedPasswordToggle");
                 ToggleButton decryptVisibilityToggle = field(controller, "showPasswordToggle");
+                Label generatedPasswordLabel = field(controller, "generatedPasswordLabel", Label.class);
+                Label decryptPasswordLabel = field(controller, "decryptPasswordLabel", Label.class);
+                Label languageLabel = field(controller, "languageLabel", Label.class);
+                ComboBox<?> languageSelector = field(controller, "languageSelector", ComboBox.class);
+                assertEquals(field(controller, "sourcePathField", TextField.class),
+                                field(controller, "sourcePathLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "destinationDirectoryField", TextField.class),
+                                field(controller, "destinationDirectoryLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "decryptSourcePathField", TextField.class),
+                                field(controller, "decryptSourceLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "decryptDestinationDirectoryField", TextField.class),
+                                field(controller, "decryptDestinationLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "referencePathField", TextField.class),
+                                field(controller, "referencePathLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "textPreviewArea", TextArea.class),
+                                field(controller, "textPreviewLabel", Label.class).getLabelFor());
+                assertEquals(field(controller, "imagePreview", ImageView.class),
+                                field(controller, "imagePreviewLabel", Label.class).getLabelFor());
                 assertTrue(maskedPassword.isVisible());
                 assertFalse(visiblePassword.isVisible());
+                assertEquals(languageSelector, languageLabel.getLabelFor());
+                assertEquals(maskedPassword, generatedPasswordLabel.getLabelFor());
+                assertEquals(field(controller, "decryptPasswordField", PasswordField.class),
+                                decryptPasswordLabel.getLabelFor());
                 assertFalse(field(controller, "progressIndicator", ProgressIndicator.class).isVisible());
                 assertFalse(field(controller, "progressBar", ProgressBar.class).isVisible());
                 assertTrue(visibilityToggle.isDisable());
@@ -73,6 +95,9 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 runOnFxThread(() -> {
                         visibilityToggle.setSelected(true);
                         decryptVisibilityToggle.setSelected(true);
+                        assertEquals(visiblePassword, generatedPasswordLabel.getLabelFor());
+                        assertEquals(field(controller, "visibleDecryptPasswordField", TextField.class),
+                                        decryptPasswordLabel.getLabelFor());
                         maskedPassword.setText("SafePassword1234");
                         field(controller, "sourcePathField", TextField.class).setText("source.txt");
                         field(controller, "destinationDirectoryField", TextField.class).setText("output");
@@ -88,6 +113,9 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                 assertEquals("", maskedPassword.getText());
                 assertEquals("", visiblePassword.getText());
                 assertFalse(visibilityToggle.isSelected());
+                assertEquals(maskedPassword, generatedPasswordLabel.getLabelFor());
+                assertEquals(field(controller, "decryptPasswordField", PasswordField.class),
+                                decryptPasswordLabel.getLabelFor());
                 assertEquals("", visibilityToggle.getText());
                 assertEquals("", decryptVisibilityToggle.getText());
                 assertTrue(showDecryptIcon.isVisible());
@@ -244,6 +272,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 assertTrue(spanishHelp.contains("Ctrl+Enter: ejecutar"));
                                 assertTrue(spanishHelp.contains("Esc: volver"));
                                 assertTrue(spanishHelp.contains("F2: mostrar información acerca de la aplicación."));
+                                assertTrue(spanishHelp.contains("Recorre los controles con Tab y Mayús+Tab."));
 
                                 ComboBox<?> languageSelector = field(controller, "languageSelector", ComboBox.class);
                                 languageSelector.getSelectionModel().select(1);
@@ -253,6 +282,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 assertTrue(englishHelp.contains("F2: show information about the application."));
                                 assertTrue(englishHelp.contains("Ctrl+1: open the encryption view."));
                                 assertTrue(englishHelp.contains("Ctrl+Enter: run the operation"));
+                                assertTrue(englishHelp.contains("Move through controls with Tab and Shift+Tab."));
 
                                 field(controller, "sourcePathField", TextField.class).setText(source.toString());
                                 field(controller, "destinationDirectoryField", TextField.class)
@@ -277,6 +307,74 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                                 return null;
                         });
                 }
+        }
+
+        @Test
+        void updatesAccessibleStatusAndProvidesLocalizedTooltips() throws Exception {
+                MainController controller = loadController();
+
+                runOnFxThread(() -> {
+                        Label status = field(controller, "statusLabel", Label.class);
+                        Button chooseSource = field(controller, "chooseSourceButton", Button.class);
+                        Button clearSelection = field(controller, "clearSelectionButton", Button.class);
+                        ToggleButton passwordToggle = field(controller, "showPasswordToggle",
+                                        ToggleButton.class);
+
+                        assertEquals("Estado de la aplicación: Listo para trabajar.",
+                                        status.getAccessibleText());
+                        assertNotNull(chooseSource.getTooltip());
+                        assertEquals("Abre el selector para elegir el archivo que quieres cifrar.",
+                                        chooseSource.getTooltip().getText());
+
+                        clearSelection.fire();
+                        assertEquals("Estado de la aplicación: Selección limpiada.",
+                                        status.getAccessibleText());
+                        passwordToggle.setSelected(true);
+                        assertEquals("Ocultar contraseña", passwordToggle.getAccessibleText());
+                        assertEquals("Ocultar contraseña", passwordToggle.getTooltip().getText());
+
+                        ComboBox<?> languageSelector = field(controller, "languageSelector");
+                        languageSelector.getSelectionModel().select(1);
+                        languageSelector.fireEvent(new ActionEvent());
+                        assertEquals("Application status: Selection cleared.",
+                                        status.getAccessibleText());
+                        assertEquals("Opens the file chooser to select the file to encrypt.",
+                                        chooseSource.getTooltip().getText());
+                        return null;
+                });
+        }
+
+        @Test
+        void translatesAllHelpSectionsWhenTheInterfaceLanguageChanges() throws Exception {
+                MainController controller = loadController();
+
+                runOnFxThread(() -> {
+                        ComboBox<?> languageSelector = field(controller, "languageSelector");
+
+                        languageSelector.getSelectionModel().select(0);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String spanishHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(spanishHelp.contains("Cifrado: selecciona un archivo"));
+                        assertTrue(spanishHelp.contains("Descifrado: selecciona el contenedor"));
+                        assertTrue(spanishHelp.contains("La vista previa se muestra"));
+
+                        languageSelector.getSelectionModel().select(1);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String englishHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(englishHelp.contains("Encryption: select a .txt, .log, .png"));
+                        assertTrue(englishHelp.contains("Decryption: select the .enc container"));
+                        assertTrue(englishHelp.contains("A preview is shown after successful decryption"));
+                        assertTrue(englishHelp.contains("Move through controls with Tab and Shift+Tab."));
+
+                        languageSelector.getSelectionModel().select(2);
+                        languageSelector.fireEvent(new ActionEvent());
+                        String basqueHelp = (String) invoke(controller, "helpContent");
+                        assertTrue(basqueHelp.contains("Zifratzea: aukeratu .txt, .log, .png"));
+                        assertTrue(basqueHelp.contains("Deszifratzea: aukeratu .enc edukiontzia"));
+                        assertTrue(basqueHelp.contains("Aurrebista behar bezala deszifratu ondoren"));
+                        assertTrue(basqueHelp.contains("Teklatuko lasterbideak:"));
+                        return null;
+                });
         }
 
         @Test
@@ -615,6 +713,7 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         assertTrue(stage.getY() + stage.getHeight() <= screenBounds.getMaxY() + 2.0);
 
                         stage.getScene().getRoot().applyCss();
+                        stage.getScene().getRoot().layout();
                         Label encryptionTitle = (Label) stage.getScene().getRoot()
                                         .lookup("#menuEncryptionTitle");
                         Label decryptionTitle = (Label) stage.getScene().getRoot()
@@ -646,5 +745,49 @@ class MainControllerGeneralTest extends JavaFxTestSupport {
                         stage.close();
                         return null;
                 });
+        }
+
+        @Test
+        void expandsMainMenuActionsAcrossLargeWindow() throws Exception {
+                MainController controller = loadController();
+                Stage stage = runOnFxThread(() -> {
+                        Parent root = field(controller, "rootPane", Parent.class);
+                        Stage window = new Stage();
+                        Scene scene = new Scene(root, 1200.0, 900.0);
+                        scene.getStylesheets().add(MainApplication.class
+                                        .getResource("/com/enigma/javafx/styles.css").toExternalForm());
+                        window.setScene(scene);
+                        window.show();
+                        root.applyCss();
+                        root.layout();
+                        return window;
+                });
+
+                try {
+                        runOnFxThread(() -> {
+                                var menuButtons = ((Parent) field(controller, "menuView", Parent.class))
+                                                .getChildrenUnmodifiable().stream()
+                                                .filter(Button.class::isInstance)
+                                                .map(Button.class::cast)
+                                                .toList();
+                                assertEquals(2, menuButtons.size());
+                                Button encryptionButton = menuButtons.get(0);
+                                Button decryptionButton = menuButtons.get(1);
+                                assertTrue(encryptionButton.getWidth() >= 700.0,
+                                                "Encryption button width: " + encryptionButton.getWidth());
+                                assertTrue(decryptionButton.getWidth() >= 700.0,
+                                                "Decryption button width: " + decryptionButton.getWidth());
+                                assertTrue(encryptionButton.getHeight() >= 170.0,
+                                                "Encryption button height: " + encryptionButton.getHeight());
+                                assertTrue(decryptionButton.getHeight() >= 170.0,
+                                                "Decryption button height: " + decryptionButton.getHeight());
+                                return null;
+                        });
+                } finally {
+                        runOnFxThread(() -> {
+                                stage.close();
+                                return null;
+                        });
+                }
         }
 }

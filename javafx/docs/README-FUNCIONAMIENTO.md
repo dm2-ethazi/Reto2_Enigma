@@ -41,6 +41,11 @@ muestran en **Ayuda**:
 - `Ctrl+Enter`: iniciar la operación de la vista actual.
 - `Esc`: volver al menú principal.
 
+También se puede recorrer la interfaz con `Tab` y `Mayús+Tab`; `Espacio` activa
+casillas y `Espacio` o `Intro` activan botones. El foco de teclado se muestra
+visualmente.
+Los controles principales ofrecen ayudas emergentes y descripciones accesibles.
+
 ## Recorrido de cifrado
 
 1. En la pantalla principal se selecciona un archivo `.txt`, `.log`, `.png` u
@@ -204,10 +209,16 @@ byte y SHA-256. `mvn verify` genera el informe JaCoCo y exige al menos un 80 %
 de cobertura de líneas; el HTML queda en `target/site/jacoco/index.html`.
 
 La comprobación de accesibilidad automatizada mide el contraste de los pares de
-texto/superficie y de los indicadores de foco principales. La pila tipográfica
-declara Noto Sans con Arial y DejaVu Sans como alternativas. Los botones de la
-vista de cifrado usan el azul del título de la opción; los de descifrado, el
-magenta correspondiente.
+texto/superficie y de los indicadores de foco, y comprueba la presencia de
+nombres y ayudas accesibles. Los estados de operación exponen texto accesible
+dinámico y notifican cambios de estado; la aplicación no envía una notificación
+de accesibilidad por cada actualización porcentual para evitar interrupciones
+frecuentes. El comportamiento final debe comprobarse con el lector de pantalla
+del sistema operativo. JavaFX usa sus
+propias propiedades accesibles; esta aplicación no utiliza atributos ARIA, que
+corresponden a interfaces web. La pila tipográfica declara Noto Sans con Arial
+y DejaVu Sans como alternativas. Los botones de la vista de cifrado usan el
+azul del título de la opción; los de descifrado, el magenta correspondiente.
 
 La prueba opcional `LargePngPreviewValidationTest` cifra, descifra y carga una
 imagen PNG válida de exactamente 850 MiB, comprueba los bytes y SHA-256 e
